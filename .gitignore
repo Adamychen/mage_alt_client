@@ -64,3 +64,23 @@ mage-bundle.zip
 
 # dev tools
 .devcontainer/**/*lock.json
+
+# local test server for Mage.Proxy development
+/local-server
+/Mage.Proxy/target
+
+
+# runtime folders (client image cache etc.)
+/plugins
+
+
+# runtime state (dev scripts)
+/.run
+
+# web client (Mage.Proxy/web) build artifacts
+/Mage.Proxy/web/vite.log
+/Mage.Proxy/web/*.tsbuildinfo
+/Mage.Proxy/web/playwright-report
+/Mage.Proxy/web/test-results
+/Mage.Proxy/web/e2e/shots
+/Mage.Proxy/web/coverage

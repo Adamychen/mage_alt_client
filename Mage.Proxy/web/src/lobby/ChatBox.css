@@ -1,0 +1,39 @@
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  min-height: 0;
+}
+
+.chat-msg {
+  word-break: break-word;
+}
+
+.chat-msg.system {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.chat-from {
+  color: var(--accent-2);
+}
+
+.chat-input {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chat-input input {
+  flex: 1;
+}

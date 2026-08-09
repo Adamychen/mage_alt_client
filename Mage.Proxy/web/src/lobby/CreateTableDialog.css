@@ -1,0 +1,61 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 15, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialog {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dialog h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 20px;
+}
+
+.chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}

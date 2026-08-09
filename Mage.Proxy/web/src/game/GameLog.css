@@ -1,0 +1,33 @@
+.gamelog {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gamelog h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.gamelog-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.gamelog-entry {
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.gamelog-from {
+  color: var(--accent-2);
+  font-weight: 600;
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mage.Proxy test client</title>
+<style>
+  body { font-family: monospace; background: #111; color: #ddd; margin: 0; padding: 16px; }
+  h1 { font-size: 18px; }
+  input, button { font-family: monospace; font-size: 13px; padding: 4px 6px; margin: 2px; }
+  #log { margin-top: 12px; background: #000; border: 1px solid #333; padding: 8px; height: 60vh; overflow-y: auto; white-space: pre-wrap; }
+  .ev  { color: #6cf; }
+  .res { color: #6c6; }
+  .err { color: #f66; }
+  .inf { color: #cc6; }
+  .lob { color: #c6f; }
+  .raw { color: #888; }
+</style>
+</head>
+<body>
+<h1>Mage.Proxy test client</h1>
+<p>
+  Server: <input id="host" value="localhost" size="14"> <input id="port" value="17171" size="6">
+  User: <input id="user" value="test1" size="10"> Pass: <input id="pass" type="password" value="test1" size="10">
+  <button onclick="connect()">Connect</button>
+  <button onclick="send({action:'disconnect'})">Disconnect</button>
+  <button onclick="send({action:'getGameTypes'})">Game types</button>
+  <button onclick="send({action:'getTables'})">Tables</button>
+  <button onclick="send({action:'getRoomChatId'})">Room chat id</button>
+</p>
+<div id="log"></div>
+
+<script>
+  var ws = null;
+  var chatId = null;
+
+  function log(cls, text) {
+    var el = document.getElementById('log');
+    var line = document.createElement('div');
+    line.className = cls;
+    line.textContent = text;
+    el.appendChild(line);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function send(msg) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) { log('err', 'not connected to proxy'); return; }
+    ws.send(JSON.stringify(msg));
+  }
+
+  function connect() {
+    send({
+      action: 'connect',
+      args: {
+        host: document.getElementById('host').value,
+        port: parseInt(document.getElementById('port').value),
+        username: document.getElementById('user').value,
+        password: document.getElementById('pass').value
+      }
+    });
+  }
+
+  ws = new WebSocket('ws://localhost:8787');
+
+  ws.onopen = function () { log('inf', 'proxy ws open'); };
+  ws.onclose = function () { log('err', 'proxy ws closed'); };
+
+  ws.onmessage = function (event) {
+    var msg = JSON.parse(event.data);
+    switch (msg.type) {
+      case 'info':     log('inf', '[info] ' + msg.message); break;
+      case 'error':    log('err', '[error] ' + msg.message); break;
+      case 'connected':    log('inf', '[connected] ' + msg.info); break;
+      case 'disconnected': log('err', '[disconnected] ' + msg.info); break;
+      case 'result':
+        log('res', '[result] ' + msg.action + ' ok=' + msg.ok
+          + (msg.data !== undefined ? ' :: ' + JSON.stringify(msg.data).substring(0, 400) : ''));
+        if (msg.action === 'getRoomChatId' && msg.ok && msg.data) {
+          chatId = msg.data;
+          log('res', 'joining chat ' + chatId);
+          send({ action: 'joinChat', args: { chatId: chatId } });
+        }
+        break;
+      case 'lobby':
+        log('lob', '[lobby] tables=' + (msg.tables ? msg.tables.length : 0)
+          + ' users=' + (msg.users ? msg.users.length : 0)
+          + ' :: ' + JSON.stringify(msg.tables ? msg.tables.map(function (t) { return t.name; }) : []));
+        break;
+      case 'event':
+        log('ev', '[event] ' + msg.method + ' (id ' + msg.messageId + ') data=' + JSON.stringify(msg.data).substring(0, 300));
+        break;
+      default:
+        log('raw', JSON.stringify(msg).substring(0, 300));
+    }
+  };
+</script>
+</body>
+</html>

@@ -249,6 +249,7 @@
         <module>Mage.Tests</module>
         <module>Mage.Verify</module>
         <module>Mage.Reports</module>
+        <module>Mage.Proxy</module>
     </modules>
 
     <repositories>
@@ -381,6 +382,12 @@
                 <groupId>org.jsoup</groupId>
                 <artifactId>jsoup</artifactId>
                 <version>1.21.2</version>
+            </dependency>
+            <dependency>
+                <!-- websocket server used by the Mage.Proxy gateway -->
+                <groupId>org.java-websocket</groupId>
+                <artifactId>Java-WebSocket</artifactId>
+                <version>1.5.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

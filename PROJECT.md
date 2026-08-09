@@ -1,0 +1,325 @@
+# Proyecto: Cliente moderno para XMage (web) — Documento maestro de trabajo
+
+> Este documento es la **fuente de verdad del proyecto**: roadmap, fases, decisiones y
+> estado real verificado. Se actualiza en cada paso de trabajo, no solo al final de fases.
+> Última actualización: 2026-08-09 (Fase 2 en progreso; contrato validado E2E real: jugar carta completa)
+
+---
+
+## 1. Objetivo
+
+Replicar la experiencia de XMage (Magic: The Gathering, multijugador y contra IA) con un
+cliente web **moderno, estilo MTG Arena**: render WebGL2, animaciones, targeting visual,
+y jugable **sin instalar nada** (un link y a jugar).
+
+No reimplementamos reglas de Magic: el servidor XMage (Java) sigue siendo el motor de reglas,
+la base de datos de cartas y la red social. Nosotros construimos un cliente nuevo encima.
+
+## 2. Estado actual
+
+| Fase | Nombre | Estado |
+|---|---|---|
+| 0 | Proxy XMage (bridge) | ✅ Completada y verificada (2026-08-08) |
+| 1 | Cliente web: login + lobby + tablero renderizado | ✅ Completada y verificada (2026-08-08) |
+| 2 | Interacción completa: feedbacks, targeting, jugar | En progreso (contrato + clic + mulligan/prioridad/objetivo/maná validados E2E; falta UX avanzada) |
+| 3 | Efectos, sonido, launcher de escritorio | ⬜ Pendiente |
+
+## 3. Arquitectura general
+
+```
+┌──────────────┐   WS JSON    ┌────────────────┐   protocolo XMage    ┌───────────────────┐
+│  Navegador   │ ───────────▶ │ Proxy Java     │ ───────────────────▶ │ Servidor XMage    │
+│  React+Pixi  │ ◀─────────── │ (Mage.Proxy)   │ ◀─────────────────── │ (Mage.Server)     │
+│  WebGL2      │              │ sesión real    │   jboss-serialization│ 1.4.60-V3         │
+└──────────────┘              └────────────────┘                      └───────────────────┘
+```
+
+- **Servidor XMage**: motor de reglas y de juego (Java, `Mage.Server`). Ya existente, no se toca.
+- **Proxy (`Mage.Proxy/`)**: módulo Java nuestro. Abre una sesión XMage real (`SessionImpl`),
+  recibe callbacks del servidor y los reexpone por WebSocket como JSON; ejecuta las acciones
+  del web client contra el servidor. Necesario porque el navegador no puede hablar
+  jboss-serialization.
+- **Cliente web (`Mage.Proxy/web/`)**: app React + PixiJS. Se comunica solo con el proxy,
+  nunca con Mage.Common → cambiar cliente no rompe proxy ni viceversa.
+
+## 4. Decisiones técnicas (y por qué)
+
+| Decisión | Elección | Razón |
+|---|---|---|
+| Stack cliente | React 19 + Vite + TypeScript + PixiJS 8 (WebGL2) | PixiJS = sprites/partículas/filtros en GPU; React = UI (lobby, diálogos). Máxima velocidad de iteración y efecto |
+| Arquitectura de estado | **Snapshot-diff → animación**: cada `GAME_UPDATE` trae el `GameView` completo; el cliente calcula transiciones (carta A voló de mano→battlefield, B se giró...) y las anima | La lógica es pura y testeable; los efectos son data-driven, no código por efecto |
+| Efectos | Catálogo declarativo (`fx/catalog.ts`): un efecto = entrada de config (animación, ease, duración, partículas) | Añadir efectos cuesta líneas, no refactors; mantenible |
+| Distribución | Navegador puro (Fases 1-2) → launcher Tauri (Fase 3) | Link = cero instalación (ventaja nº1 vs XMage); Tauri = app de escritorio de 10 MB que arranca el proxy solo |
+| Mantenibilidad | `types.ts` = fuente única del protocolo; lógica pura separada del render; pocas dependencias fijadas | Riesgo real del proyecto = versiones de XMage (proxy), no el cliente |
+| Rendimiento | Sprites compartidos, texturas de carta únicas, pool de partículas, DPI-aware | El juego no es performance-bound; se controla memoria y pausas de GC |
+
+## 5. Fase 0 — Proxy XMage (✅ completada y verificada el 2026-08-08)
+
+### Componentes entregados (`Mage.Proxy/`)
+
+| Archivo | Función |
+|---|---|
+| `src/main/java/.../ProxyClient.java` | Implementa `MageClient`; sesión XMage real vía `SessionImpl`; reenvía callbacks del servidor como JSON; ejecuta comandos del web client |
+| `src/main/java/.../Gateway.java` | Servidor WebSocket (Java-WebSocket) en `ws://localhost:8787` |
+| `src/main/java/.../JsonUtil.java` | Serializador JSON por reflexión con detección de ciclos (clave para GameView gigante) |
+| `src/main/java/.../Main.java` + `Config.java` | Arranque; flags `--host --port --username --password --wsPort --httpPort` |
+| `src/main/java/.../DeckJson.java` | Parseo de mazos JSON → `DeckCardLists` |
+| `src/main/resources/web/index.html` | Página de test servida en `http://localhost:8788/index.html` |
+| `README.md` | Documentación del protocolo WS (comandos, eventos, ejemplos) |
+| `pom.xml` (root) | Registrado módulo `Mage.Proxy`; `Mage.Proxy/pom.xml` con deps de Mage.Common 1.4.60-V3 |
+
+### Verificación real (servidor local en test mode, `local-server/`)
+
+Flujo completo probado de punta a punta:
+- Login/sesión OK · lobby broadcast (tablas/usuarios/mensajes) cada ~2 s OK
+- Chat de sala (joinChat + mensajes) OK
+- Crear mesa con IA + humano, unirse con mazo JSON, `startMatch` OK
+- Eventos recibidos en JSON: `START_GAME`, `GAME_INIT` (GameView completo),
+  `GAME_UPDATE`, `GAME_ASK` (mulligan) OK
+
+### Lecciones aprendidas (importantes para Fases 1-3)
+
+1. **Proxy Y servidor** deben ejecutarse con `--add-opens=java.base/java.io=ALL-UNNAMED`
+   (jboss-serialization rompe en JDK 17 sin esos flags).
+2. `beta.xmage.de` está caído/bloqueado (2026-08-08); todo se verifica contra servidor local.
+3. `deckType` debe ser un **nombre real de la config del servidor** (p. ej. `Constructed - Modern`).
+4. Las plazas de IA se llenan **antes** que la humana (igual que el cliente oficial).
+5. `createTable` exige que el `quitRatio` del mazo ≥ el del usuario (usar 100 por defecto).
+6. La versión del cliente debe coincidir con la del servidor (1.4.60-V3); el servidor local
+   necesita `config.xml` con `${project.version}` sustituido y los plugins en `plugins/`
+   (dejado preparado en `local-server/`, ignorado por git).
+7. **El connect NUNCA debe reiniciar una sesión que ya es del mismo usuario+servidor**
+   (pestañas/recargas envían connect repetido). En test mode el servidor expulsa usuarios
+   duplicados del mismo host (`Session.java` anon-dedup) → con el reinicio se monta un bucle
+   de reconnect del `SessionImpl` (~1.5s) que vacía el registro de conexiones WS y mata los
+   broadcasts. Fix: connect idempotente + `synchronized`.
+8. **Los eventos de partida siguen llegando al proxy ~1 min después de que el watcher cierra**
+   (GAME_UPDATE/GAME_OVER de partidas IA en curso). "Broadcast a 0 conexiones" de eventos de
+   partida es normal y no debe sonar como error; los de `lobby` sí lo son (siempre debe haber
+   clientes conectados).
+9. **Desmontar el tablero requiere desconectar el ResizeObserver**: Pixi 8 pone `renderer` a
+   null al destruir; un observer fugado dispara `resize()` contra null tras el unmount.
+10. Los check de logs deben ser **time-windowed** (offset al inicio del test): los logs del
+    proxy son append-only entre reinicios y los restos históricos dan falsos positivos.
+11. **Semántica real de los booleanos de XMage** (verificado en `HumanPlayer`/`Mage.Client`,
+    y empíricamente contra el servidor): `sendPlayerBoolean(true)` = **tomar mulligan**,
+    `false` = **mantener** (el botón "Mulligan" del cliente oficial manda true). Para prioridad
+    (`GAME_SELECT`), cualquier booleano = pasar. Ojo: los feedbacks de mulligan y "keep" del
+    cliente web y del test estaban **invertidos**; corregidos (2026-08-09).
+12. **El mulligan real (London, 0 free)**: tras `GAME_ASK "Mulligan down to N?"`, si se toma
+    mulligan el servidor pide `GAME_TARGET "Select a card (N more) to put on the bottom of your
+    library"` (los UUIDs de las cartas van en `targets`, **no** en `cardsView1`) y vuelve a
+    preguntar con N−1. El servidor re-dispara el target si la respuesta no lo resuelve.
+13. **"Select a starting player" es aleatorio**: `GameImpl.pickChoosingPlayer()` elige al azar
+    quién gana el sorteo; si es el humano, llega un `GAME_TARGET` bloqueante que hay que
+    responder con el UUID de un jugador (también puede dispararse 2× por la race del
+    "forced join"; dedup por contenido en los tests).
+14. **Los objetivos de "any target" incluyen a ambos jugadores**: para verificar daño en tests,
+    hay que elegir el UUID del oponente (`gameView.players[].controlled`), no el primero de
+    `targets` (el primero puede ser uno mismo).
+
+### Comandos de arranque (verificados)
+
+```powershell
+# Servidor local (test mode)
+& java --add-opens=java.base/java.io=ALL-UNNAMED -jar local-server\Mage.Server.Console\mage-server-1.4.60-V3.jar -testMode
+
+# Proxy
+& java --add-opens=java.base/java.io=ALL-UNNAMED -jar Mage.Proxy\target\mage-proxy-1.4.60.jar --username <user> --password <pass>
+```
+
+---
+
+## 6. Fase 1 — Cliente web: login + lobby + tablero renderizado (✅ completada y verificada el 2026-08-08)
+
+### Objetivo
+
+App web que conecta al proxy, hace login, muestra el lobby (tablas, usuarios, chat),
+permite crear/ver partidas, y **renderiza el tablero con cartas reales (Scryfall)**.
+Demo estrella: ser **espectador de una partida IA vs IA** y verla jugar sola.
+
+### Estructura de código (`Mage.Proxy/web/`)
+
+```
+web/
+├── index.html
+├── package.json / vite.config.ts / tsconfig.json
+└── src/
+    ├── main.tsx / App.tsx          — entrada, routing por estado (login/lobby/game)
+    ├── net/
+    │   ├── types.ts                — TIPOS TS DEL PROTOCOLO (fuente única, espejo del JSON del proxy)
+    │   ├── Gateway.ts              — WS, reconexión, routing por tipo, promesas por result
+    │   └── commands.ts             — helpers de acciones al proxy
+    ├── state/
+    │   ├── store.ts                — estado de conexión + lobby
+    │   └── gameStore.ts            — snapshot GameView actual + log de partida
+    ├── lobby/
+    │   ├── LoginScreen.tsx         — host/ws/user/pass → connect
+    │   ├── LobbyScreen.tsx         — tablas, usuarios, chat de sala, crear mesa
+    │   └── CreateTableDialog.tsx   — tipo de juego, formato, nº de IA
+    ├── cards/
+    │   └── cardImages.ts           — Scryfall (set+número) con caché IndexedDB y placeholder
+    ├── board/
+    │   ├── BoardView.tsx           — monta Pixi.Application (WebGL) dentro de React
+    │   ├── BoardScene.ts           — orquesta: snapshot → sprites; zonas, tap, contadores
+    │   ├── zones.ts                — layout: dónde vive cada carta (slots en px)
+    │   └── gameToScene.ts          — mapeo GameView → entidades del escenario
+    └── ui/
+        ├── TopBar.tsx              — turno, fase/paso, vida/maná de ambos jugadores
+        └── GameLog.tsx             — log desde GAME_UPDATE_AND_INFORM / CHATMESSAGE
+```
+
+### Tareas y estado real
+
+- [x] **1.0** Decisiones de stack y alcance (2026-08-08): React+Vite+TS+PixiJS; Fase 1 entera.
+- [x] **1.1** Entorno: instalado Node.js (v24.19.0) y scaffolding de `web/`.
+- [x] **1.2** `types.ts`: tipos de EventMessage, GameView, PlayerView, CardView, TableView, ChatMessage.
+- [x] **1.3** `Gateway.ts`: conexión WS, reconexión con backoff, promesas por `result`, routing de eventos.
+- [x] **1.4** LoginScreen + store de conexión → conecta y ve el lobby.
+- [x] **1.5** LobbyScreen: tablas (broadcast `lobby`), usuarios, chat de sala, crear mesa (AI vs AI).
+- [x] **1.6** `cardImages.ts`: carga Scryfall con caché; placeholder con coste de maná.
+- [x] **1.7** Board: `zones.ts` + `BoardScene.ts` + `BoardView.tsx`: battlefield 2 filas, mano en abanico, library/cementerio/exilio, stack; tap = giro; cartas ocultas con dorso.
+- [x] **1.8** TopBar (turno/fase/vida/maná) + GameLog.
+- [x] **1.9** Demo espectador: `watchTable` en partida IA vs IA (2 × COMPUTER_MAD) → la partida avanza y el tablero se redibuja.
+- [x] **1.10** Auto-respuesta mínima para partida propia (toggle): mulligan "keep" + paso de prioridad XMage mediante booleano.
+- [x] **1.11** Verificación: servidor local + proxy + `vite dev`; partida IA vs IA en directo. README del web client.
+
+### Calidad: tests e integración continua (añadido 2026-08-08)
+
+| Capa | Herramienta | Comando | Estado |
+|---|---|---|---|
+| Unitario (lógica pura) | vitest | `npm --prefix Mage.Proxy/web run test` | ✅ 60 tests |
+| Cobertura de núcleo web | vitest/v8 | `npm --prefix Mage.Proxy/web run test:coverage` | ✅ 60 tests · 88.2% statements · 91.1% lines |
+| Typecheck | tsc | `npm --prefix Mage.Proxy/web run typecheck` | ✅ |
+| Build producción | vite | `npm --prefix Mage.Proxy/web run build` | ✅ |
+| Proxy Java | Maven/JUnit 5 | `mvn -pl Mage.Proxy -am test` | ✅ 14 tests del proxy |
+| E2E headless (proxy real) | `scripts/self-test.mjs` | `node scripts/self-test.mjs` | ✅ 15 checks |
+| E2E jugador humano vs IA | Node/WebSocket | `node scripts/human-test.mjs` | ✅ 26 checks (partida completa: mulligan → tierra → Bolt → objetivo → maná → resolución) |
+| E2E navegador (login→lobby→demo→tablero) | Playwright | `npm --prefix Mage.Proxy/web run test:e2e` | ✅ re-ejecutado tras F2 (2026-08-09) |
+
+- **Un solo comando para todo**: `node scripts/test.mjs [unit|coverage|typecheck|build|java|self-test|human-test|e2e]` (con `--skip=`).
+- **CI en GitHub** (para cuando se pushee a un fork propio): `.github/workflows/web-ci.yml`
+  (npm ci + vitest + typecheck + build). El `maven.yml` existente ya compila `Mage.Proxy`.
+- **Instalación desde cero para el usuario**: `node scripts/install.mjs` (mvn base+plugins, copia
+  plugins, npm install) → `node scripts/ctl.mjs start` → `node scripts/test.mjs`.
+- **Control del stack sin bloquear el shell**: `node scripts/ctl.mjs start|stop|restart|status`
+  (usa un proceso independiente en Windows; logs en `.run/*.log`); logs en vivo con `node scripts/tail.mjs`.
+
+### Bugs reales encontrados y arreglados en Fase 1
+
+1. **Crash de espectador** (`store.ts:maybeAutoPass`): `game.players` es `undefined` en modo
+   espectador → TypeError al renderizar. Guards `?.`/`??` en store, gameToScene y BoardScene;
+   tipos de `GameView` corregidos (`players?`, `stack?`).
+2. **Thrash de sesión en el proxy** (`ProxyClient.connect`): cada reconexión de pestaña enviaba
+   `connect(player1)` y el proxy reiniciaba la sesión (connectStop+sleep+connectStart), matando
+   los callbacks y dejando los broadcasts a 0 conexiones en bucle infinito (test-mode kicks a
+   usuarios duplicados del mismo host). Fix: **connect idempotente** (mismo usuario+host → no-op).
+3. **ResizeObserver fugado** (`BoardView.tsx`): al terminar la partida, el observer seguía
+   llamando `resize()` contra una app Pixi destruida → TypeError. Fix: `ro.disconnect()` en
+   cleanup + guard `!app.renderer` en `BoardScene.resize`.
+4. **Pestaña congelada en la demo (GPU real)**: el navegador del usuario moría (ws 1006) justo
+   al recibir `GAME_INIT` e inicializar Pixi — reproducido solo con GPU real, no en headless.
+   Defensas añadidas:
+   - `ErrorBoundary` global (`src/ui/ErrorBoundary.tsx`): error de render → pantalla con "Recargar".
+   - `createBoardScene()` con pre-check `hasWebGL2()` + timeout de init de 8s → mensaje claro
+     ("GPU colgada / sin aceleración por hardware") en vez de tab muerta.
+   - **Throttling de render** en `BoardScene`: la partida IA emite ~5 `GAME_UPDATE`/s con el
+     GameView completo; ahora se acumula el último snapshot y se redibuja como mucho cada 80ms
+     (antes: reconstrucción total de todos los sprites por cada update → congelaba GPUs débiles).
+   - Banner "Conexión perdida — reconectando…" (`store.wsAlive`) y timeouts explícitos en
+     `runDemo`/join/start/watch (el botón nunca se queda en "…" infinito).
+
+### Criterios de aceptación (Fase 1)
+
+1. Login contra el proxy (servidor local) sin errores y lobby poblado en ≤ 3 s. ✅
+2. Chat de sala funcional (enviar y recibir). ✅
+3. Partida IA vs IA visible como espectador: tablero completo renderizado con imágenes reales, y la partida avanza sola (turnos, fases, jugadas). ✅
+4. Cero dependencias de XMage en el navegador; solo WS JSON contra el proxy. ✅
+5. `npm run build` y `npm run typecheck` en verde. ✅ (además vitest + self-test + Playwright)
+
+### Entorno real instalado (2026-08-08)
+
+- Node.js: v24.19.0 · npm (bundled) · Java: OpenJDK 17.0.20
+- Dependencias npm: react 19.2.x, pixi.js 8.19.x, vite 8.2.x, typescript 7.0.x,
+  vitest (última), @playwright/test (última, chromium instalado)
+
+---
+
+## 7. Fase 2 — Interacción completa (en progreso)
+
+- Cubrir completamente los callbacks de diálogo reales de XMage (`GAME_ASK`, `GAME_TARGET`,
+  `GAME_PLAY_MANA`, `GAME_CHOOSE_*`, `GAME_SELECT`, cantidades...): diálogos genéricos + interacción por clic.
+- Targeting visual: líneas de targeting punteadas, resaltado pulsante de objetivos válidos.
+- Drag & drop / clic para jugar cartas, elegir modos, X costs, contadores de +1/+1.
+- Enviar `sendPlayerAction` / `sendPlayerString` / `sendPlayerUUID` según el feedback.
+
+Implementado en Fase 2:
+- Contrato real de prioridad (`GAME_SELECT` + boolean), `GAME_UPDATE_AND_INFORM.gameView` y `canPlayObjects` tipado.
+- Adaptador puro y testeado para `GAME_ASK`, `GAME_TARGET`, `GAME_SELECT`, elecciones,
+  pilas, cantidades, multi-cantidades y maná.
+- Diálogo web común conectado al `gameId` y a las acciones del protocolo.
+- Objetivos con UUIDs directos, `cardsView1`, jugadores y selección opcional.
+- Cartas jugables resaltadas; clic sobre una carta envía su UUID XMage real.
+- ✅ **Validado E2E real (2026-08-09)**: `scripts/human-test.mjs` juega una partida completa
+  humano vs IA: sorteo de starting player (aleatorio), mulligan (keep + London bottom-of-library),
+  jugar tierra, pasar turnos, lanzar **Lightning Bolt**, elegir al oponente como objetivo,
+  pagar maná y verificar la resolución (vida 17). 26 checks PASS.
+- ✅ E2E Playwright del navegador re-ejecutado tras los cambios (verde).
+- Corregidos bugs reales del contrato (ver sección 5.11-5.14): semántica de booleanos de
+  mulligan invertida en `feedback.ts`/`store.ts`/`human-test.mjs`, `"Select a starting player"`
+  sin manejar, deck del test sin Lightning Bolt (`HUMAN_DECK` no se usaba), elección de
+  objetivo contra uno mismo, y etiquetado de targets de mano/battlefield en el diálogo.
+
+Pendiente en Fase 2:
+- Drag & drop, líneas de targeting visuales (punteadas + resaltado pulsante de objetivos válidos),
+  modos avanzados (X costs, elecciones múltiples), contadores de +1/+1 y rutas de pago alternativas
+  (multi-maná, X mana) en el cliente web (el contrato ya está implementado y validado por el test).
+
+## 8. Fase 3 — Efectos, pulido y distribución (⬜ pendiente)
+
+- Motor de efectos declarativo (`fx/engine.ts`, `fx/catalog.ts`): vuelos arqueados, partículas
+  de maná por color, glow/outline (filters de Pixi), shake de pantalla, números flotantes de
+  daño/vida, sonido.
+- Interpretación del texto de `GAME_UPDATE_AND_INFORM` → efectos temáticos.
+- Launcher Tauri: app de escritorio que arranca el proxy y abre la ventana (o el navegador).
+- PWA: instalable, caché offline de cartas.
+- Rendimiento: DPI-aware, memory budgets, telemetría básica.
+
+---
+
+## 9. Registro de trabajo (log real)
+
+| Fecha | Paso | Qué se hizo | Verificación |
+|---|---|---|---|
+| 2026-08-08 | F0 | Construido `Mage.Proxy` (client, gateway, json, deck, main) + página de test | Compilado con `mvn -pl Mage,Mage.Common,Mage.Sets,Mage.Server,Mage.Proxy -am package` |
+| 2026-08-08 | F0 | Servidor local en `local-server/` (test mode) con config corregida y plugins | Login, lobby, chat, crear mesa, startMatch OK |
+| 2026-08-08 | F0 | Verificado flujo completo: eventos `START_GAME`/`GAME_INIT`/`GAME_UPDATE`/`GAME_ASK` en JSON | Página `http://localhost:8788/index.html` |
+| 2026-08-08 | F0 | Limpieza repo: `.gitignore` (local-server, target, plugins), `pom.xml` con módulo `Mage.Proxy` | `git status` limpio (solo cambios intencionados) |
+| 2026-08-08 | F1 | Creado este documento maestro + decisiones de stack (React+Vite+TS+PixiJS) | Aprobado por el usuario |
+| 2026-08-08 | F1.1 | Instalación Node.js v24.19.0 y scaffolding `web/` | `npm install` + `vite dev` OK |
+| 2026-08-08 | F1 | Implementado el cliente completo (types, Gateway, store, lobby, board Pixi, cards, log) | typecheck + build verdes |
+| 2026-08-08 | F1 | **Bug crash espectador**: `game.players` undefined → guards + tipos `players?`/`stack?` | `vite.log` sin pageerrors |
+| 2026-08-08 | F1 | **Bug thrash de sesión proxy**: connect idempotente (mismo user → no-op) | self-test 15/15, E2E sin pageerrors |
+| 2026-08-08 | F1 | **Bug ResizeObserver fugado**: disconnect en cleanup + guard en BoardScene.resize | Playwright sin TypeError |
+| 2026-08-08 | F1 | Tests unitarios vitest (zones, gameToScene, Gateway, store) + fixtures | 38/38 verde |
+| 2026-08-08 | F1 | `scripts/test.mjs` (orquestador 5 capas), `scripts/install.mjs` (setup 1 comando), `scripts/ctl.mjs` (stack en background) | `node scripts/test.mjs` todo verde |
+| 2026-08-08 | F1 | E2E Playwright full-flow (login→lobby→demo espectador→tablero avanza) + screenshots | 1/1 verde, 0 pageerrors |
+| 2026-08-08 | F1 | CI: `.github/workflows/web-ci.yml` (npm ci + vitest + typecheck + build) | Listo para fork propio |
+| 2026-08-08 | F1 | `scripts/install.mjs` verificado de cero (mvn base+plugins, plugins copiados, npm install) | Instalación completada OK |
+| 2026-08-08 | F1 | **Bug tab congelada (GPU real)**: ErrorBoundary + hasWebGL2/timeout de init + throttling de render (80ms) + banner de reconexión + timeouts en lobby | Suite 5/5 verde, E2E headed y headless OK |
+| 2026-08-08 | Hardening | Proxy local-first: bind loopback, allowlist de Origin, límites de WebSocket, path traversal canónico, auth por conexión y broadcast solo autorizado | Maven proxy tests + integración WebSocket ✅ |
+| 2026-08-08 | Contrato | Respuestas con `requestId`, `errorCode`, `protocolVersion` y `gameId` obligatorio en acciones de partida; fix `HUMAN` | 14 tests Java + 53 tests web + typecheck/build ✅ |
+| 2026-08-09 | F2 | Corregido contrato XMage: prioridad booleana, `GAME_UPDATE_AND_INFORM.gameView`, callbacks reales y `canPlayObjects` tipado | 60 tests web + typecheck ✅ |
+| 2026-08-09 | F2 | Feedback de objetivos sin UUID explícita, jugadores, objetivos opcionales, pago especial y cancelación de maná | Vitest + cobertura ✅ |
+| 2026-08-09 | F2 | Cartas jugables resaltadas y clic conectado a `sendPlayerUUID`; `human-test` ampliado hasta resolución de `Lightning Bolt` | Build + 14 tests Java ✅; E2E local pendiente |
+| 2026-08-09 | F2 | **Bug semántica booleana de XMage**: mulligan TRUE=mulligan/FALSE=keep (verificado en `HumanPlayer`/`Mage.Client` y empíricamente). Invertido en `feedback.ts`, `store.ts` (auto-keep) y `human-test.mjs` → corregidos + tests | 62 tests web + typecheck + build ✅ |
+| 2026-08-09 | F2 | **"Select a starting player" aleatorio** (sorteo): GAME_TARGET bloqueante si el humano gana; manejo + dedup de duplicados del "forced join" en el test | Validado empíricamente con dump de eventos |
+| 2026-08-09 | F2 | **London mulligan real**: tras mulligan, `GAME_TARGET` para poner cartas en el fondo de la library (UUIDs en `targets`, no `cardsView1`); re-ask del servidor si no resuelve | Dump de eventos (re-fire en bucle confirmado) |
+| 2026-08-09 | F2 | **Objetivo de "any target"**: el primero de `targets` puede ser uno mismo; elegir al oponente (`gameView.players[].controlled`) para validar daño | `human-test` verificó vida 20→17 |
+| 2026-08-09 | F2 | **human-test completo en verde**: sorteo → mulligan → tierra → turnos → `Lightning Bolt` → objetivo → maná → resolución → quitMatch | 26 checks PASS; suite 7/7 (unit, coverage, typecheck, build, java, self-test, human-test) + E2E Playwright ✅ |
+
+## 10. Notas de ejecución
+
+- Regla: al terminar cada paso, actualizar sección 6 (checklist) y sección 9 (log) con lo real.
+- Verificación siempre contra el entorno real (servidor local + proxy), nunca "en teoría".
+- Documentar cualquier descubrimiento en la sección 5 (lecciones), aunque no sea de Fase 0.

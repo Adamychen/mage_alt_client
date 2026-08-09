@@ -1,0 +1,110 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f1220;
+  --panel: #1a1e33;
+  --panel-2: #232a45;
+  --border: #2e3560;
+  --text: #e8eaf6;
+  --text-dim: #9aa1c0;
+  --accent: #7c5cff;
+  --accent-2: #ffb03a;
+  --good: #4cd07d;
+  --bad: #ff5c6c;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+button:hover { background: #2d3560; }
+button:active { transform: scale(0.97); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+button.primary:hover { background: #8f74ff; }
+
+input, select {
+  font: inherit;
+  color: var(--text);
+  background: #141831;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+input:focus, select:focus { outline: 1px solid var(--accent); }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+/* pantalla de error global (ErrorBoundary) */
+.crash-screen {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+}
+.crash-screen pre {
+  max-width: 640px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--bad);
+}
+
+/* aviso de reconexión */
+.reconnect-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #4a3a10;
+  border-bottom: 1px solid var(--accent-2);
+  color: var(--accent-2);
+  text-align: center;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* fallback cuando no hay renderizador (WebGL2/WebGPU) */
+.board-error {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+}
+.board-error code { color: var(--bad); }
