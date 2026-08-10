@@ -67,7 +67,8 @@
   background: rgb(4 6 16 / 62%);
 }
 
-.feedback-backdrop.targeting {
+.feedback-backdrop.targeting,
+.feedback-backdrop.mana {
   pointer-events: none;
 }
 

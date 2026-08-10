@@ -3,6 +3,8 @@ import * as cmds from '../net/commands'
 import { clearFeedback, setStoreError, useStore } from '../state/store'
 import type { FeedbackOption, FeedbackPrompt } from './feedback'
 
+const POOL_COLORS = ['white', 'blue', 'black', 'red', 'green', 'colorless'] as const
+
 function isResultOk(result: { ok: boolean; error?: string }, fallback: string) {
   if (result.ok) {
     clearFeedback()
@@ -14,6 +16,7 @@ function isResultOk(result: { ok: boolean; error?: string }, fallback: string) {
 
 export default function FeedbackDialog() {
   const prompt = useStore((s) => s.feedback)
+  const game = useStore((s) => s.game)
   const [busy, setBusy] = useState(false)
   const [amount, setAmount] = useState(0)
   const [selected, setSelected] = useState<string[]>([])
@@ -88,7 +91,7 @@ export default function FeedbackDialog() {
   }
 
   return (
-    <div className={`feedback-backdrop ${prompt.method === 'GAME_TARGET' ? 'targeting' : ''}`} role="presentation">
+    <div className={`feedback-backdrop ${prompt.method === 'GAME_TARGET' ? 'targeting' : prompt.method === 'GAME_PLAY_MANA' ? 'mana' : ''}`} role="presentation">
       <section className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className="feedback-kicker">{prompt.method}</div>
         <h2 id="feedback-title">{prompt.title}</h2>
@@ -130,7 +133,20 @@ export default function FeedbackDialog() {
         )}
 
         {prompt.mode === 'mana' && (
+          <p className="feedback-hint">Haz clic en tus fuentes de maná del tablero para pagar el coste.</p>
+        )}
+
+        {prompt.mode === 'mana' && (
           <div className="feedback-options">
+            {prompt.playerId && poolMana(game).map((mana) => (
+              <button
+                key={mana.color}
+                disabled={busy}
+                onClick={() => void send(() => cmds.sendPlayerManaType(prompt.gameId, prompt.playerId as string, mana.color), 'No se pudo usar la reserva de maná')}
+              >
+                Pagar reserva: {mana.label}
+              </button>
+            ))}
             <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo activar el pago especial')}>
               Acción especial
             </button>
@@ -165,8 +181,18 @@ export default function FeedbackDialog() {
   )
 }
 
-function sendValue(prompt: FeedbackPrompt, value: string) {
-  switch (prompt.mode) {
+const COLOR_SYMBOLS: Record<string, string> = { white: 'W', blue: 'U', black: 'B', red: 'R', green: 'G', colorless: 'C' }
+
+/** Maná disponible en la reserva del jugador controlado para pagar desde el pool. */
+function poolMana(game: { players?: unknown[] | null } | null) {
+  const players = (game?.players ?? []) as { controlled?: boolean; manaPool?: Record<string, number> }[]
+  const me = players.find((p) => p.controlled)
+  const pool = (me?.manaPool ?? {}) as Record<string, number>
+  return POOL_COLORS.filter((color) => (pool[color] ?? 0) > 0)
+    .map((color) => ({ color: color.toUpperCase(), label: `${COLOR_SYMBOLS[color]}${pool[color] ?? 0}` }))
+}
+
+function sendValue(prompt: FeedbackPrompt, value: string) {  switch (prompt.mode) {
     case 'boolean':
       return cmds.sendPlayerBoolean(value === 'true', prompt.gameId)
     case 'string':

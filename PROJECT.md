@@ -2,7 +2,7 @@
 
 > Este documento es la **fuente de verdad del proyecto**: roadmap, fases, decisiones y
 > estado real verificado. Se actualiza en cada paso de trabajo, no solo al final de fases.
-> Última actualización: 2026-08-09 (Fase 2 en progreso; contrato validado E2E real: jugar carta completa)
+> Última actualización: 2026-08-10 (Fase 2: targeting visual + pago de maná validados E2E en navegador)
 
 ---
 
@@ -21,7 +21,7 @@ la base de datos de cartas y la red social. Nosotros construimos un cliente nuev
 |---|---|---|
 | 0 | Proxy XMage (bridge) | ✅ Completada y verificada (2026-08-08) |
 | 1 | Cliente web: login + lobby + tablero renderizado | ✅ Completada y verificada (2026-08-08) |
-| 2 | Interacción completa: feedbacks, targeting, jugar | En progreso (contrato + clic + mulligan/prioridad/objetivo/maná validados E2E; falta UX avanzada) |
+| 2 | Interacción completa: feedbacks, targeting, jugar | En progreso (contrato + clic + mulligan/prioridad/objetivo/maná validados E2E; targeting visual y pago de maná E2E en navegador 2026-08-10) |
 | 3 | Efectos, sonido, launcher de escritorio | ⬜ Pendiente |
 
 ## 3. Arquitectura general
@@ -117,6 +117,27 @@ Flujo completo probado de punta a punta:
 14. **Los objetivos de "any target" incluyen a ambos jugadores**: para verificar daño en tests,
     hay que elegir el UUID del oponente (`gameView.players[].controlled`), no el primero de
     `targets` (el primero puede ser uno mismo).
+15. **macOS: el stub `/usr/bin/java` rompe los daemons** (`Unable to locate a Java Runtime` en
+    `.run/*.err.log`): `scripts/lib.mjs` ahora resuelve el binario real (`javaBin()`, Homebrew
+    `openjdk@17` en `/opt/homebrew/opt` primero) y `daemon()` usa la ruta absoluta para `java`.
+16. **`SESSION CALLBACK EXCEPTION - Unable to create socket` se vuelve persistente si el
+    servidor acumula sesiones de proxies muertos** (matados con kill -9): los clientes antiguos
+    dejan sus sockets de retorno en el servidor y el callback del nuevo login falla con retries
+    infinitos. Fix empírico: reiniciar el servidor y arrancar el proxy limpio (con `javaBin()`
+    el stack queda estable; el self-test pasa 15/15 repetidas veces).
+17. **El pago de maná real (`GAME_PLAY_MANA`) no manda colores**: `data.options` solo trae
+    `{"queryType":"PLAY_MANA"}`. El pago se hace clicando las fuentes de maná del tablero
+    (UUID de `canPlayObjects` que esté en `players[].battlefield` — la gira y mete maná en la
+    reserva) y **después** pagando desde la reserva con `sendPlayerManaType` (se necesita un
+    segundo ask: "Pay {R}" → clic fuente → "Pay {R}" de nuevo → reserva). El cliente oficial
+    hace exactamente esto.
+18. **Los E2E de navegador dejan partidas corriendo en el servidor** (test-mode, `maxGameThreads`=10):
+    tandas largas de runs + retries saturan el servidor y los siguientes tests (incluido el
+    propio full-flow) fallan con timeouts raros. Entre tandas: `node scripts/ctl.mjs restart server`.
+19. **El mazo de las IA del demo debe ser "estable"** (islas+montañas+4 bolts): si las IA juegan
+    solo montañas+16 bolts la partida IA vs IA termina en 2-3 turnos y el demo/full-flow no ve
+    el tablero. Mazos separados en `web/src/lobby/decks.ts` (`STABLE_DECK` demo / `DEFAULT_DECK`
+    44+16 para partidas humanas).
 
 ### Comandos de arranque (verificados)
 
@@ -271,9 +292,36 @@ Implementado en Fase 2:
   objetivo contra uno mismo, y etiquetado de targets de mano/battlefield en el diálogo.
 
 Pendiente en Fase 2:
-- Drag & drop, líneas de targeting visuales (punteadas + resaltado pulsante de objetivos válidos),
-  modos avanzados (X costs, elecciones múltiples), contadores de +1/+1 y rutas de pago alternativas
-  (multi-maná, X mana) en el cliente web (el contrato ya está implementado y validado por el test).
+- Drag & drop, modos avanzados (X costs, elecciones múltiples), contadores de +1/+1 y rutas de
+  pago alternativas (multi-maná, X mana) en el cliente web (el contrato ya está implementado y
+  validado por el test).
+
+### Añadido 2026-08-10 — targeting visual + pago de maná (validado E2E en navegador)
+
+- **Targeting visual** (`BoardScene`): capa de efectos con ticker propio — outlines pulsantes
+  (alfa/ancho con seno) sobre los objetivos válidos, **líneas punteadas animadas** (guiones que
+  fluyen) desde la carta fuente (hechizo en el stack o permanente con habilidad activada) a cada
+  objetivo, y **aros pulsantes** sobre objetivos de jugador (header del oponente).
+  - `sourceName` viene de `data.options.secondMessage` (el servidor NO manda el UUID de la
+    fuente; se empareja por nombre contra stack/battlefield: `resolveTargetSourceId`).
+  - Los objetivos de jugador son **clicables** con hit-areas invisibles (antes no se podía
+    apuntar a un jugador desde la UI).
+  - Hover sobre un objetivo: línea y outline se intensifican.
+- **Pago de maná** (`GAME_PLAY_MANA`): el diálogo muestra el prompt con hint ("haz clic en tus
+  fuentes de maná"), el backdrop ya no bloquea el tablero, y ofrece botones de **reserva de
+  maná** (`sendPlayerManaType` por color con maná en el pool). El flujo completo de un
+  Lightning Bolt por UI: clic carta → GAME_TARGET (pulso+líneas) → clic objetivo → clic
+  Mountain del tablero (la gira) → "Pagar reserva: R" → pasar prioridad → resolución (vida 17).
+- **Mesas humano vs IA en el lobby**: el creador ocupa su plaza automáticamente (como el
+  cliente oficial), el diálogo de mesa tiene toggle "Tu plaza" (HUMAN) con plazas IA limitadas
+  por el tipo de juego, y cada mesa con plaza IA libre muestra "Unirse IA".
+- **E2E nuevo** (`e2e/targeting.spec.ts`): partida completa humana por navegador — sorteo de
+  starting player, mulligan auto-keep, Mountain, Lightning Bolt, aserciones del targeting
+  visual (el canvas cambia al entrar en targeting y pulsa entre capturas), resolución (vida 17)
+  y cero pageerrors. Mazo humano 44 montañas + 16 bolts en `lobby/decks.ts` (`DEFAULT_DECK`).
+- Evidencia: `Mage.Proxy/web/e2e/shots/targeting-bolt.png` (canvas durante el targeting;
+  análisis de píxeles: naranja del pulso/líneas presente en stack, banda central y header del
+  oponente).
 
 ## 8. Fase 3 — Efectos, pulido y distribución (⬜ pendiente)
 
@@ -317,6 +365,14 @@ Pendiente en Fase 2:
 | 2026-08-09 | F2 | **London mulligan real**: tras mulligan, `GAME_TARGET` para poner cartas en el fondo de la library (UUIDs en `targets`, no `cardsView1`); re-ask del servidor si no resuelve | Dump de eventos (re-fire en bucle confirmado) |
 | 2026-08-09 | F2 | **Objetivo de "any target"**: el primero de `targets` puede ser uno mismo; elegir al oponente (`gameView.players[].controlled`) para validar daño | `human-test` verificó vida 20→17 |
 | 2026-08-09 | F2 | **human-test completo en verde**: sorteo → mulligan → tierra → turnos → `Lightning Bolt` → objetivo → maná → resolución → quitMatch | 26 checks PASS; suite 7/7 (unit, coverage, typecheck, build, java, self-test, human-test) + E2E Playwright ✅ |
+| 2026-08-10 | Entorno | **Entorno macOS reconstruido desde cero**: instalado Java 17.0.20 + Maven 3.9.16 (Homebrew), build Maven completa, `local-server/` regenerado (config.xml con `${project.version}`→1.4.60 en `local-server/config/config.xml`, 27 plugins), jar del proxy | `install.mjs` + `build.mjs proxy` + stack arriba |
+| 2026-08-10 | Infra | **Bug daemons macOS**: el stub `/usr/bin/java` mataba server/proxy; `javaBin()` en `lib.mjs` resuelve el JDK real (Homebrew) y `daemon()` lo usa | ctl.mjs start/restart con java real; stack estable |
+| 2026-08-10 | Infra | **Diagnóstico callbacks caídos**: `SESSION CALLBACK EXCEPTION - Unable to create socket` persistente por sesiones obsoletas de proxies muertos (kill -9); reiniciar servidor + proxy limpio lo resuelve (ver lección 16) | self-test 15/15 repetido ×2 |
+| 2026-08-10 | F2 | **Targeting visual** en BoardScene: capa fx con ticker — outlines pulsantes, líneas punteadas animadas desde la fuente (stack/battlefield por `secondMessage`), aros de jugador, hit-areas clicables para jugadores, hover intensificado | unit + typecheck ✅ |
+| 2026-08-10 | F2 | **Pago de maná por UI**: `GAME_PLAY_MANA` sin colores (options={queryType}), backdrop no bloquea tablero, hint + botones de reserva (`sendPlayerManaType`) + pago por clic en fuentes del tablero | unit + typecheck ✅ |
+| 2026-08-10 | F2 | **Lobby humano vs IA**: auto-join del creador, toggle "Tu plaza" (HUMAN) en el diálogo, botón "Unirse IA" por mesa; mazos separados (`STABLE_DECK` demo / `DEFAULT_DECK` 44+16) | full-flow E2E ✅ |
+| 2026-08-10 | F2 | **E2E targeting visual** (`e2e/targeting.spec.ts`): partida humana completa por navegador: sorteo, mulligan, Mountain, Bolt, aserciones de pulso/líneas en canvas (byte-diff + píxeles), pago de maná (fuente + reserva), prioridad, resolución (vida 17) | 2× verde en secuencia + suite completa ✅ |
+| 2026-08-10 | F2 | **Verificación final**: `node scripts/test.mjs` completo (unit 66, coverage, typecheck, build, java, self-test 15/15, human-test 27/27) + E2E Playwright 2/2 | suite 8/8 ✅ (self-test 1 reintento por cold-start flake) |
 
 ## 10. Notas de ejecución
 

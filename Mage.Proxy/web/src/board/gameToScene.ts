@@ -27,6 +27,25 @@ export function playableObjectIds(game: GameView): string[] {
   return Object.keys(game.canPlayObjects?.objects ?? {})
 }
 
+/**
+ * Localiza la carta que pide el objetivo (el hechizo en el stack o el permanente
+ * cuya habilidad se activa) por nombre, y devuelve el sourceId de su placement.
+ * El servidor no manda el UUID de la fuente (solo options.secondMessage = nombre),
+ * así que el emparejamiento es por nombre: stack primero, battlefield después.
+ */
+export function resolveTargetSourceId(game: GameView, sourceName: string | undefined): string | undefined {
+  if (!sourceName) return undefined
+  for (const [key, card] of Object.entries(game.stack ?? {})) {
+    if (card.name === sourceName) return card.id ?? card.parentId ?? key
+  }
+  for (const player of game.players ?? []) {
+    for (const [permId, perm] of Object.entries(player.battlefield ?? {})) {
+      if (perm.name === sourceName) return perm.id ?? perm.parentId ?? permId
+    }
+  }
+  return undefined
+}
+
 export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] {
   const out: Placement[] = []
   const cw = 146 * zones.scale

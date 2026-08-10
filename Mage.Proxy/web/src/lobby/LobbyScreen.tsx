@@ -4,6 +4,7 @@ import * as cmds from '../net/commands'
 import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
 import ChatBox from './ChatBox'
+import { DEFAULT_DECK, STABLE_DECK } from './decks'
 import './LobbyScreen.css'
 
 const AI_PLAYER = 'COMPUTER_MAD'
@@ -69,7 +70,7 @@ export default function LobbyScreen() {
             playerName: i === 0 ? 'Computer' : `Computer ${i + 1}`,
             playerType: AI_PLAYER,
             skill: 1,
-            deck: DEFAULT_DECK,
+            deck: STABLE_DECK,
           }),
           15000,
           `joinTable #${i + 1}`,
@@ -115,6 +116,36 @@ export default function LobbyScreen() {
         'joinTable',
       )
       setNotice(res.ok ? 'Unido a la mesa (auto-pase activo). Esperando startMatch…' : `joinTable: ${res.error}`)
+    } catch (e) {
+      setNotice((e as Error).message)
+    } finally {
+      setBusyTable(null)
+    }
+  }
+
+  const joinAi = async (t: TableView) => {
+    setBusyTable(t.tableId)
+    setNotice(null)
+    const seat = t.seats.find((s) => !s.playerName && s.playerType && /COMPUTER|AI/i.test(s.playerType))
+    if (!seat?.playerType) {
+      setNotice('no hay plazas IA libres')
+      return
+    }
+    const aiSeats = t.seats.filter((s) => s.playerType && /COMPUTER|AI/i.test(s.playerType))
+    const aiIndex = aiSeats.indexOf(seat)
+    try {
+      const res = await withTimeout(
+        cmds.joinTable({
+          tableId: t.tableId,
+          playerName: aiIndex <= 0 ? 'Computer' : `Computer ${aiIndex + 1}`,
+          playerType: seat.playerType,
+          skill: 1,
+          deck: DEFAULT_DECK,
+        }),
+        15000,
+        'joinTable IA',
+      )
+      setNotice(res.ok ? 'IA unida a la mesa' : `joinTable IA: ${res.error}`)
     } catch (e) {
       setNotice((e as Error).message)
     } finally {
@@ -187,9 +218,14 @@ export default function LobbyScreen() {
                       Empezar
                     </button>
                   )}
-                  {t.tableState === 'READY_TO_START' && (
+                  {(t.tableState === 'WAITING' || t.tableState === 'READY_TO_START') && t.seats.some((s) => !s.playerName && (!s.playerType || s.playerType === 'HUMAN')) && (
                     <button disabled={busyTable === t.tableId} onClick={() => joinHuman(t)}>
                       Unirse (humano)
+                    </button>
+                  )}
+                  {(t.tableState === 'WAITING' || t.tableState === 'READY_TO_START') && t.seats.some((s) => !s.playerName && s.playerType && /COMPUTER|AI/i.test(s.playerType)) && (
+                    <button disabled={busyTable === t.tableId} onClick={() => joinAi(t)}>
+                      Unirse IA
                     </button>
                   )}
                   <button disabled={busyTable === t.tableId} onClick={() => watchTable(t)}>
@@ -236,14 +272,4 @@ export default function LobbyScreen() {
       {showCreate && <CreateTableDialog onClose={() => setShowCreate(false)} />}
     </div>
   )
-}
-
-export const DEFAULT_DECK = {
-  name: 'Mage Web starter',
-  cards: [
-    { cardName: 'Island', setCode: 'LEA', cardNumber: '288', amount: 28 },
-    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 28 },
-    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 4 },
-  ],
-  sideboard: [],
 }

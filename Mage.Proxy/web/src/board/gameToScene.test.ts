@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPlacements, playableObjectIds } from './gameToScene'
+import { buildPlacements, playableObjectIds, resolveTargetSourceId } from './gameToScene'
 import { computeZones } from './zones'
 import { playerGameView, spectatorGameView, spectatorNoPlayersGameView } from '../__fixtures__/gameViews'
 
@@ -97,5 +97,28 @@ describe('buildPlacements', () => {
     expect(placements.filter((p) => p.group === 'myBattle')).toHaveLength(0)
     expect(placements.filter((p) => p.group === 'myHand')).toHaveLength(0)
     expect(placements.filter((p) => p.group === 'stack')).toHaveLength(1)
+  })
+})
+
+describe('resolveTargetSourceId', () => {
+  it('finds the spell on the stack by name (sourceId of its placement)', () => {
+    const id = resolveTargetSourceId(spectatorNoPlayersGameView, 'Lightning Bolt')
+    expect(id).toBe('s-1')
+    const placement = buildPlacements(spectatorNoPlayersGameView, zones).find((p) => p.group === 'stack')
+    expect(placement?.sourceId).toBe(id)
+  })
+
+  it('falls back to a battlefield permanent when the source is an activated ability', () => {
+    const game = {
+      ...playerGameView,
+      stack: {},
+    }
+    const id = resolveTargetSourceId(game, 'Serra Angel')
+    expect(id).toBe('p-untapped')
+  })
+
+  it('returns undefined when the source name is unknown or missing', () => {
+    expect(resolveTargetSourceId(spectatorNoPlayersGameView, 'Not On Board')).toBeUndefined()
+    expect(resolveTargetSourceId(spectatorNoPlayersGameView, undefined)).toBeUndefined()
   })
 })

@@ -72,6 +72,17 @@ describe('parseFeedback', () => {
     expect(prompt?.options).toEqual([{ id: 'perm-1', label: 'Grizzly Bears', value: 'perm-1' }])
   })
 
+  it('exposes the source object name from options.secondMessage', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-2', {
+      message: 'Choose target creature or player',
+      targets: ['perm-1'],
+      options: { secondMessage: 'Lightning Bolt' },
+      gameView: { players: [] },
+    })
+    expect(prompt?.sourceName).toBe('Lightning Bolt')
+    expect(parseFeedback('GAME_TARGET', 'game-2', { targets: [], gameView: {} })?.sourceName).toBeUndefined()
+  })
+
   it('does not treat GAME_SELECT priority as a modal card selection', () => {
     expect(parseFeedback('GAME_SELECT', 'game-2', { message: 'Play spells and abilities' })).toBeNull()
   })
@@ -93,12 +104,14 @@ describe('parseFeedback', () => {
     const pile = parseFeedback('GAME_CHOOSE_PILE', 'game-4', { cardsView1: { a: {} }, cardsView2: { b: {}, c: {} } })
     expect(pile?.options.map((option) => option.value)).toEqual(['true', 'false'])
 
+    // GAME_PLAY_MANA: el servidor no manda colores (solo queryType); el pago es
+    // clicando fuentes de maná en el tablero, por lo que no debe fabricar botones.
     const mana = parseFeedback('GAME_PLAY_MANA', 'game-4', {
       gameView: { players: [{ controlled: true, playerId: 'player-1' }] },
-      options: { RED: 'Red' },
+      options: { queryType: 'PLAY_MANA' },
     })
     expect(mana).toMatchObject({ mode: 'mana', playerId: 'player-1' })
-    expect(mana?.options[0].value).toBe('RED')
+    expect(mana?.options).toEqual([])
   })
 
   it('maps the server AbilityPickerView and keyed choices', () => {

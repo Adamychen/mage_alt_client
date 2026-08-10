@@ -122,6 +122,28 @@ export function binName(name) {
 }
 
 /**
+ * Resuelve el binario de Java real (no el stub de macOS que falla si no hay
+ * JDK registrado en java_home). El daemon hereda el entorno del proceso que
+ * lanza los scripts, así que si JAVA_HOME está en el PATH de la shell de
+ * arranque no es suficiente: se usa la ruta absoluta al binario.
+ */
+export function javaBin() {
+  const candidates = [process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java') : '']
+  if (process.platform === 'darwin') {
+    // Homebrew JDKs suelen estar en /opt/homebrew/opt (Apple Silicon) o /usr/local/opt (Intel)
+    for (const home of ['/opt/homebrew/opt', '/usr/local/opt']) {
+      candidates.push(`${home}/openjdk@17/bin/java`, `${home}/openjdk/bin/java`, `${home}/openjdk@21/bin/java`, `${home}/openjdk@11/bin/java`)
+    }
+  }
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) return candidate
+  }
+  const probe = spawnSync('sh', ['-c', 'command -v java'], { encoding: 'utf8' })
+  if (probe.status === 0 && probe.stdout.trim()) return probe.stdout.trim()
+  return 'java'
+}
+
+/**
  * Lanza un proceso en segundo plano (detached) con salida redirigida a .run/.
  * Devuelve el PID.
  */
@@ -129,6 +151,8 @@ export function daemon(name, cmd, args, { cwd } = {}) {
   ensureRunDir()
   const out = fs.openSync(outFile(name), 'a')
   const err = fs.openSync(errFile(name), 'a')
+  // el stub de macOS (/usr/bin/java) falla si el JDK no está registrado en java_home
+  if (cmd === 'java') cmd = javaBin()
   // los binarios .cmd/.bat de Windows no se pueden spawnear directamente
   const useShell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(cmd)
   const child = spawn(cmd, args, {

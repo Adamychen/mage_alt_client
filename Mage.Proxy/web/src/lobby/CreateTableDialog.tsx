@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import * as cmds from '../net/commands'
 import type { GameTypeInfo } from '../net/commands'
 import { useStore } from '../state/store'
+import { DEFAULT_DECK } from './decks'
 import './CreateTableDialog.css'
 
 export default function CreateTableDialog({ onClose }: { onClose: () => void }) {
@@ -12,6 +13,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const [gameType, setGameType] = useState('Two Player Duel')
   const [deckType, setDeckType] = useState('Constructed - Modern')
   const [playerTypesSel, setPlayerTypesSel] = useState<string[]>([])
+  const [humanSeat, setHumanSeat] = useState(true)
   const [name, setName] = useState(`${username}'s table`)
   const [wins, setWins] = useState(1)
   const [busy, setBusy] = useState(false)
@@ -35,7 +37,11 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const create = async () => {
     setBusy(true)
     setError(null)
-    const playerTypesFinal = playerTypesSel.length ? playerTypesSel : ['COMPUTER_MAD', 'COMPUTER_MAD']
+    const gameTypeInfo = gameTypes.find((g) => g.name === gameType)
+    const maxPlayers = gameTypeInfo?.maxPlayers ?? 3
+    const maxAi = Math.max(0, maxPlayers - (humanSeat ? 1 : 0))
+    const aiTypes = (playerTypesSel.length ? playerTypesSel : ['COMPUTER_MAD', 'COMPUTER_MAD']).slice(0, maxAi)
+    const playerTypesFinal = humanSeat ? ['HUMAN', ...aiTypes] : aiTypes
     const res = await cmds.createTable({
       name: name || `${username}'s table`,
       gameType,
@@ -47,6 +53,21 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
     if (!res.ok) {
       setError(res.error ?? 'no se pudo crear la mesa')
       return
+    }
+    const tableId = (res.data as { tableId?: string } | null)?.tableId
+    if (humanSeat && tableId) {
+      // como el cliente oficial: el creador ocupa su plaza humana al crear la mesa
+      const join = await cmds.joinTable({
+        tableId,
+        playerName: username,
+        playerType: 'HUMAN',
+        skill: 1,
+        deck: DEFAULT_DECK,
+      })
+      if (!join.ok) {
+        setError(join.error ?? 'no se pudo unir tu plaza')
+        return
+      }
     }
     onClose()
   }
@@ -87,6 +108,14 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
             ))}
           </select>
         </label>
+        <div className="field">
+          <span>Tu plaza</span>
+          <div className="chip-row">
+            <button className={humanSeat ? 'chip on' : 'chip'} onClick={() => setHumanSeat((v) => !v)}>
+              HUMAN
+            </button>
+          </div>
+        </div>
         <div className="field">
           <span>Jugadores IA</span>
           <div className="chip-row">

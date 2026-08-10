@@ -26,11 +26,11 @@ export interface FeedbackPrompt {
   items?: FeedbackItem[]
   playerId?: string
   required?: boolean
+  /** Nombre del objeto que pide el objetivo (options.secondMessage del servidor). */
+  sourceName?: string
 }
 
 type JsonRecord = Record<string, unknown>
-
-const DEFAULT_MANA = ['WHITE', 'BLUE', 'BLACK', 'RED', 'GREEN', 'COLORLESS']
 
 export function parseFeedback(method: string, objectId: string | null, raw: unknown): FeedbackPrompt | null {
   const data = asRecord(raw)
@@ -59,7 +59,7 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
       return prompt(method, gameId, isMulligan ? 'Mulligan' : 'Confirmación', message, isMulligan ? 'boolean' : 'string', choices, bounds)
     }
     case 'GAME_TARGET':
-      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false')
+      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data))
     case 'GAME_SELECT':
     case 'GAME_SELECT_CARDS':
     case 'GAME_SELECT_TARGETS':
@@ -81,12 +81,11 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
         { id: 'pile2', label: pile2, value: 'false' },
       ], bounds)
     }
-    case 'GAME_PLAY_MANA': {
-      const options = optionEntries(data.options)
-      const manaOptions = (options.length ? options : DEFAULT_MANA.map((value) => ({ id: value, label: value, value })))
-        .map((option) => ({ ...option, value: option.value.toUpperCase() }))
-      return prompt(method, gameId, 'Elige maná', message, 'mana', manaOptions, bounds, undefined, controlledPlayerId(data.gameView))
-    }
+    case 'GAME_PLAY_MANA':
+      // El servidor NO manda los colores de maná: options solo trae {queryType: "PLAY_MANA"}.
+      // El pago real se hace clicando las fuentes de maná en el tablero
+      // (canPlayObjects del gameView incrustado), igual que el cliente oficial.
+      return prompt(method, gameId, 'Pagar maná', message, 'mana', [], bounds, undefined, controlledPlayerId(data.gameView))
     case 'GAME_PLAY_XMANA':
       return prompt(method, gameId, 'Pagar maná', message, 'boolean', [
         { id: 'yes', label: 'Confirmar', value: 'true' },
@@ -113,8 +112,9 @@ function prompt(
   items?: FeedbackItem[],
   playerId?: string,
   required = true,
+  sourceName?: string,
 ): FeedbackPrompt {
-  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required }
+  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName }
 }
 
 function asRecord(value: unknown): JsonRecord {
@@ -123,6 +123,11 @@ function asRecord(value: unknown): JsonRecord {
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === 'string' ? value : value == null ? undefined : String(value)
+}
+
+function secondMessageOf(data: JsonRecord): string | undefined {
+  const value = asRecord(data.options).secondMessage
+  return stringValue(value)
 }
 
 function controlledPlayerId(value: unknown): string | undefined {

@@ -4,7 +4,7 @@ import * as cmds from '../net/commands'
 import { clearFeedback, maybeAutoPass, reset, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import GameLog from './GameLog'
 import FeedbackDialog from './FeedbackDialog'
-import { playableObjectIds } from '../board/gameToScene'
+import { playableObjectIds, resolveTargetSourceId } from '../board/gameToScene'
 import './GameScreen.css'
 
 export default function GameScreen() {
@@ -19,6 +19,7 @@ export default function GameScreen() {
 
   const me = game?.players?.find((p) => p.controlled)
   const targetIds = feedback?.method === 'GAME_TARGET' ? feedback.options.map((option) => option.id) : []
+  const targetSourceId = game && feedback?.method === 'GAME_TARGET' ? resolveTargetSourceId(game, feedback.sourceName) : undefined
   const playableIds = game ? playableObjectIds(game) : []
   const onTargetClick = async (id: string) => {
     if (!gameId) return
@@ -71,6 +72,7 @@ export default function GameScreen() {
                 game={game}
                 targetIds={targetIds}
                 onTargetClick={onTargetClick}
+                targetSourceId={targetSourceId}
                 playableIds={playableIds}
                 onPlayableClick={onPlayableClick}
               />

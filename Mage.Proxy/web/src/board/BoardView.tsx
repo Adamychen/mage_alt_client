@@ -3,10 +3,11 @@ import type { GameView } from '../net/types'
 import { createBoardScene, type BoardScene } from './BoardScene'
 import './BoardView.css'
 
-export default function BoardView({ game, targetIds = [], onTargetClick, playableIds = [], onPlayableClick }: {
+export default function BoardView({ game, targetIds = [], onTargetClick, targetSourceId, playableIds = [], onPlayableClick }: {
   game: GameView
   targetIds?: string[]
   onTargetClick?: (id: string) => void
+  targetSourceId?: string
   playableIds?: string[]
   onPlayableClick?: (id: string) => void
 }) {
@@ -28,7 +29,7 @@ export default function BoardView({ game, targetIds = [], onTargetClick, playabl
         }
         scene = s
         sceneRef.current = s
-        s.setTargeting(targetIds, onTargetClick)
+        s.setTargeting(targetIds, onTargetClick, targetSourceId)
         s.setPlayable(playableIds, onPlayableClick)
         host.appendChild(s.app.canvas)
         s.resize(host.clientWidth, host.clientHeight)
@@ -57,8 +58,8 @@ export default function BoardView({ game, targetIds = [], onTargetClick, playabl
   }, [game])
 
   useEffect(() => {
-    sceneRef.current?.setTargeting(targetIds, onTargetClick)
-  }, [targetIds, onTargetClick])
+    sceneRef.current?.setTargeting(targetIds, onTargetClick, targetSourceId)
+  }, [targetIds, onTargetClick, targetSourceId])
 
   useEffect(() => {
     sceneRef.current?.setPlayable(playableIds, onPlayableClick)

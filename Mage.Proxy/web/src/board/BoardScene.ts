@@ -8,13 +8,20 @@ export class BoardScene {
   readonly app: Application
   private root = new Container()
   private dynamic = new Container()
+  private fx = new Container()
+  private lines = new Graphics()
   private overlay = new Container()
   private textures = new Map<string, Texture>()
-  private liveCards = new Map<string, { holder: Container; overlays: Container; faceDown: boolean; signature: string; scale: number }>()
+  private liveCards = new Map<string, { holder: Container; overlays: Container; faceDown: boolean; signature: string; scale: number; sourceId: string }>()
   private targetIds = new Set<string>()
   private targetHandler: ((id: string) => void) | undefined
+  private targetSourceId: string | undefined
   private playableIds = new Set<string>()
   private playableHandler: ((id: string) => void) | undefined
+  private pulses = new Map<string, Graphics>()
+  private playerHits = new Map<string, Graphics>()
+  private hoveredTargetId: string | undefined
+  private pulseStart = 0
   private zones = computeZones(1600, 900)
   private game: GameView | null = null
   // throttling de render: la partida IA emite varios GAME_UPDATE por segundo con
@@ -25,11 +32,14 @@ export class BoardScene {
   private pendingGame: GameView | null = null
   private lastRenderAt = 0
   private renderScheduled = false
+  private fxTicker = () => this.drawTargetFx()
 
   constructor(app: Application) {
     this.app = app
     app.stage.addChild(this.root)
     this.root.addChild(this.dynamic)
+    this.fx.addChild(this.lines)
+    this.root.addChild(this.fx)
     this.root.addChild(this.overlay)
   }
 
@@ -58,10 +68,47 @@ export class BoardScene {
     }
   }
 
-  setTargeting(ids: string[], handler?: (id: string) => void) {
+  setTargeting(ids: string[], handler?: (id: string) => void, sourceId?: string) {
     this.targetIds = new Set(ids)
     this.targetHandler = handler
+    this.targetSourceId = sourceId
+    this.hoveredTargetId = undefined
+    this.clearPulses()
+    this.buildPlayerHits()
+    if (ids.length) {
+      this.pulseStart = performance.now()
+      this.app.ticker.add(this.fxTicker)
+    } else {
+      this.app.ticker.remove(this.fxTicker)
+    }
     if (this.game) this.render(this.game)
+  }
+
+  /** Hit areas invisibles sobre los objetivos de jugador (no hay holder de carta). */
+  private buildPlayerHits() {
+    for (const g of this.playerHits.values()) {
+      if (!g.destroyed) g.destroy()
+    }
+    this.playerHits.clear()
+    if (!this.targetHandler) return
+    for (const id of this.targetIds) {
+      if (this.findLive(id)) continue
+      const anchor = this.playerAnchor(id)
+      if (!anchor) continue
+      const g = new Graphics()
+      g.circle(anchor.x, anchor.y, 34).fill({ color: 0xffb03a, alpha: 0.0001 })
+      g.eventMode = 'static'
+      g.cursor = 'pointer'
+      g.on('pointertap', () => this.targetHandler?.(id))
+      g.on('pointerover', () => {
+        this.hoveredTargetId = id
+      })
+      g.on('pointerout', () => {
+        this.hoveredTargetId = undefined
+      })
+      this.fx.addChild(g)
+      this.playerHits.set(id, g)
+    }
   }
 
   setPlayable(ids: string[], handler?: (id: string) => void) {
@@ -75,6 +122,86 @@ export class BoardScene {
     const game = this.pendingGame ?? this.game
     this.pendingGame = null
     if (game) this.render(game)
+  }
+
+  /** Dibuja (cada frame del ticker) los efectos del targeting: outlines pulsantes,
+   *  líneas punteadas del origen a cada objetivo y aros sobre objetivos de jugador. */
+  private drawTargetFx() {
+    if (!this.game || this.targetIds.size === 0) return
+    const t = (performance.now() - this.pulseStart) / 1000
+    const pulse = 0.5 + 0.5 * Math.sin(t * 3.2)
+    const dashOffset = (t * 70) % 17
+    this.lines.clear()
+    const source = this.targetSourceId ? this.findLive(this.targetSourceId) : undefined
+    const from = source && !source.holder.destroyed ? source.holder.position : null
+    if (from) {
+      for (const id of this.targetIds) {
+        const to = this.targetAnchor(id)
+        if (!to) continue
+        const hovered = this.hoveredTargetId === id
+        drawDashedLine(this.lines, from.x, from.y, to.x, to.y, 10, 7, dashOffset, hovered ? 1 : 0.35 + 0.35 * pulse, hovered ? 0xffffff : 0xffb03a, hovered ? 3 : 2)
+      }
+    }
+    for (const id of this.targetIds) {
+      if (this.findLive(id)) continue
+      const anchor = this.playerAnchor(id)
+      if (!anchor) continue
+      const hovered = this.hoveredTargetId === id
+      this.lines
+        .circle(anchor.x, anchor.y, 26 + 5 * pulse)
+        .stroke({ width: hovered ? 4 : 3, color: 0xffb03a, alpha: hovered ? 1 : 0.5 + 0.4 * pulse })
+    }
+    for (const id of this.targetIds) {
+      const live = this.findLive(id)
+      if (!live || live.holder.destroyed) continue
+      let g = this.pulses.get(id)
+      if (!g || g.destroyed) {
+        g = new Graphics()
+        g.eventMode = 'none'
+        this.pulses.set(id, g)
+        live.holder.addChild(g)
+      }
+      const cw = CARD_W * live.scale
+      const ch = CARD_H * live.scale
+      const hovered = this.hoveredTargetId === id
+      const alpha = hovered ? 1 : 0.45 + 0.55 * pulse
+      g.clear()
+      g.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: hovered ? 5 : 2 + 2 * pulse, color: 0xffb03a, alpha })
+      if (hovered) g.roundRect(4, 4, cw - 8, ch - 8, 6).stroke({ width: 2, color: 0xffdf8a, alpha: 0.9 })
+    }
+  }
+
+  private clearPulses() {
+    this.app.ticker.remove(this.fxTicker)
+    this.lines.clear()
+    for (const g of this.pulses.values()) {
+      if (!g.destroyed) g.destroy()
+    }
+    this.pulses.clear()
+  }
+
+  private findLive(sourceId: string) {
+    for (const live of this.liveCards.values()) {
+      if (live.sourceId === sourceId && !live.holder.destroyed) return live
+    }
+    return undefined
+  }
+
+  /** Centro en coordenadas de escena de un objetivo (carta o jugador). */
+  private targetAnchor(id: string): { x: number; y: number } | null {
+    const live = this.findLive(id)
+    if (live) return { x: live.holder.position.x, y: live.holder.position.y }
+    return this.playerAnchor(id)
+  }
+
+  private playerAnchor(playerId: string): { x: number; y: number } | null {
+    const players = this.game?.players ?? []
+    const player = players.find((p) => p.playerId === playerId)
+    if (!player) return null
+    if (player.controlled) return { x: this.zones.myHeader.x + 8, y: this.zones.myHeader.y - 4 }
+    const opponents = players.filter((p) => !p.controlled)
+    const index = opponents.indexOf(player)
+    return { x: this.zones.oppHeader.x + 8, y: this.zones.oppHeader.y + index * 24 - 4 }
   }
 
   private render(game: GameView) {
@@ -119,7 +246,7 @@ export class BoardScene {
     holder.rotation = p.rotation
     parent.addChild(holder)
     const overlays = new Container()
-    const live = { holder, overlays, faceDown: p.faceDown, signature: cardSignature(p.card), scale: p.scale }
+    const live = { holder, overlays, faceDown: p.faceDown, signature: cardSignature(p.card), scale: p.scale, sourceId: p.sourceId }
     this.liveCards.set(p.id, live)
     this.updateInteractivity(holder, p.sourceId)
 
@@ -183,12 +310,7 @@ export class BoardScene {
 
   private renderOverlays(p: Placement, cw: number, ch: number, overlays: Container) {
     overlays.removeChildren()
-    if (this.targetIds.has(p.sourceId)) {
-      const target = new Graphics()
-      target.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: 4, color: 0xffb03a, alpha: 0.95 })
-      overlays.addChild(target)
-    }
-    if (this.playableIds.has(p.sourceId) && !this.targetIds.has(p.sourceId)) {
+    if (this.playableIds.has(p.sourceId)) {
       const playable = new Graphics()
       playable.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: 3, color: 0x63e6be, alpha: 0.9 })
       overlays.addChild(playable)
@@ -224,10 +346,18 @@ export class BoardScene {
 
   private updateInteractivity(holder: Container, id: string) {
     holder.removeAllListeners('pointertap')
+    holder.removeAllListeners('pointerover')
+    holder.removeAllListeners('pointerout')
     if (this.targetIds.has(id) && this.targetHandler) {
       holder.eventMode = 'static'
       holder.cursor = 'pointer'
       holder.on('pointertap', () => this.targetHandler?.(id))
+      holder.on('pointerover', () => {
+        this.hoveredTargetId = id
+      })
+      holder.on('pointerout', () => {
+        this.hoveredTargetId = undefined
+      })
     } else if (this.playableIds.has(id) && this.playableHandler) {
       holder.eventMode = 'static'
       holder.cursor = 'pointer'
@@ -288,6 +418,42 @@ export class BoardScene {
 
 function cardSignature(card: CardView): string {
   return [card.name, card.expansionSetCode, card.cardNumber, card.faceDown ? 'down' : 'up'].join('|')
+}
+
+/** Línea punteada con desplazamiento de guiones (dashOffset) para el efecto "fluyente". */
+function drawDashedLine(
+  g: Graphics,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  dash: number,
+  gap: number,
+  offset: number,
+  alpha: number,
+  color: number,
+  width: number,
+) {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.hypot(dx, dy)
+  if (len === 0) return
+  const ux = dx / len
+  const uy = dy / len
+  const period = dash + gap
+  let start = offset % period
+  if (start < 0) start += period
+  let covered = -start
+  while (covered < len) {
+    const from = Math.max(covered, 0)
+    const to = Math.min(covered + dash, len)
+    if (to > from) {
+      g.moveTo(x1 + ux * from, y1 + uy * from)
+      g.lineTo(x1 + ux * to, y1 + uy * to)
+    }
+    covered += period
+  }
+  g.stroke({ width, color, alpha })
 }
 
 /** ¿Hay soporte WebGL2? Pixi 8 lo exige (o WebGPU). Detección barata antes de init. */
