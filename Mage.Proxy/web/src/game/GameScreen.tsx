@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import BoardView from '../board/BoardView'
 import * as cmds from '../net/commands'
-import { clearFeedback, maybeAutoPass, reset, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
+import { maybeAutoPass, reset, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import GameLog from './GameLog'
 import FeedbackDialog from './FeedbackDialog'
 import { playableObjectIds, resolveTargetSourceId } from '../board/gameToScene'
@@ -19,13 +19,15 @@ export default function GameScreen() {
 
   const me = game?.players?.find((p) => p.controlled)
   const targetIds = feedback?.method === 'GAME_TARGET' ? feedback.options.map((option) => option.id) : []
+  const chosenTargetIds = feedback?.method === 'GAME_TARGET' ? (feedback.chosenTargets ?? []) : []
   const targetSourceId = game && feedback?.method === 'GAME_TARGET' ? resolveTargetSourceId(game, feedback.sourceName) : undefined
   const playableIds = game ? playableObjectIds(game) : []
   const onTargetClick = async (id: string) => {
     if (!gameId) return
+    // Cada objetivo elegido resuelve una consulta GAME_TARGET; el servidor re-dispara
+    // la consulta mientras queden objetivos por elegir (no limpiar el feedback aquí).
     const result = await cmds.sendPlayerUUID(id, gameId)
-    if (result.ok) clearFeedback()
-    else setStoreError(result.error ?? 'No se pudo enviar el objetivo')
+    if (!result.ok) setStoreError(result.error ?? 'No se pudo enviar el objetivo')
   }
 
   const onPlayableClick = async (id: string) => {
@@ -71,6 +73,7 @@ export default function GameScreen() {
               <BoardView
                 game={game}
                 targetIds={targetIds}
+                chosenTargetIds={chosenTargetIds}
                 onTargetClick={onTargetClick}
                 targetSourceId={targetSourceId}
                 playableIds={playableIds}

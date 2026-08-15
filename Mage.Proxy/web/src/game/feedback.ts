@@ -28,6 +28,8 @@ export interface FeedbackPrompt {
   required?: boolean
   /** Nombre del objeto que pide el objetivo (options.secondMessage del servidor). */
   sourceName?: string
+  /** Objetivos ya elegidos en consultas multi-target (options.chosenTargets del servidor). */
+  chosenTargets?: string[]
 }
 
 type JsonRecord = Record<string, unknown>
@@ -59,7 +61,7 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
       return prompt(method, gameId, isMulligan ? 'Mulligan' : 'Confirmación', message, isMulligan ? 'boolean' : 'string', choices, bounds)
     }
     case 'GAME_TARGET':
-      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data))
+      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data), chosenTargetsOf(data))
     case 'GAME_SELECT':
     case 'GAME_SELECT_CARDS':
     case 'GAME_SELECT_TARGETS':
@@ -113,8 +115,9 @@ function prompt(
   playerId?: string,
   required = true,
   sourceName?: string,
+  chosenTargets?: string[],
 ): FeedbackPrompt {
-  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName }
+  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName, chosenTargets }
 }
 
 function asRecord(value: unknown): JsonRecord {
@@ -128,6 +131,11 @@ function stringValue(value: unknown): string | undefined {
 function secondMessageOf(data: JsonRecord): string | undefined {
   const value = asRecord(data.options).secondMessage
   return stringValue(value)
+}
+
+function chosenTargetsOf(data: JsonRecord): string[] | undefined {
+  const targets = stringList(asRecord(data.options).chosenTargets)
+  return targets.length ? targets : undefined
 }
 
 function controlledPlayerId(value: unknown): string | undefined {

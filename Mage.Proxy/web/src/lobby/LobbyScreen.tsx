@@ -4,7 +4,7 @@ import * as cmds from '../net/commands'
 import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
 import ChatBox from './ChatBox'
-import { DEFAULT_DECK, STABLE_DECK } from './decks'
+import { AI_OPPONENT_DECK, DEFAULT_DECK, STABLE_DECK } from './decks'
 import './LobbyScreen.css'
 
 const AI_PLAYER = 'COMPUTER_MAD'
@@ -140,7 +140,7 @@ export default function LobbyScreen() {
           playerName: aiIndex <= 0 ? 'Computer' : `Computer ${aiIndex + 1}`,
           playerType: seat.playerType,
           skill: 1,
-          deck: DEFAULT_DECK,
+          deck: AI_OPPONENT_DECK,
         }),
         15000,
         'joinTable IA',

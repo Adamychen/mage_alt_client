@@ -14,11 +14,13 @@ export class BoardScene {
   private textures = new Map<string, Texture>()
   private liveCards = new Map<string, { holder: Container; overlays: Container; faceDown: boolean; signature: string; scale: number; sourceId: string }>()
   private targetIds = new Set<string>()
+  private chosenTargetIds = new Set<string>()
   private targetHandler: ((id: string) => void) | undefined
   private targetSourceId: string | undefined
   private playableIds = new Set<string>()
   private playableHandler: ((id: string) => void) | undefined
   private pulses = new Map<string, Graphics>()
+  private chosenBadges = new Map<string, Text>()
   private playerHits = new Map<string, Graphics>()
   private hoveredTargetId: string | undefined
   private pulseStart = 0
@@ -68,8 +70,9 @@ export class BoardScene {
     }
   }
 
-  setTargeting(ids: string[], handler?: (id: string) => void, sourceId?: string) {
+  setTargeting(ids: string[], handler?: (id: string) => void, sourceId?: string, chosenIds?: string[]) {
     this.targetIds = new Set(ids)
+    this.chosenTargetIds = new Set(chosenIds ?? [])
     this.targetHandler = handler
     this.targetSourceId = sourceId
     this.hoveredTargetId = undefined
@@ -114,6 +117,7 @@ export class BoardScene {
   setPlayable(ids: string[], handler?: (id: string) => void) {
     this.playableIds = new Set(ids)
     this.playableHandler = handler
+    this.publishSceneState()
     if (this.game) this.render(this.game)
   }
 
@@ -139,7 +143,12 @@ export class BoardScene {
         const to = this.targetAnchor(id)
         if (!to) continue
         const hovered = this.hoveredTargetId === id
-        drawDashedLine(this.lines, from.x, from.y, to.x, to.y, 10, 7, dashOffset, hovered ? 1 : 0.35 + 0.35 * pulse, hovered ? 0xffffff : 0xffb03a, hovered ? 3 : 2)
+        const chosen = this.chosenTargetIds.has(id)
+        if (chosen) {
+          drawDashedLine(this.lines, from.x, from.y, to.x, to.y, 10, 7, dashOffset, 0.95, 0x7ee787, 2)
+        } else {
+          drawDashedLine(this.lines, from.x, from.y, to.x, to.y, 10, 7, dashOffset, hovered ? 1 : 0.35 + 0.35 * pulse, hovered ? 0xffffff : 0xffb03a, hovered ? 3 : 2)
+        }
       }
     }
     for (const id of this.targetIds) {
@@ -147,9 +156,16 @@ export class BoardScene {
       const anchor = this.playerAnchor(id)
       if (!anchor) continue
       const hovered = this.hoveredTargetId === id
-      this.lines
-        .circle(anchor.x, anchor.y, 26 + 5 * pulse)
-        .stroke({ width: hovered ? 4 : 3, color: 0xffb03a, alpha: hovered ? 1 : 0.5 + 0.4 * pulse })
+      const chosen = this.chosenTargetIds.has(id)
+      if (chosen) {
+        this.lines
+          .circle(anchor.x, anchor.y, 26 + 5 * pulse)
+          .stroke({ width: 3, color: 0x7ee787, alpha: 0.95 })
+      } else {
+        this.lines
+          .circle(anchor.x, anchor.y, 26 + 5 * pulse)
+          .stroke({ width: hovered ? 4 : 3, color: 0xffb03a, alpha: hovered ? 1 : 0.5 + 0.4 * pulse })
+      }
     }
     for (const id of this.targetIds) {
       const live = this.findLive(id)
@@ -164,10 +180,46 @@ export class BoardScene {
       const cw = CARD_W * live.scale
       const ch = CARD_H * live.scale
       const hovered = this.hoveredTargetId === id
+      const chosen = this.chosenTargetIds.has(id)
       const alpha = hovered ? 1 : 0.45 + 0.55 * pulse
       g.clear()
-      g.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: hovered ? 5 : 2 + 2 * pulse, color: 0xffb03a, alpha })
+      if (chosen) {
+        g.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: 3, color: 0x7ee787, alpha: 0.95 })
+      } else {
+        g.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: hovered ? 5 : 2 + 2 * pulse, color: 0xffb03a, alpha })
+      }
       if (hovered) g.roundRect(4, 4, cw - 8, ch - 8, 6).stroke({ width: 2, color: 0xffdf8a, alpha: 0.9 })
+      this.syncChosenBadge(id, live.holder, cw)
+    }
+    this.pruneChosenBadges()
+  }
+
+  /** Badge "✓" sobre los objetivos ya elegidos en consultas multi-target. */
+  private syncChosenBadge(id: string, holder: Container, cw: number) {
+    const badge = this.chosenBadges.get(id)
+    if (this.chosenTargetIds.has(id)) {
+      let b = badge
+      if (!b || b.destroyed) {
+        b = new Text({
+          text: '✓',
+          style: { fontSize: 22, fill: 0x7ee787, stroke: { color: 0x000000, width: 4 }, fontWeight: '800' },
+        })
+        this.chosenBadges.set(id, b)
+        holder.addChild(b)
+      }
+      b.position.set(cw - 22, -2)
+    } else if (badge && !badge.destroyed) {
+      badge.destroy()
+      this.chosenBadges.delete(id)
+    }
+  }
+
+  private pruneChosenBadges() {
+    for (const [id, badge] of this.chosenBadges) {
+      if (!this.chosenTargetIds.has(id) && !badge.destroyed) {
+        badge.destroy()
+        this.chosenBadges.delete(id)
+      }
     }
   }
 
@@ -178,6 +230,7 @@ export class BoardScene {
       if (!g.destroyed) g.destroy()
     }
     this.pulses.clear()
+    this.pruneChosenBadges()
   }
 
   private findLive(sourceId: string) {
@@ -235,6 +288,25 @@ export class BoardScene {
       }
     }
     this.renderHeaders(game)
+    this.publishSceneState()
+  }
+
+  /** Estado en vivo del escenario para los E2E: posiciones reales de las cartas en el canvas
+   *  y los ids jugables actuales (el estado que de verdad acepta el servidor al clicar). */
+  private publishSceneState() {
+    const cards: Record<string, { x: number; y: number }> = {}
+    for (const [id, live] of this.liveCards) {
+      const key = id.startsWith('myHand:') ? id.slice('myHand:'.length) : id
+      cards[key] = { x: live.holder.position.x, y: live.holder.position.y }
+    }
+    const me = this.game?.players?.find((p) => p.controlled)
+    ;(globalThis as unknown as { __mageScene?: unknown }).__mageScene = {
+      cards,
+      playable: [...this.playableIds],
+      game: this.game
+        ? { turn: this.game.turn, phase: this.game.phase, step: this.game.step, priority: me?.hasPriority === true }
+        : null,
+    }
   }
 
   private async spawnCard(p: Placement, parent: Container) {

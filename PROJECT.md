@@ -2,7 +2,7 @@
 
 > Este documento es la **fuente de verdad del proyecto**: roadmap, fases, decisiones y
 > estado real verificado. Se actualiza en cada paso de trabajo, no solo al final de fases.
-> Última actualización: 2026-08-10 (Fase 2: targeting visual + pago de maná validados E2E en navegador)
+> Última actualización: 2026-08-15 (Fase 2 completada y verificada E2E en navegador)
 
 ---
 
@@ -21,7 +21,7 @@ la base de datos de cartas y la red social. Nosotros construimos un cliente nuev
 |---|---|---|
 | 0 | Proxy XMage (bridge) | ✅ Completada y verificada (2026-08-08) |
 | 1 | Cliente web: login + lobby + tablero renderizado | ✅ Completada y verificada (2026-08-08) |
-| 2 | Interacción completa: feedbacks, targeting, jugar | En progreso (contrato + clic + mulligan/prioridad/objetivo/maná validados E2E; targeting visual y pago de maná E2E en navegador 2026-08-10) |
+| 2 | Interacción completa: feedbacks, targeting, jugar | ✅ **Completada y verificada (2026-08-15)** — X costs, multi-target, modal y contadores validados por WS (human-test 83 checks) y E2E en navegador (spells 4/4) |
 | 3 | Efectos, sonido, launcher de escritorio | ⬜ Pendiente |
 
 ## 3. Arquitectura general
@@ -292,9 +292,94 @@ Implementado en Fase 2:
   objetivo contra uno mismo, y etiquetado de targets de mano/battlefield en el diálogo.
 
 Pendiente en Fase 2:
-- Drag & drop, modos avanzados (X costs, elecciones múltiples), contadores de +1/+1 y rutas de
-  pago alternativas (multi-maná, X mana) en el cliente web (el contrato ya está implementado y
-  validado por el test).
+- ~~Drag & drop, modos avanzados (X costs, elecciones múltiples), contadores de +1/+1 y rutas de
+  pago alternativas (multi-maná, X mana) en el cliente web~~ → ✅ Implementado y validado
+  (2026-08-15): X costs, modal y contadores resueltos por UI y verificados por WS + E2E.
+- Drag & drop de cartas (pulido de interacción, aplazado a Fase 3 con los efectos).
+
+### Añadido 2026-08-10 (tarde) — cierre de Fase 2: multi-target UX + verificación avanzada (EN CURSO)
+
+**Commit `a1af5bb202`**: trabajo del 10-08 consolidado (targeting visual, pago de maná por UI,
+mesas humano vs IA, E2E targeting).
+
+- **Multi-target desde el tablero**: verificado contra el servidor que `GAME_TARGET` se
+  **re-dispara por cada objetivo elegido** (`HumanPlayer.chooseTarget`, bucle con
+  `options.chosenTargets` con los ya elegidos); por tanto el clic secuencial ya resuelve
+  consultas de 2+ objetivos. Mejoras UI:
+  - `feedback.ts` parsea `options.chosenTargets` → `FeedbackPrompt.chosenTargets` (con test).
+  - `BoardScene` dibuja los objetivos ya elegidos en **verde sólido con badge "✓"**
+    (líneas punteadas verdes, aros verdes) frente al pulso naranja de los pendientes;
+    clic de nuevo deselecciona (el servidor lo gestiona: `target.remove`).
+  - `GameScreen.onTargetClick` ya **no limpia el feedback** al elegir (el servidor siempre
+    re-dispara el siguiente diálogo; limpiar creaba una race).
+  - Diálogo muestra "Objetivos ya elegidos: N (clic de nuevo para deseleccionar)".
+- **Mazo avanzado de verificación** (`web/src/lobby/decks.ts` → `ADVANCED_DECK`, 66 cartas,
+  Modern legal): 34 Mountain + 4 Plains + 8 Bolt + 8 **Blaze** ({X}{R}, X cost) + 4 **Arc Trail**
+  (2 objetivos) + 4 **Boros Charm** ({R}{W}, "Choose one", pago multi-color) + 4 **Walking
+  Ballista** (contadores +1/+1, X = maná gastado). Selector "Tu mazo" nuevo en
+  `CreateTableDialog` (DEFAULT/ADVANCED/STABLE).
+- **`human-test.mjs` ampliado** (escenario avanzado tras el Bolt): X cost (Blaze, `GAME_GET_AMOUNT`
+  → `sendPlayerInteger(2)` → objetivo → pago {R}{2}), multi-target (Arc Trail 2 objetivos con
+  verificación de `chosenTargets`), modal (Boros Charm `GAME_CHOOSE_CHOICE` → clave del modo
+  de 4 de daño), contadores (Ballista {4} → `counters` = 4 en el GameView).
+- **Validado por WS (human-test)**: X cost COMPLETO (Blaze X=2: announce → target → 3 pagos de
+  maná → vida oponente 17→15 en la última ejecución con Blaze resuelto pendiente de pasar
+  prioridad). unit 67/67 + typecheck ✅.
+
+**Bugs reales encontrados y corregidos en el test** (lecciones para el E2E y el cliente):
+1. **Race de cursor en el test**: un `GAME_SELECT` (prioridad) que llega en el hueco entre dos
+   esperas se pierde con `waitEvent(after=events.length)` y la partida queda bloqueada esperando
+   respuesta. Fix: estado `openPriorityEvent` (el GAME_SELECT abierto se registra al recibir y
+   se limpia solo si la acción que enviamos resuelve exactamente ese diálogo) + `waitNextPriority`.
+2. **La mano >7 cartas bloquea la partida**: el servidor pide `GAME_TARGET "Select a card to
+   discard"` al final del turno y, sin respuesta, nadie vuelve a tener prioridad (síntoma:
+   "timeout esperando prioridad"). Fix: `autoDiscard` en el test (descarta Mountain/Plains/primera
+   carta de `cardsView1`). **Recién aplicado, pendiente de verificación.**
+3. **El pago de maná no resuelve el hechizo**: tras pagar hay que pasar prioridad
+   (`sendPlayerBoolean(false)`) para que el stack resuelva; `resolveCast` + `passPriority`.
+4. **Faltan fuentes**: Blaze X=2 necesita 3 tierras sin girar; helper `ensureLands` (juega una
+   tierra por turno hasta `need`).
+5. **La IA con mazo de 60 tierras pierde la partida ~turno 10-15** (se agota el mazo o se
+   rinde): pendiente engrosar el mazo IA del human-test (p. ej. 50+50) y/o jugar más rápido.
+
+**Pendiente para terminar el cierre de Fase 2**:
+- [x] Cambiar el mazo IA del human-test a 100 cartas (50 Island + 50 Mountain) para que no se
+      agote ni se rinda durante el escenario avanzado (~turno 90 de presupuesto).
+- [x] Verificar `autoDiscard` + ejecutar `human-test.mjs` completo (Bolt → Blaze → Arc Trail →
+      Boros Charm → Ballista) hasta TODO PASS (83 checks, 2026-08-15).
+- [x] E2E Playwright `e2e/spells.spec.ts`: partida humana con `ADVANCED_DECK` por el selector
+      "Tu mazo" (reestructurado a 4 tests independientes, ver abajo).
+- [x] Suite completa (`node scripts/test.mjs`) + actualizar este documento y commitear.
+- [x] Borrar `scripts/askprobe.tmp.mjs` (sonda temporal; ya no existía).
+
+### Añadido 2026-08-15 — cierre de Fase 2 (✅ completada): X costs, multi-target, modal y contadores E2E
+
+- **`human-test.mjs` completo en verde: 83 checks** (Bolt → Blaze X=2 → Arc Trail 2 objetivos →
+  Boros Charm modo 4 daño → Walking Ballista X=4 con 4 contadores), con el mazo IA a 100 cartas
+  (50 Island + 50 Mountain) y `autoDiscard` verificados.
+- **`e2e/spells.spec.ts` reestructurado a 4 tests independientes** (seriales, uno por hechizo,
+  cada uno con su propia partida, presupuesto y retries) + **`e2e/targeting.spec.ts`** intacto:
+  1. **Blaze X=2**: diálogo integer del X, evidencia del targeting visual (screenshot diff),
+     pago {R}{2} y resolución (vida oponente -2).
+  2. **Arc Trail**: dos objetivos (el 2º ask se re-dispara solo si hay otro objetivo legal; si
+     no, el servidor auto-elige y va directo al maná — ambas rutas cubiertas), resolución -2.
+  3. **Boros Charm**: el modo llega como **`GAME_CHOOSE_ABILITY`** (chooseMode →
+     AbilityPickerView), NO `GAME_CHOOSE_CHOICE` (verificado contra el servidor); pago {R}{W}
+     con **respeto del color** y resolución -4.
+  4. **Walking Ballista**: `GAME_CHOOSE_ABILITY` "Cast" → integer X=4 → pago {8} → permanente
+     con 4 contadores en el campo.
+- **Robustez de clics E2E** (lecciones): el canvas puede ir un render por detrás de los frames
+  (throttling ~80ms + descartes en marcha) → **clic por posición REAL del escenario**
+  (`BoardScene` expone `window.__mageScene` = posiciones de cartas + playables en vivo; el test
+  clica por UUID de carta, no por índice de una vista parseada). La comprobación de jugabilidad
+  usa el estado de la app (no el `canPlayObjects` intermitente de los frames) con reintento.
+- **Mazo IA benigno** (`AI_OPPONENT_DECK` 50 Island + 50 Mountain) para las mesas humanas del
+  lobby: la IA con 16 Bolts mataba al humano en partidas largas y volvía flaky todos los E2E de
+  hechizos. El demo IA vs IA sigue con `STABLE_DECK`.
+- **Hallazgo de contrato**: en objetivos SEPARADOS (Arc Trail = 2 `Target` distintos) el servidor
+  **no puebla `options.chosenTargets`** (llega `[]`); el hint "Objetivos ya elegidos: N" y el
+  verde ✓ solo aplican a consultas de un único `Target` multi-elección (no cubiertas por
+  ADVANCED_DECK). El parseo queda verificado por unit test (fixture).
 
 ### Añadido 2026-08-10 — targeting visual + pago de maná (validado E2E en navegador)
 
@@ -373,6 +458,21 @@ Pendiente en Fase 2:
 | 2026-08-10 | F2 | **Lobby humano vs IA**: auto-join del creador, toggle "Tu plaza" (HUMAN) en el diálogo, botón "Unirse IA" por mesa; mazos separados (`STABLE_DECK` demo / `DEFAULT_DECK` 44+16) | full-flow E2E ✅ |
 | 2026-08-10 | F2 | **E2E targeting visual** (`e2e/targeting.spec.ts`): partida humana completa por navegador: sorteo, mulligan, Mountain, Bolt, aserciones de pulso/líneas en canvas (byte-diff + píxeles), pago de maná (fuente + reserva), prioridad, resolución (vida 17) | 2× verde en secuencia + suite completa ✅ |
 | 2026-08-10 | F2 | **Verificación final**: `node scripts/test.mjs` completo (unit 66, coverage, typecheck, build, java, self-test 15/15, human-test 27/27) + E2E Playwright 2/2 | suite 8/8 ✅ (self-test 1 reintento por cold-start flake) |
+| 2026-08-10 | F2 | Commit `a1af5bb202` del trabajo validado (targeting visual, pago de maná, mesas humano vs IA, E2E) | 15 archivos, 879+/49- |
+| 2026-08-10 | F2 | Multi-target UX: `chosenTargets` parseado (`feedback.ts`), objetivos elegidos en verde sólido + badge "✓" (`BoardScene`), sin `clearFeedback` tras elegir, hint en el diálogo | unit 67/67 + typecheck ✅ |
+| 2026-08-10 | F2 | `ADVANCED_DECK` (Blaze/Arc Trail/Boros Charm/Walking Ballista, 66 cartas) + selector "Tu mazo" en `CreateTableDialog`; cartas verificadas en Scryfall (6ED 168, SOM 81, FDN 721, 2XM 306) | typecheck ✅ |
+| 2026-08-10 | F2 | `human-test` escenario avanzado: X cost (Blaze X=2) validado por WS — `GAME_GET_AMOUNT` → `sendPlayerInteger` → objetivo → pago {R}{2} en 3 pasos | 39 pass, Blaze completo; faltan Arc Trail/Boros Charm/Ballista |
+| 2026-08-10 | F2 | **Bug race de prioridad en tests**: `GAME_SELECT` perdido en huecos entre esperas (partida bloqueada) → estado `openPriorityEvent` (registrar al recibir, limpiar solo si la acción resuelve ese diálogo) | human-test avanza al flujo avanzado |
+| 2026-08-10 | F2 | **Bug mano llena**: "Select a card to discard" sin responder bloquea la partida → `autoDiscard` en human-test (descarta Mountain/Plains/primera) | recién aplicado, pendiente verificación |
+| 2026-08-10 | F2 | **Lecciones de pago**: tras pagar maná hay que pasar prioridad para que el stack resuelva (`passPriority`); X=2 necesita 3 tierras sin girar (`ensureLands`); la IA de 60 tierras pierde ~turno 10-15 → engrosar su mazo | pendiente: mazo IA 50+50 |
+| 2026-08-15 | F2 | **Cierre de Fase 2 verificado**: mazo IA del human-test a 50+50, `autoDiscard` preferente de tierras, escenario avanzado completo (Blaze X=2, Arc Trail, Boros Charm, Ballista X=4) | `human-test` 83 checks TODO PASS ✅ |
+| 2026-08-15 | F2 | **`e2e/spells.spec.ts` reescrito**: 4 tests seriales independientes (Blaze/Arc Trail/Boros/Ballista) con retries y presupuesto propios | e2e completo 6/6 (varias tandas) ✅ |
+| 2026-08-15 | F2 | **Clics E2E por estado real del canvas**: hook `window.__mageScene` en `BoardScene` (posiciones + playables en vivo); el test clica por UUID real, reintenta si el canvas va por detrás, y comprueba jugabilidad contra la app (no contra el `canPlayObjects` intermitente de los frames) | fallo "clic cayó en la carta equivocada" (Boros→Ballista) eliminado ✅ |
+| 2026-08-15 | F2 | **Pago de maná con color**: `payMana` parsea "Pay {R}{W}…" y clica fuentes del color pedido (una Plains no paga {R} y el servidor re-pregunta en bucle); cursores con lookback (el `hasMyPriority` puede llegar durante el clic) | "Pay {R}{W}"→"{R}" resuelto sin re-asks ✅ |
+| 2026-08-15 | F2 | **Modo de Boros Charm y "Cast" de Ballista**: el servidor los manda como `GAME_CHOOSE_ABILITY` (no `GAME_CHOOSE_CHOICE` como asumía el test); assert de vida solo del oponente (la IA con Bolts dabaña al humano durante la resolución) | Boros/Ballista verdes ✅ |
+| 2026-08-15 | F2 | **Mazo IA benigno** (`AI_OPPONENT_DECK` 50/50) en `LobbyScreen.joinAi`: la IA con 16 Bolts mataba al humano en partidas largas → flakes sistemáticos en spells E2E | e2e de 6.5-7 min a 3.9-5.3 min y sin muertes por IA ✅ |
+| 2026-08-15 | F2 | **Suite completa** (unit 67, coverage, typecheck, build, java, self-test, human-test 83, e2e 6) | 7/8 + self-test flake WATCHGAME conocido (pasa al reintento 15/15) |
+| 2026-08-15 | F2 | Hallazgo de contrato: `options.chosenTargets` llega `[]` en objetivos separados (Arc Trail = 2 `Target`); el hint "ya elegidos" y el ✓ verde solo aplican a un único `Target` multi-elección | documentado en sección 7 |
 
 ## 10. Notas de ejecución
 

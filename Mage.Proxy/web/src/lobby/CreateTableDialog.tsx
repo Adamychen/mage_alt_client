@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as cmds from '../net/commands'
 import type { GameTypeInfo } from '../net/commands'
 import { useStore } from '../state/store'
-import { DEFAULT_DECK } from './decks'
+import { DECKS, DEFAULT_DECK, type Deck } from './decks'
 import './CreateTableDialog.css'
 
 export default function CreateTableDialog({ onClose }: { onClose: () => void }) {
@@ -12,6 +12,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const [playerTypes, setPlayerTypes] = useState<string[]>([])
   const [gameType, setGameType] = useState('Two Player Duel')
   const [deckType, setDeckType] = useState('Constructed - Modern')
+  const [deck, setDeck] = useState<Deck>(DEFAULT_DECK)
   const [playerTypesSel, setPlayerTypesSel] = useState<string[]>([])
   const [humanSeat, setHumanSeat] = useState(true)
   const [name, setName] = useState(`${username}'s table`)
@@ -62,7 +63,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
         playerName: username,
         playerType: 'HUMAN',
         skill: 1,
-        deck: DEFAULT_DECK,
+        deck,
       })
       if (!join.ok) {
         setError(join.error ?? 'no se pudo unir tu plaza')
@@ -95,6 +96,16 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
           <select value={deckType} onChange={(e) => setDeckType(e.target.value)}>
             {deckTypes.map((d) => (
               <option key={d}>{d}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Tu mazo
+          <select value={deck.name} onChange={(e) => setDeck(DECKS.find((d) => d.name === e.target.value) ?? DEFAULT_DECK)}>
+            {DECKS.map((d) => (
+              <option key={d.name} value={d.name}>
+                {d.name} ({d.cards.reduce((sum, c) => sum + c.amount, 0)} cartas)
+              </option>
             ))}
           </select>
         </label>

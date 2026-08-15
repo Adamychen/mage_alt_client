@@ -136,6 +136,10 @@ export default function FeedbackDialog() {
           <p className="feedback-hint">Haz clic en tus fuentes de maná del tablero para pagar el coste.</p>
         )}
 
+        {prompt.method === 'GAME_TARGET' && (prompt.chosenTargets?.length ?? 0) > 0 && (
+          <p className="feedback-hint">Objetivos ya elegidos: {prompt.chosenTargets?.length} (clic de nuevo para deseleccionar)</p>
+        )}
+
         {prompt.mode === 'mana' && (
           <div className="feedback-options">
             {prompt.playerId && poolMana(game).map((mana) => (

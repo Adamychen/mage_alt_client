@@ -71,7 +71,7 @@ public class ProxyClient implements MageClient {
     private final ExecutorService commandExecutor = Executors.newSingleThreadExecutor();
     // server callbacks are processed in order on one thread (recreated on user switch to drain stale ones)
     private ExecutorService callbackExecutor = Executors.newSingleThreadExecutor();
-    private final ScheduledExecutorService lobbyTimer = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService lobbyTimer = Executors.newSingleThreadScheduledExecutor();
     private final ScheduledExecutorService pingTimer = Executors.newSingleThreadScheduledExecutor();
 
     // out-of-order protection for reconnect/bad network (same logic as the original client)
@@ -106,7 +106,7 @@ public class ProxyClient implements MageClient {
             if (connected) {
                 session.ping();
             }
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             logger.log(Level.FINE, "ping failed", ex);
         }
     }
@@ -300,8 +300,10 @@ public class ProxyClient implements MageClient {
             lobby.add("users", JsonParser.parseString(JsonUtil.toJson(session.getRoomUsers(roomId))));
             lobby.add("serverMessages", JsonParser.parseString(JsonUtil.toJson(session.getServerMessages())));
             broadcastAuthorized(lobby.toString());
-        } catch (Exception ex) {
-            // transient errors (e.g. server restart) must not spam the log
+        } catch (Throwable ex) {
+            // transient errors (e.g. server restart) must not spam the log; a Throwable here
+            // (e.g. a remoting Error while the server dies) would otherwise cancel the
+            // periodic task silently, killing all lobby broadcasts until the proxy restarts
             logger.log(Level.WARNING, "Lobby publish failed: " + ex.getMessage(), ex);
         }
     }
@@ -631,6 +633,11 @@ public class ProxyClient implements MageClient {
             // to the new client (e.g. a WATCHGAME that lagged behind the update flood)
             callbackExecutor.shutdownNow();
             callbackExecutor = Executors.newSingleThreadExecutor();
+            // a dead lobby timer (e.g. an uncatchable error during a server restart) must be
+            // healed on reconnect, or the lobby UI would never receive table broadcasts again
+            lobbyTimer.shutdownNow();
+            lobbyTimer = Executors.newSingleThreadScheduledExecutor();
+            lobbyTimer.scheduleWithFixedDelay(this::publishLobby, 0, 2, TimeUnit.SECONDS);
             if (conn != null) {
                 authorized.add(conn);
             }

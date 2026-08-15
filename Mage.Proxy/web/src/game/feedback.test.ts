@@ -83,6 +83,43 @@ describe('parseFeedback', () => {
     expect(parseFeedback('GAME_TARGET', 'game-2', { targets: [], gameView: {} })?.sourceName).toBeUndefined()
   })
 
+  it('labels array-form card targets by id or parentId', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-2', {
+      message: 'Choose a target',
+      targets: ['card-1', 'child-2'],
+      cardsView1: [
+        { id: 'card-1', name: 'Forest' },
+        { parentId: 'child-2', displayName: 'Island' },
+      ],
+    })
+    expect(prompt?.options.map((option) => option.label)).toEqual(['Forest', 'Island'])
+  })
+
+  it('exposes already chosen targets for multi-target queries', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-2', {
+      message: 'Choose up to two targets',
+      targets: ['perm-2', 'perm-3'],
+      options: { chosenTargets: ['perm-1'] },
+      gameView: { players: [] },
+    })
+    expect(prompt?.chosenTargets).toEqual(['perm-1'])
+    expect(parseFeedback('GAME_TARGET', 'game-2', { targets: [], gameView: {} })?.chosenTargets).toBeUndefined()
+  })
+
+  it('maps mulligan boolean labels via no/yes keywords and positional fallbacks', () => {
+    const prompt = parseFeedback('GAME_ASK', 'game-1', {
+      message: 'Mulligan?',
+      options: {
+        maybe: 'Maybe',
+        cancel: 'No, thank you',
+        accept: 'Yes, go ahead',
+        later: 'Never mind',
+      },
+    })
+    expect(prompt?.mode).toBe('boolean')
+    expect(prompt?.options.map((option) => option.value)).toEqual(['true', 'false', 'true', 'false'])
+  })
+
   it('does not treat GAME_SELECT priority as a modal card selection', () => {
     expect(parseFeedback('GAME_SELECT', 'game-2', { message: 'Play spells and abilities' })).toBeNull()
   })
