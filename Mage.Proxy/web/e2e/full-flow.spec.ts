@@ -4,6 +4,7 @@ import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect } from './fixtures'
 import { cleanupUser } from './cleanup'
+import { login } from './support/start-game'
 
 const SHOTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'shots')
 const FINAL_SHOT = path.join(SHOTS_DIR, 'full-flow-final.png')
@@ -25,7 +26,8 @@ async function sceneOf(page: Page): Promise<SceneState | null> {
   }
 }
 
-test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero avanza sin errores', async ({ page }) => {
+test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero avanza sin errores', { tag: '@fullflow' }, async ({ page, fakeServer }) => {
+  void fakeServer
   // (a) capturar todos los pageerror y console error
   const pageErrors: Error[] = []
   const consoleErrors: string[] = []
@@ -45,18 +47,10 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
     })
   })
 
-  // (b) formulario de login
-  await page.goto('/')
-  await expect(page.locator('form.login-card')).toBeVisible()
-
-  // (c) credenciales únicas -> Conectar (XMage limita el nombre a 14 caracteres)
+  // (b) credenciales únicas -> Conectar (XMage limita el nombre a 14 caracteres)
   const username = `e2e-${String(Date.now()).slice(-10)}`
   cleanupUser(username)
-  await page.getByLabel('Servidor del proxy (host)').fill('localhost')
-  await page.getByLabel('Puerto del servidor XMage').fill('17171')
-  await page.getByLabel('Usuario').fill(username)
-  await page.getByLabel('Contraseña').fill('x')
-  await page.getByRole('button', { name: 'Conectar' }).click()
+  await login(page, username)
 
   // (d) lobby (el broadcast de mesas llega cada ~2s)
   await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })

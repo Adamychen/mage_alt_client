@@ -1,8 +1,10 @@
 /**
  * Fixtures de Playwright con el backend dual.
- * - fake: el worker arranca su propio FixtureServer en 8787 (el proxy real
- *   debe estar detenido; si no, falla con un mensaje claro).
- * - real: no-op (usa el stack: server + proxy + vite).
+ * - fake: el FixtureServer se arranca con `{ fakeServer }` (full-flow usa el
+ *   fixture; los specs de partida humana lo arrancan explícitamente con su
+ *   escenario, `FakeServer.start(port, escenario())`). El proxy real debe
+ *   estar detenido (puerto 8787).
+ * - real: fakeServer es null (usa el stack: server + proxy + vite).
  */
 
 import { test as base, expect as baseExpect } from '@playwright/test'
@@ -29,7 +31,7 @@ export const test = base.extend<{ fakeServer: FakeServer | null }>({
       await use(server)
       await server.stop()
     },
-    { scope: 'worker', auto: true },
+    { scope: 'test' },
   ],
 })
 

@@ -248,9 +248,12 @@ export class HumanHelper {
   private handleAsk(data: EventDataLike) {
     if (!this.gameId) return
     const question = String(data.question ?? data.message ?? '')
-    // XMage: false = mantener la mano en el mulligan; true = aceptar el resto
-    const keep = /mulligan|keep your hand|keep hand/i.test(question)
-    void this.send('sendPlayerBoolean', { gameId: this.gameId, value: keep ? false : true })
+    // XMage: false = mantener la mano en el mulligan; true = aceptar el resto.
+    // El auto-keep del web ya responde el mulligan: responderlo aquí también
+    // (el helper va conectado desde el arranque) mandaría un SEGUNDO false que
+    // el servidor trata como "pasar prioridad" y rompería la ventana del test.
+    if (/mulligan|keep your hand|keep hand/i.test(question)) return
+    void this.send('sendPlayerBoolean', { gameId: this.gameId, value: true })
   }
 }
 

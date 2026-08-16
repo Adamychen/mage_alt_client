@@ -17,6 +17,9 @@ export interface FakeConn {
   readonly id: number
   /** Callback del servidor (type:'event'); messageId autoincremental. */
   event(method: string, data: unknown, objectId?: string | null): void
+  /** Emite el evento a TODAS las conexiones del servidor (la página y el
+   *  helper WS del humano ven la misma partida). */
+  broadcast(method: string, data: unknown, objectId?: string | null): void
   /** Respuesta a una acción (type:'result'). */
   ok(requestId: string | number, action: string, data?: unknown): void
   fail(requestId: string | number, action: string, error: string, errorCode?: string): void
@@ -58,6 +61,7 @@ class FakeConnection implements FakeConn {
     readonly id: number,
     private readonly ws: WebSocket,
     private readonly scenario: Scenario,
+    private readonly server: FakeServer,
   ) {}
 
   isOpen(): boolean {
@@ -70,6 +74,12 @@ class FakeConnection implements FakeConn {
 
   event(method: string, data: unknown, objectId: string | null = null): void {
     this.raw({ type: 'event', method, messageId: ++this.seq, objectId, data })
+  }
+
+  broadcast(method: string, data: unknown, objectId: string | null = null): void {
+    const obj = { type: 'event', method, messageId: ++this.seq, objectId, data }
+    this.raw(obj)
+    this.server.broadcast(obj, this.id)
   }
 
   ok(requestId: string | number, action: string, data?: unknown): void {
@@ -99,6 +109,7 @@ export class FakeServer {
   private wss: WebSocketServer
   private conns = new Set<FakeConnection>()
   private cleanups: (() => void)[] = []
+  private scenarioInstance: Scenario | null = null
 
   constructor(readonly port: number, private readonly makeScenario: () => Scenario) {}
 
@@ -126,8 +137,12 @@ export class FakeServer {
   }
 
   private handleConnection(ws: WebSocket) {
-    const scenario = this.makeScenario()
-    const conn = new FakeConnection(nextConnId++, ws, scenario)
+    // El escenario se crea UNA vez por servidor (no por conexión): la página y
+    // el HumanHelper WS del humano comparten el MISMO estado de juego (partida
+    // humana vs Sim) a través del broadcast de FakeConnection.
+    if (!this.scenarioInstance) this.scenarioInstance = this.makeScenario()
+    const scenario = this.scenarioInstance
+    const conn = new FakeConnection(nextConnId++, ws, scenario, this)
     this.conns.add(conn)
     ws.on('close', () => {
       this.conns.delete(conn)
@@ -175,6 +190,13 @@ export class FakeServer {
 
   get connectedConns(): number {
     return this.conns.size
+  }
+
+  /** Reenvía un frame a todas las conexiones excepto la emisora. */
+  broadcast(obj: unknown, exceptId?: number): void {
+    for (const c of this.conns) {
+      if (c.id !== exceptId) c.raw(obj)
+    }
   }
 
   async stop(): Promise<void> {
