@@ -35,9 +35,14 @@ description: Contexto completo de los E2E del Mage.Proxy con oponentes simulados
      sigue abierta y no se está pagando); **el timer es OBLIGATORIO**: sin él, tras
      un select sin respuesta no llegan más eventos y la partida se congela;
    - no-main → pasar al instante;
-   - GAME_TARGET con "discard" → primer id (descarte); el resto de targets NO se
-     responden (los responde el test);
-   - GAME_ASK → false si mulligan (keep), true en el resto.
+    - GAME_TARGET con "discard" → primer id (descarte); el resto de targets NO se
+      responden (los responde el test);
+    - GAME_ASK → **NO responde el mulligan** (el auto-keep del web ya lo hace; un
+      segundo `sendPlayerBoolean(false)` pasa la prioridad del main y pierde la
+      ventana del test — era la flake de targeting, resuelta 2026-08-17);
+      el resto de asks → true.
+    El helper se conecta ANTES del `startMatch` (lo arranca `startGame`): captura el
+    START_GAME/GAME_INIT desde el primer evento y espera `waitGameId`.
    Métodos públicos: `start()`, `stop()`, `waitGameId(timeoutMs)`, `playCard(id)`
    (= `sendPlayerUUID` — vale para lanzar cartas, elegir objetivo y pagar maná).
    Los helpers se registran en `cleanup.ts` (`registerHelper`) y se cierran en
@@ -108,22 +113,27 @@ Análisis del run de las 18:34 (fallo "sin fuente de maná para Pay {1}"):
 - `waitPlayable(minUntapped=3)` NO es el problema en este run (3 tierras en el
   campo al lanzar, vista msgId=71); el helper jugó la 3ª tierra en el turno 5.
 
-## CASO ABIERTO (pendiente — objetivo del agente e2e-spells)
+## ✅ CERRADO 2026-08-16/17 — spells 4/4 real y fake, targeting estable
 
-`Mage.Proxy/web/e2e/spells.spec.ts` (4 tests: Blaze, Arc Trail, Boros Charm, Walking
-Ballista) NO está verde. Estado al cierre de la sesión anterior:
+`spells.spec.ts` (Blaze, Arc Trail, Boros Charm, Walking Ballista) y `targeting.spec.ts`
+están VERDES en real y en fake. El caso abierto de la sesión anterior se cerró con
+la combinación (ver "✅ CERRADO 2026-08-16 (por la tarde)" abajo) + la flake de
+targeting resuelta el 17 (doble respuesta al mulligan, ver la regla del helper).
 
-- El flujo llega a: lanzar por WS ✓ → GAME_GET_AMOUNT (X=2) ✓ → targeting (diálogo +
-  canvas con reintentos de captura del pulso) ✓ → target por WS ✓ → GAME_PLAY_MANA.
-- Fallos observados (por orden de aparición): (a) asks de maná duplicados (el primer
-  pago de cada ask no registra — sospecha: source stale/tapada); (b) el pago no
-  completa y el hechizo queda en el stack (`stack=1`) o se cancela; (c) la partida
-  termina con "Player sim-... is the winner" en turno ~5 DURANTE el targeting/pago
-  (el servidor no loguea la razón; sin daño ni deck-out posibles — verificar si es el
-  session-swap del retry, la cancelación por pago incompleto + pase, o un timeout).
-- Último fallo antes de parar: "timeout esperando GAME_PLAY_MANA (0)" tras el target
-  por WS + la partida terminó con victoria del Sim.
-- Los otros specs están verdes: combat (8s), full-flow (14s), targeting (~25s).
+**2026-08-17 — arquitectura modular**: los specs ahora usan librerías comunes en
+`Mage.Proxy/web/e2e/support/` (`frames.ts`, `start-game.ts` → `GameSession`,
+`game-screen.ts`, `scene.ts`, `canvas.ts`, `fake-backend.ts` → `withFakeServer`) y
+escenarios declarativos del FixtureServer en `fixtures/scenarios/` (mini-motor
+`humanGame.ts` + `spells.ts`/`targeting.ts`/`combat.ts`). Todo el e2e corre en fake
+sin stack (~56s) y en real (contrato). Tags: `@spells/@targeting/@combat/@fullflow`.
+Al tocar `support/` o los escenarios: fake completo + real.
+
+**Lecciones del fake (contrato expuesto por el diseño)**:
+- IDs de mano ÚNICOS (una key por carta; `human-<i>`): keys repetidas truncaban la mano.
+- `battlefield` como `Record<UUID, PermanentView>` (nunca array): `nextManaSource`
+  busca `battlefield[id]`; con array pagaba el índice `'0'` y el servidor lo rechazaba.
+- El fake no emite el 2º target de Arc Trail (el servidor real lo auto-elige sin
+  criaturas en juego) — el spec ya lo tolera con su try/catch.
 
 ## ✅ DEMO CONGELADA RESUELTA (2026-08-16 noche) — full-flow real VERDE
 
@@ -141,10 +151,12 @@ produzcan TODOS los colores; si no, `-> skip`. El dedup por firma `(turno, paso,
 tierras)` queda como defensa anti-spin. Logs INFO: msg del GAME_ASK + respuesta, y
 colores/UUIDs de tryCast.
 
-**Flake residual conocido de targeting (raro, solo tras `restart all`)**: el GAME_TARGET del
-Bolt llega al web pero el diálogo `.feedback-dialog` no renderiza. No se reprodujo en 6+ runs
-consecutivos; el assert del diálogo ahora incluye `pageerrors` en el mensaje para diagnosticar
-si reaparece. Sospecha: estado del servidor tras restart (mismo patrón que el Bug 2).
+**Flake residual de targeting — CERRADA (2026-08-17)**: la causa era el doble
+`sendPlayerBoolean(false)` al mulligan (auto-keep del web + helper conectado desde
+el arranque): el 2º false pasaba la prioridad del main y el Bolt nunca se lanzaba
+(síntoma: partida en turno 22 sin GAME_TARGET). Fix: el helper ya no responde el
+mulligan (ver reglas). Verificado: real 7/7 + fake 7/7. Si reaparece tras `restart
+all`, el assert del diálogo sigue mostrando `pageerrors` en el mensaje.
 
 ## ✅ CERRADO 2026-08-16 (por la tarde) — spells/targeting real VERDES
 
@@ -168,7 +180,8 @@ suite real.
 
 ## Workflow de depuración
 
-- Test aislado: `npm --prefix Mage.Proxy/web run test:e2e -- --reporter=list e2e/spells.spec.ts -g "Blaze"`
+- Test aislado: `npm --prefix Mage.Proxy/web run test:e2e:spells -- --grep "Blaze" --reporter=list`
+  (o `test:e2e:targeting|combat|fullflow`; añade `E2E_BACKEND=real` para el contrato real).
 - Frames/sent del test: se capturan en `frames`/`sent` (page.on websocket). Para verlos
   en un fallo: dump temporal con `fs.writeFileSync('/tmp/x.jsonl', ...)` en el punto
   del fallo + `console.log`.

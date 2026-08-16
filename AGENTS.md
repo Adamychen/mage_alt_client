@@ -79,10 +79,8 @@ Los e2e de UI usan asientos `SIM` (el proxy une un bot determinista con su propi
 sesión) y un `HumanHelper` por WS (`Mage.Proxy/web/e2e/wshelper.ts`) que desarrolla
 tierras, pasa prioridades, descarta y responde asks — las acciones frágiles van por
 WS y la UI solo verifica (diálogos, render, pageerrors). Los tests NO activan el
-auto-pase del web (compite con las ventanas de lanzamiento). **`spells.spec.ts`
-está PENDIENTE de cerrar** (caso abierto documentado en la skill `mage-e2e-sim`;
-el agente `e2e-spells` está diseñado para ello). Cargar `mage-e2e-sim` antes de
-tocar o depurar cualquier e2e.
+auto-pase del web (compite con las ventanas de lanzamiento). Cargar `mage-e2e-sim`
+antes de tocar o depurar cualquier e2e.
 
 **Arquitectura modular (2026-08-17)**: tests por funcionalidad, partida
 independiente por test. Librerías comunes en `Mage.Proxy/web/e2e/support/`

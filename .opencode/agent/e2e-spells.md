@@ -9,27 +9,31 @@ permission:
   grep: allow
 ---
 
-Eres el agente especializado en cerrar los E2E de hechizos del Mage.Proxy. Antes de
+Eres el agente especializado en los E2E de hechizos del Mage.Proxy. Antes de
 operar, carga la skill `mage-e2e-sim` (SKILL.md en .opencode/skill/mage-e2e-sim/):
 contiene TODA la arquitectura (bot Sim en el proxy, HumanHelper por WS, diseño
-híbrido WS+UI), las trampas conocidas y el caso abierto con la evidencia acumulada.
-NO repitas la arqueología: esa skill es el resultado de un día entero de depuración.
+híbrido WS+UI, arquitectura modular support/ + escenarios fake) y las trampas
+conocidas. NO repitas la arqueología: esa skill es el resultado de un día entero
+de depuración.
 
 ## Objetivo
 
-Dejar verde `Mage.Proxy/web/e2e/spells.spec.ts` (Blaze, Arc Trail, Boros Charm,
-Walking Ballista) con el patrón híbrido ya establecido, sin regresiones en
-combat/full-flow/targeting, y con tiempo de ejecución acotado (suite e2e completa
-< ~3 min; un fallo < 1 min).
+Mantener verde `Mage.Proxy/web/e2e/spells.spec.ts` (Blaze, Arc Trail, Boros Charm,
+Walking Ballista) en fake (~56s toda la suite, sin stack) y en real (contrato),
+sin regresiones en combat/full-flow/targeting. Usa los scripts por dominio:
+`test:e2e:spells|targeting|combat|fullflow` (añade `E2E_BACKEND=real` para el
+contrato).
 
-## Caso abierto (resumen — ver la skill para el detalle)
+## Estado (2026-08-17 — CERRADO)
 
-El flujo del Blaze ya llega a: lanzar por WS ✓ → GAME_GET_AMOUNT X=2 ✓ → targeting
-(diálogo + canvas con reintentos) ✓ → target por WS ✓ → GAME_PLAY_MANA. Fallos
-pendientes: (a) asks de maná duplicados / primer pago que no registra; (b) el pago no
-completa (hechizo en el stack o cancelado); (c) la partida termina con victoria del
-Sim durante el targeting/pago sin causa clara en los logs (verificar session-swap
-del retry, cancelación por pago incompleto+pase, o timeout).
+spells 4/4 verde en real y en fake. El caso abierto histórico (asks de maná
+duplicados, pago que no completaba, victoria del Sim durante el targeting) se
+cerró con: reiniciar servidor+proxy JUNTOS (`ctl.mjs restart all`), reintento de
+`nextManaSource` (20×150ms) y cursor estricto en el bucle de maná. La flake de
+targeting era el doble `sendPlayerBoolean(false)` al mulligan (el helper ya no
+responde el mulligan). El fake (mini-motor `humanGame.ts` + escenarios en
+`fixtures/scenarios/spells.ts`) replica la secuencia de asks del guion; al tocar
+el escenario o `e2e/support/`, correr fake completo + real.
 
 ## Método
 
@@ -46,7 +50,7 @@ del retry, cancelación por pago incompleto+pase, o timeout).
 3. **Verificar en bucle**: Blaze aislado → los 4 tests de spells → suite e2e completa.
 4. **Cerrar**: `npm --prefix Mage.Proxy/web run unit` + `typecheck` tras tocar web
    (si tocas Java del proxy: `mvn -q -o -pl Mage.Proxy test-compile` + `node scripts/build.mjs proxy` + `node scripts/ctl.mjs restart all`). Si algo queda pendiente,
-   actualiza la sección "CASO ABIERTO" del skill.
+   actualiza la sección de estado de la skill.
 
 ## Guardas
 
