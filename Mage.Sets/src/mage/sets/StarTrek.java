@@ -22,8 +22,12 @@ public final class StarTrek extends ExpansionSet {
 
         // this.enablePlayBooster(276); // TODO: Temporary until spoilers conclude
 
+        cards.add(new SetCardInfo("A Good Day to Die", 111, Rarity.COMMON, mage.cards.a.AGoodDayToDie.class));
         cards.add(new SetCardInfo("Amok Time", 183, Rarity.UNCOMMON, mage.cards.a.AmokTime.class));
         cards.add(new SetCardInfo("Assault Drone", 92, Rarity.COMMON, mage.cards.a.AssaultDrone.class));
+        cards.add(new SetCardInfo("Automated Warfare System", 93, Rarity.COMMON, mage.cards.a.AutomatedWarfareSystem.class));
+        cards.add(new SetCardInfo("Bat'leth", 94, Rarity.UNCOMMON, mage.cards.b.Batleth.class));
+        cards.add(new SetCardInfo("Battle-Scarred Survivalist", 95, Rarity.COMMON, mage.cards.b.BattleScarredSurvivalist.class));
         cards.add(new SetCardInfo("Beckett Mariner, Impetuous Ensign", 138, Rarity.UNCOMMON, mage.cards.b.BeckettMarinerImpetuousEnsign.class));
         cards.add(new SetCardInfo("Blood Crypt", 278, Rarity.RARE, mage.cards.b.BloodCrypt.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Blood Crypt", 394, Rarity.RARE, mage.cards.b.BloodCrypt.class, NON_FULL_USE_VARIOUS));
@@ -40,6 +44,8 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Captain Kathryn Janeway", 340, Rarity.MYTHIC, mage.cards.c.CaptainKathrynJaneway.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Captain Kathryn Janeway", 386, Rarity.MYTHIC, mage.cards.c.CaptainKathrynJaneway.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Captain Kathryn Janeway", 520, Rarity.MYTHIC, mage.cards.c.CaptainKathrynJaneway.class, NON_FULL_USE_VARIOUS));
+        cards.add(new SetCardInfo("Captain's Tutelage", 144, Rarity.COMMON, mage.cards.c.CaptainsTutelage.class));
+        cards.add(new SetCardInfo("Cha'DIch Investigator", 97, Rarity.COMMON, mage.cards.c.ChaDIchInvestigator.class));
         cards.add(new SetCardInfo("Cloistered Telepath", 50, Rarity.COMMON, mage.cards.c.CloisteredTelepath.class));
         cards.add(new SetCardInfo("Cold-Blooded Crew", 189, Rarity.COMMON, mage.cards.c.ColdBloodedCrew.class));
         cards.add(new SetCardInfo("Collective Drone", 99, Rarity.UNCOMMON, mage.cards.c.CollectiveDrone.class));
@@ -58,6 +64,7 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Godless Shrine", 285, Rarity.RARE, mage.cards.g.GodlessShrine.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Godless Shrine", 397, Rarity.RARE, mage.cards.g.GodlessShrine.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Godless Shrine", 492, Rarity.RARE, mage.cards.g.GodlessShrine.class, NON_FULL_USE_VARIOUS));
+        cards.add(new SetCardInfo("Guidance Failure", 60, Rarity.COMMON, mage.cards.g.GuidanceFailure.class));
         cards.add(new SetCardInfo("Hallowed Fountain", 286, Rarity.RARE, mage.cards.h.HallowedFountain.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Hallowed Fountain", 392, Rarity.RARE, mage.cards.h.HallowedFountain.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Hallowed Fountain", 487, Rarity.RARE, mage.cards.h.HallowedFountain.class, NON_FULL_USE_VARIOUS));
@@ -69,6 +76,7 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Island", 319, Rarity.LAND, mage.cards.basiclands.Island.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Island", 320, Rarity.LAND, mage.cards.basiclands.Island.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Khaaaaaaaaaaaannn!", 154, Rarity.UNCOMMON, mage.cards.k.Khaaaaaaaaaaaannn.class));
+        cards.add(new SetCardInfo("Malfunctioning Holodeck", 22, Rarity.COMMON, mage.cards.m.MalfunctioningHolodeck.class));
         cards.add(new SetCardInfo("Moopsy", 207, Rarity.COMMON, mage.cards.m.Moopsy.class));
         cards.add(new SetCardInfo("Mountain", 323, Rarity.LAND, mage.cards.basiclands.Mountain.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Mountain", 324, Rarity.LAND, mage.cards.basiclands.Mountain.class, NON_FULL_USE_VARIOUS));
@@ -78,6 +86,7 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Overgrown Tomb", 289, Rarity.RARE, mage.cards.o.OvergrownTomb.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Overgrown Tomb", 399, Rarity.RARE, mage.cards.o.OvergrownTomb.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Overgrown Tomb", 494, Rarity.RARE, mage.cards.o.OvergrownTomb.class, NON_FULL_USE_VARIOUS));
+        cards.add(new SetCardInfo("Picard, Leading by Example", 29, Rarity.UNCOMMON, mage.cards.p.PicardLeadingByExample.class));
         cards.add(new SetCardInfo("Plains", 317, Rarity.LAND, mage.cards.basiclands.Plains.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Plains", 318, Rarity.LAND, mage.cards.basiclands.Plains.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Planetary Patrol", 163, Rarity.COMMON, mage.cards.p.PlanetaryPatrol.class));
@@ -91,6 +100,8 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Sacred Foundry", 495, Rarity.RARE, mage.cards.s.SacredFoundry.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Saurian Explorer", 213, Rarity.COMMON, mage.cards.s.SaurianExplorer.class));
         cards.add(new SetCardInfo("Set Phasers to...", 34, Rarity.COMMON, mage.cards.s.SetPhasersTo.class));
+        cards.add(new SetCardInfo("Shuttle Ace", 36, Rarity.COMMON, mage.cards.s.ShuttleAce.class));
+        cards.add(new SetCardInfo("Silicate Surveyor", 172, Rarity.COMMON, mage.cards.s.SilicateSurveyor.class));
         cards.add(new SetCardInfo("Steam Vents", 298, Rarity.RARE, mage.cards.s.SteamVents.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Steam Vents", 398, Rarity.RARE, mage.cards.s.SteamVents.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Steam Vents", 493, Rarity.RARE, mage.cards.s.SteamVents.class, NON_FULL_USE_VARIOUS));
@@ -100,6 +111,7 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("Swamp", 321, Rarity.LAND, mage.cards.basiclands.Swamp.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Swamp", 322, Rarity.LAND, mage.cards.basiclands.Swamp.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Syndicate Liquidators", 218, Rarity.UNCOMMON, mage.cards.s.SyndicateLiquidators.class));
+        cards.add(new SetCardInfo("Tactical Officer", 38, Rarity.COMMON, mage.cards.t.TacticalOfficer.class));
         cards.add(new SetCardInfo("Temple Garden", 301, Rarity.RARE, mage.cards.t.TempleGarden.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Temple Garden", 396, Rarity.RARE, mage.cards.t.TempleGarden.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Temple Garden", 491, Rarity.RARE, mage.cards.t.TempleGarden.class, NON_FULL_USE_VARIOUS));
@@ -107,6 +119,7 @@ public final class StarTrek extends ExpansionSet {
         cards.add(new SetCardInfo("U.S.S. Enterprise-D, Galaxy-Class", 273, Rarity.RARE, mage.cards.u.USSEnterpriseDGalaxyClass.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("U.S.S. Enterprise-D, Galaxy-Class", 481, Rarity.RARE, mage.cards.u.USSEnterpriseDGalaxyClass.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("U.S.S. Enterprise-D, Galaxy-Class", 557, Rarity.RARE, mage.cards.u.USSEnterpriseDGalaxyClass.class, FULL_ART_USE_VARIOUS));
+        cards.add(new SetCardInfo("V'Ger, the Intruder", 87, Rarity.UNCOMMON, mage.cards.v.VGerTheIntruder.class));
         cards.add(new SetCardInfo("Watery Grave", 306, Rarity.RARE, mage.cards.w.WateryGrave.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Watery Grave", 393, Rarity.RARE, mage.cards.w.WateryGrave.class, NON_FULL_USE_VARIOUS));
         cards.add(new SetCardInfo("Watery Grave", 488, Rarity.RARE, mage.cards.w.WateryGrave.class, NON_FULL_USE_VARIOUS));
