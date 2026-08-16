@@ -18,6 +18,7 @@ import mage.players.net.UserData;
 import mage.remote.Connection;
 import mage.remote.SessionImpl;
 import mage.utils.MageVersion;
+import mage.view.TableView;
 import org.java_websocket.WebSocket;
 
 import java.util.Arrays;
@@ -85,6 +86,13 @@ public class ProxyClient implements MageClient {
      * (they flooded the single-threaded callback queue and starved real dialogs like WATCHGAME).
      */
     private final Set<UUID> sessionGameIds = new java.util.HashSet<>();
+
+    // asientos "SIM": oponentes simulados con su propia sesión de servidor
+    private final Map<String, SimPlayer> sims = new java.util.HashMap<>();
+    private int simCounter = 0;
+    // servidor al que conecta la sesión web (los Sim se conectan al mismo)
+    private volatile String serverHost = "";
+    private volatile int serverPort = 0;
 
     private volatile boolean connected = false;
 
@@ -356,6 +364,7 @@ public class ProxyClient implements MageClient {
                     break;
                 }
                 case "disconnect": {
+                    stopSims();
                     session.connectStop(false, false);
                     connected = false;
                     authorized.clear();
@@ -439,7 +448,11 @@ public class ProxyClient implements MageClient {
                     MatchOptions options = parseMatchOptions(args);
                     UUID roomId = uuid(args, "roomId", session.getMainRoomId());
                     Object result = session.createTable(roomId, options);
-                    gateway.send(conn, resultJson(action, requestId, result != null, result != null ? null : ERR_FAILED, result));
+                    boolean ok = result != null;
+                    gateway.send(conn, resultJson(action, requestId, ok, ok ? null : ERR_FAILED, result));
+                    if (ok && result instanceof TableView) {
+                        startSims(args, roomId, ((TableView) result).getTableId());
+                    }
                     break;
                 }
                 case "joinTable": {
@@ -461,13 +474,12 @@ public class ProxyClient implements MageClient {
                     break;
                 }
                 case "removeTable": {
+                    // siempre la variante con roomId: removeTable(tableId) es la
+                    // variante de admin (adminTableRemove) y falla con "Wrong admin
+                    // access" para usuarios normales, dejando mesas huérfanas
+                    UUID roomId = uuid(args, "roomId", session.getMainRoomId());
                     UUID tableId = uuid(args, "tableId", null);
-                    if (tableId == null) {
-                        UUID roomId = uuid(args, "roomId", session.getMainRoomId());
-                        gateway.send(conn, resultJson(action, requestId, session.removeTable(roomId, uuid(args, "tableId", null)), null, null));
-                    } else {
-                        gateway.send(conn, resultJson(action, requestId, session.removeTable(tableId), null, null));
-                    }
+                    gateway.send(conn, resultJson(action, requestId, session.removeTable(roomId, tableId), null, null));
                     break;
                 }
                 case "startMatch": {
@@ -602,6 +614,7 @@ public class ProxyClient implements MageClient {
         if (connected) {
             // replace the old session instead of rejecting the new client (refresh/reconnect case)
             logger.info("connect: already connected, disconnecting old session first");
+            stopSims();
             authorized.clear();
             session.connectStop(false, false);
             connected = false;
@@ -618,6 +631,9 @@ public class ProxyClient implements MageClient {
         connection.setUserIdStr(System.getProperty("user.name") + ":" + System.getProperty("os.name") + ":mage-proxy");
         connection.setUserData(UserData.getDefaultUserDataView());
         connection.setProxyType(Connection.ProxyType.NONE);
+
+        serverHost = host;
+        serverPort = port;
 
         boolean ok = session.connectStart(connection);
         connected = ok;
@@ -661,7 +677,7 @@ public class ProxyClient implements MageClient {
         }
     }
 
-    private MatchOptions parseMatchOptions(JsonObject args) {
+    static MatchOptions parseMatchOptions(JsonObject args) {
         String name = str(args, "name", "Game " + System.currentTimeMillis());
         String gameType = str(args, "gameType", "");
         boolean multiPlayer = getBool(args, "multiPlayer", false);
@@ -673,12 +689,24 @@ public class ProxyClient implements MageClient {
         options.setQuitRatio(getInt(args, "quitRatio", 100));
         options.setPassword(str(args, "password", ""));
         options.setSpectatorsAllowed(getBool(args, "spectatorsAllowed", true));
+        // modo test: no barajar el mazo inicial (la librería queda en el orden
+        // enviado); los servidores sin modificar ignoran el campo
+        options.setSkipInitShuffling(getBool(args, "skipInitShuffling", false));
+        // modo test: sin sorteo aleatorio de starting player (el primer jugador de
+        // la mesa empieza); los servidores sin modificar ignoran el campo
+        options.setSkipStartingPlayerChoice(getBool(args, "skipStartingPlayerChoice", false));
         options.getPlayerTypes().add(PlayerType.HUMAN);
         if (args.has("playerTypes")) {
             JsonArray arr = args.getAsJsonArray("playerTypes");
             List<PlayerType> types = new java.util.ArrayList<>();
             for (JsonElement e : arr) {
-                types.add(PlayerType.valueOf(e.getAsString().toUpperCase(Locale.ROOT)));
+                String raw = e.getAsString();
+                if ("SIM".equalsIgnoreCase(raw)) {
+                    // asiento simulado: el servidor oficial ve un asiento humano normal
+                    types.add(PlayerType.HUMAN);
+                } else {
+                    types.add(PlayerType.valueOf(raw.toUpperCase(Locale.ROOT)));
+                }
             }
             if (!types.isEmpty()) {
                 options.getPlayerTypes().clear();
@@ -686,6 +714,76 @@ public class ProxyClient implements MageClient {
             }
         }
         return options;
+    }
+
+    // ============================ simulated seats (SIM) ============================
+
+    /** Crea y une un SimPlayer por cada asiento "SIM" de la mesa recién creada. */
+    private void startSims(JsonObject args, UUID roomId, UUID tableId) {
+        if (!args.has("playerTypes")) {
+            return;
+        }
+        JsonArray types = args.getAsJsonArray("playerTypes");
+        int simSeats = 0;
+        for (JsonElement e : types) {
+            if ("SIM".equalsIgnoreCase(e.getAsString())) {
+                simSeats++;
+            }
+        }
+        if (simSeats == 0) {
+            return;
+        }
+        JsonArray simDecks = args.has("simDecks") && args.get("simDecks").isJsonArray()
+                ? args.getAsJsonArray("simDecks") : null;
+        for (int i = 0; i < simSeats; i++) {
+            DeckCardLists deck = null;
+            if (simDecks != null && i < simDecks.size() && simDecks.get(i).isJsonObject()) {
+                deck = DeckJson.parse(simDecks.get(i).getAsJsonObject());
+            }
+            if (deck == null) {
+                deck = defaultSimDeck();
+            }
+            SimPlayer sim = new SimPlayer(nextSimUsername(), config.getPassword(), deck, serverHost, serverPort);
+            sims.put(tableId + "#" + i, sim);
+            boolean joined = sim.startAndJoin(roomId, tableId);
+            logger.info("sim seat " + i + " for table " + tableId + " (" + sim.getUsername() + ") joined=" + joined);
+        }
+    }
+
+    private String nextSimUsername() {
+        return "sim-" + String.format("%06d", ++simCounter) + "-" + (System.currentTimeMillis() % 1000);
+    }
+
+    /** Mazo por defecto del asiento simulado: solo tierras (partida determinista). */
+    private static DeckCardLists defaultSimDeck() {
+        JsonObject deck = new JsonObject();
+        deck.addProperty("name", "Sim lands");
+        JsonArray cards = new JsonArray();
+        cards.add(cardJson("Island", "LEA", "288", 30));
+        cards.add(cardJson("Mountain", "LEA", "292", 30));
+        deck.add("cards", cards);
+        deck.add("sideboard", new JsonArray());
+        return DeckJson.parse(deck);
+    }
+
+    private static JsonObject cardJson(String name, String set, String number, int amount) {
+        JsonObject card = new JsonObject();
+        card.addProperty("cardName", name);
+        card.addProperty("setCode", set);
+        card.addProperty("cardNumber", number);
+        card.addProperty("amount", amount);
+        return card;
+    }
+
+    /** Detiene todos los bots simulados (nuevo usuario o desconexión del web). */
+    private void stopSims() {
+        for (SimPlayer sim : sims.values()) {
+            try {
+                sim.stop();
+            } catch (Exception ignored) {
+            }
+        }
+        sims.clear();
     }
 
     private static Object parseActionData(JsonElement data) {
