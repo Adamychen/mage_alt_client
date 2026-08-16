@@ -4,7 +4,7 @@ import * as cmds from '../net/commands'
 import { maybeAutoPass, reset, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import GameLog from './GameLog'
 import FeedbackDialog from './FeedbackDialog'
-import { playableObjectIds, resolveTargetSourceId } from '../board/gameToScene'
+import { resolveTargetSourceId } from '../board/gameToScene'
 import './GameScreen.css'
 
 export default function GameScreen() {
@@ -12,6 +12,8 @@ export default function GameScreen() {
   const settings = useSettings()
   const gameId = useStore((s) => s.gameId)
   const feedback = useStore((s) => s.feedback)
+  // playables consolidados por el store (el gameView de GAME_UPDATE no los trae)
+  const playableIds = useStore((s) => s.playableIds)
 
   useEffect(() => {
     if (game) maybeAutoPass(game)
@@ -21,7 +23,6 @@ export default function GameScreen() {
   const targetIds = feedback?.method === 'GAME_TARGET' ? feedback.options.map((option) => option.id) : []
   const chosenTargetIds = feedback?.method === 'GAME_TARGET' ? (feedback.chosenTargets ?? []) : []
   const targetSourceId = game && feedback?.method === 'GAME_TARGET' ? resolveTargetSourceId(game, feedback.sourceName) : undefined
-  const playableIds = game ? playableObjectIds(game) : []
   const onTargetClick = async (id: string) => {
     if (!gameId) return
     // Cada objetivo elegido resuelve una consulta GAME_TARGET; el servidor re-dispara

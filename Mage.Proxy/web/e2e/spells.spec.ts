@@ -3,9 +3,14 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Page } from '@playwright/test'
+import { cleanupUser, registerHelper } from './cleanup'
+import { HumanHelper } from './wshelper'
 
 const SHOTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'shots')
 const TARGETING_SHOT = path.join(SHOTS_DIR, 'spells-targeting.png')
+
+// tope de frames WS retenidos por test (evita el OOM con partidas rápidas)
+const MAX_FRAMES = 500
 
 // Replicas del layout del tablero (src/board/zones.ts) para clicar cartas en el canvas de Pixi.
 const CARD_W = 146
@@ -30,15 +35,19 @@ interface FieldPermanent {
 
 function computeZones(w: number, h: number): ZoneLayout {
   const scale = Math.min(w / 1600, h / 900)
+  const worldH = 900 * scale
+  const offY = (h - worldH) / 2
   const ch = CARD_H * scale
+  const X = (x: number) => (w - 1600 * scale) / 2 + x * scale
+  const Y = (y: number) => offY + y * scale
   return {
     w,
     h,
     scale,
-    oppHeader: { x: 16, y: 10 },
-    myHeader: { x: 16, y: h - 34 },
-    myHand: { x: w / 2, y: h - ch - 12 },
-    myBattle: { x: 16, y: h - ch - 100 },
+    oppHeader: { x: X(16), y: Y(10) },
+    myHeader: { x: X(16), y: Y(900 - 34) },
+    myHand: { x: X(800), y: Y(900 - 12) - ch },
+    myBattle: { x: X(16), y: Y(900 - 100) - ch },
   }
 }
 
@@ -63,33 +72,26 @@ interface GameFrame {
   data?: Record<string, unknown> & { gameView?: Record<string, unknown> }
 }
 
-function parseFrames(frames: string[]): GameFrame[] {
+/** Los frames se guardan YA PARSEADOS (con cap de MAX_FRAMES): los polls de
+ *  waitFrame/parseFrames se hacen cada ~200ms y re-parsear los 1200 frames en
+ *  cada poll con partidas rápidas generaba ~600MB/s de basura (OOM del runner). */
+function parseFrames(frames: Array<Record<string, unknown> | null>): GameFrame[] {
   const out: GameFrame[] = []
   for (const frame of frames) {
-    if (!frame.startsWith('<< ')) continue
-    try {
-      const parsed = JSON.parse(frame.slice(3)) as { method?: string; data?: unknown }
-      if (parsed && typeof parsed.method === 'string') {
-        out.push({ method: parsed.method, data: parsed.data as GameFrame['data'] })
-      }
-    } catch {
-      // frame no JSON (p.ej. ping del proxy)
+    if (!frame || typeof frame !== 'object') continue
+    if (typeof frame.method === 'string') {
+      out.push({ method: frame.method, data: frame.data as GameFrame['data'] })
     }
   }
   return out
 }
 
-function parseSent(frames: string[]): { action?: string; args?: Record<string, unknown> }[] {
+function parseSent(frames: Array<Record<string, unknown> | null>): { action?: string; args?: Record<string, unknown> }[] {
   const out: { action?: string; args?: Record<string, unknown> }[] = []
   for (const frame of frames) {
-    if (!frame.startsWith('>> ')) continue
-    try {
-      const parsed = JSON.parse(frame.slice(3)) as { action?: string; args?: Record<string, unknown> }
-      if (parsed && typeof parsed.action === 'string') {
-        out.push({ action: parsed.action, args: parsed.args })
-      }
-    } catch {
-      // frame no JSON
+    if (!frame || typeof frame !== 'object') continue
+    if (typeof frame.action === 'string') {
+      out.push({ action: frame.action, args: frame.args as Record<string, unknown> | undefined })
     }
   }
   return out
@@ -146,7 +148,7 @@ function hasMyPriority(frame: GameFrame): boolean {
 
 async function canvasBox(page: Page) {
   const canvas = page.locator('.board-wrap canvas')
-  await expect(canvas).toBeVisible({ timeout: 60_000 })
+  await expect(canvas).toBeVisible({ timeout: 20_000 })
   return await canvas.boundingBox()
 }
 
@@ -301,17 +303,25 @@ function requiredSourceName(message: string | undefined): string | null {
   return lands.size === 1 ? [...lands][0] : null
 }
 
-function nextManaSource(view: Record<string, unknown> | null, rejected: Set<string>, preferredName: string | null): string | null {
+function nextManaSource(view: Record<string, unknown> | null, preferredName: string | null): string | null {
   const primary = manaSourceId(view)
-  if (primary && !rejected.has(primary) && (!preferredName || battlefieldName(view, primary) === preferredName)) return primary
+  if (primary && (!preferredName || battlefieldName(view, primary) === preferredName)) return primary
   if (!view) return null
+  // fuentes declaradas en canPlayObjects del ask
   const objects = (view.canPlayObjects as Record<string, unknown> | undefined)?.objects as Record<string, unknown> | undefined
-  if (!objects) return null
   const me = controlledPlayer(view)
   const battlefield = ((me as unknown as { battlefield?: unknown }).battlefield ?? {}) as Record<string, FieldPermanent>
+  if (objects) {
+    const fromObjects = Object.keys(objects).find(
+      (id) => battlefield[id] && battlefield[id].tapped !== true && (!preferredName || battlefieldName(view, id) === preferredName),
+    )
+    if (fromObjects) return fromObjects
+  }
+  // fallback: tierras básicas sin girar del campo (el ask puede llegar sin
+  // canPlayObjects en partidas rápidas; el nombre de la tierra es el color)
   return (
-    Object.keys(objects).find(
-      (id) => battlefield[id] && battlefield[id].tapped !== true && !rejected.has(id) && (!preferredName || battlefieldName(view, id) === preferredName),
+    Object.keys(battlefield).find(
+      (id) => battlefield[id] && battlefield[id].tapped !== true && (!preferredName || battlefieldName(view, id) === preferredName),
     ) ?? null
   )
 }
@@ -356,12 +366,12 @@ async function clickPlayerHeader(page: Page, playerId: string): Promise<boolean>
   return true
 }
 
-function framesOf(page: Page): string[] {
-  return (page as unknown as { __frames: string[] }).__frames
+function framesOf(page: Page): Array<Record<string, unknown> | null> {
+  return (page as unknown as { __frames: Array<Record<string, unknown> | null> }).__frames
 }
 
-function sentOf(page: Page): string[] {
-  return (page as unknown as { __sent: string[] }).__sent
+function sentOf(page: Page): Array<Record<string, unknown> | null> {
+  return (page as unknown as { __sent: Array<Record<string, unknown> | null> }).__sent
 }
 
 function parsedLen(page: Page): number {
@@ -372,13 +382,18 @@ function waitFrame(
   page: Page,
   predicate: (frame: GameFrame) => boolean,
   label: string,
-  timeoutMs = 60_000,
+  timeoutMs = 15_000,
   startIndex = 0,
 ) {
   return new Promise<GameFrame>((resolve, reject) => {
     const started = Date.now()
     const tick = () => {
-      const found = parseFrames(framesOf(page).slice(startIndex)).find(predicate)
+      const parsed = parseFrames(framesOf(page))
+      // los frames se eviccionan al superar MAX_FRAMES: un cursor viejo apuntaría
+      // fuera del array y no hay nada que re-matchear (sin clamp al último frame:
+      // re-matcheaba un frame ya consumido, p. ej. el ask de maná recién pagado)
+      const start = Math.min(startIndex, parsed.length)
+      const found = parsed.slice(start).find(predicate)
       if (found) return resolve(found)
       if (Date.now() - started > timeoutMs) return reject(new Error(`timeout esperando ${label}`))
       setTimeout(tick, 200)
@@ -391,14 +406,17 @@ function waitFrameAt(
   page: Page,
   predicate: (frame: GameFrame) => boolean,
   label: string,
-  timeoutMs = 60_000,
+  timeoutMs = 15_000,
   startIndex = 0,
 ): Promise<{ frame: GameFrame; index: number }> {
   return new Promise((resolve, reject) => {
     const started = Date.now()
     const tick = () => {
       const parsed = parseFrames(framesOf(page))
-      for (let i = startIndex; i < parsed.length; i++) {
+      // sin clamp al último frame (ver waitFrame): un cursor fuera del array no
+      // debe re-matchear el frame actual como si fuera el siguiente
+      const start = Math.min(startIndex, parsed.length)
+      for (let i = start; i < parsed.length; i++) {
         if (predicate(parsed[i])) return resolve({ frame: parsed[i], index: i })
       }
       if (Date.now() - started > timeoutMs) return reject(new Error(`timeout esperando ${label}`))
@@ -419,7 +437,7 @@ function targetIdsOf(frame: GameFrame): string[] {
   return []
 }
 
-function gameEnded(frames: string[]): boolean {
+function gameEnded(frames: Array<Record<string, unknown> | null>): boolean {
   return parseFrames(frames).some((f) => f.method === 'GAME_OVER' || f.method === 'END_GAME_INFO')
 }
 
@@ -427,7 +445,128 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function untappedLands(view: Record<string, unknown> | null): { count: number; plains: number } {
+
+/** Espera la resolución verificando la vida EXACTA del oponente con el stack vacío.
+ *  Solo la del oponente: la IA lanza Lightning Bolts contra el humano (nunca contra
+ *  el oponente), así que MI vida no es determinista mientras el hechizo resuelve. */
+function waitOppLife(page: Page, expectedOpp: number, label: string, timeoutMs = 15_000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs
+    const tick = () => {
+      const view = lastGameView(parseFrames(framesOf(page)))
+      const stack = (view?.stack ?? {}) as Record<string, unknown>
+      const opp = opponentPlayer(view)
+      if (Object.keys(stack).length === 0 && (opp?.life ?? -1) === expectedOpp) return resolve()
+      if (Date.now() > deadline) {
+        const dump = parseFrames(framesOf(page))
+          .slice(-14)
+          .map((f) => `${f.method} ${String((f.data as { message?: unknown } | null)?.message ?? '').slice(0, 30)}`)
+        console.log(`[dbg] waitOppLife(${expectedOpp}) agotado: oppLife=${opp?.life} stack=${Object.keys(stack).length} frames=${JSON.stringify(dump)}`)
+        return reject(new Error(`timeout esperando ${label}`))
+      }
+      setTimeout(tick, 250)
+    }
+    tick()
+  })
+}
+
+/** Paga el maná del hechizo en curso. El diálogo "Pagar maná" se VERIFICA por UI
+ *  (render de la página); el pago en sí va por WS (determinista: el clic por
+ *  escena en los sources es una carrera con partidas rápidas). */
+async function payMana(page: Page, helper: HumanHelper): Promise<void> {
+  try {
+    await payManaInner(page, helper)
+  } catch (e) {
+    dumpE2E(page, 'payMana-fallback')
+    throw e
+  }
+}
+
+function dumpE2E(page: Page, tag: string): void {
+  try {
+    const frames = framesOf(page)
+    const sent = sentOf(page)
+    const file = `/tmp/e2e-${tag}-${Date.now()}.jsonl`
+    const lines: string[] = []
+    for (const f of frames) lines.push(JSON.stringify(f))
+    lines.push('=====SENT=====')
+    for (const s of sent) lines.push(JSON.stringify(s))
+    fs.writeFileSync(file, lines.join('\n'))
+    console.log(`[dbg] dump ${file} frames=${frames.length} sent=${sent.length}`)
+  } catch {
+    /* noop */
+  }
+}
+
+async function payManaInner(page: Page, helper: HumanHelper): Promise<void> {
+  // lookback: el primer GAME_PLAY_MANA puede haber llegado mientras la acción
+  // anterior terminaba (p. ej. la verificación del target); un cursor estricto
+  // lo saltaría y esperaría un ask que ya no llega
+  let cursor = Math.max(0, parsedLen(page) - 10)
+  for (let i = 0; i < 14; i++) {
+    const { frame: mana, index: manaIndex } = await waitFrameAt(page, (f) => f.method === 'GAME_PLAY_MANA', `GAME_PLAY_MANA (${i})`, 15_000, cursor)
+    // verificación UI del diálogo de pago
+    await expect(page.locator('.feedback-dialog')).toContainText(/Pagar maná/, { timeout: 10_000 })
+    cursor = manaIndex + 1
+    // pagar el color que el servidor pide (el ask trae "Pay {R}{W}…"): una Plains no
+    // puede pagar {R} y el servidor re-pregunta en bucle si el clic no sirve
+    const preferredName = requiredSourceName(mana.data?.message as string | undefined)
+    // el view del ask puede ir stale (fuentes ya tapadas en frames viejos): el
+    // pago del ask anterior se propaga con retraso. REINTENTAR la lectura hasta
+    // ver una fuente sin girar — la lectura única era la raíz de "sin fuente".
+    let sourceId: string | null = null
+    for (let attempt = 0; attempt < 20 && !sourceId; attempt++) {
+      sourceId = nextManaSource(lastGameView(parseFrames(framesOf(page))), preferredName)
+      if (!sourceId) await page.waitForTimeout(150)
+    }
+    if (!sourceId) throw new Error(`sin fuente de maná para "${String(mana.data?.message ?? '').slice(0, 40)}"`)
+    expect(await helper.playCard(sourceId), `pago de maná por WS (intento ${i})`).toBeTruthy()
+    // tras el pago, esperar el SIGUIENTE ask de maná; si no llega (5s), el pago
+    // está completo. OJO: no salir por hasMyPriority — un SELECT durante el pago
+    // incompleto (el helper lo aguanta con payingUntil) no significa el final.
+    let nextIndex = -1
+    try {
+      const next = await waitFrameAt(
+        page,
+        (f) => f.method === 'GAME_PLAY_MANA',
+        `siguiente ask de maná (${i})`,
+        5_000,
+        cursor,
+      )
+      nextIndex = next.index
+    } catch {
+      nextIndex = -1
+    }
+    if (nextIndex < 0) return
+    // el ask siguiente sigue sin pagar: no avanzar el cursor más allá de él,
+    // o la siguiente iteración esperaría un ask posterior que nunca llega
+    cursor = nextIndex
+  }
+  throw new Error('no se pudo pagar el maná del hechizo')
+}
+
+/** Resuelve un GAME_TARGET eligiendo al jugador oponente. El envío del UUID va
+ *  por WS (determinista); las aserciones visuales del targeting ya se hicieron
+ *  ANTES (el diálogo queda abierto hasta responder). Fallback al botón del diálogo. */
+async function targetOpponent(page: Page, target: GameFrame, label: string, helper: HumanHelper): Promise<void> {
+  const opp = opponentPlayer(lastGameView(parseFrames(framesOf(page))))
+  if (opp?.playerId) {
+    expect(await helper.playCard(opp.playerId), label).toBeTruthy()
+    return
+  }
+  const dialog = page.locator('.feedback-dialog')
+  const oppName = opp?.name
+  const button = oppName
+    ? dialog.getByRole('button', { name: new RegExp(escapeRegExp(oppName)) }).first()
+    : dialog.getByRole('button').first()
+  await expect(button, label).toBeVisible({ timeout: 15_000 })
+  await button.click()
+}
+
+
+/** Tierras básicas sin girar del campo (Mountain/Plains) para saber si el maná
+ *  del hechizo del guion ya está desarrollado. */
+function countUntappedLands(view: Record<string, unknown> | null): { count: number; plains: number } {
   let count = 0
   let plains = 0
   for (const perm of Object.values(myBattlefield(view))) {
@@ -441,170 +580,69 @@ function untappedLands(view: Record<string, unknown> | null): { count: number; p
   return { count, plains }
 }
 
-/** Espera la resolución verificando la vida EXACTA del oponente con el stack vacío.
- *  Solo la del oponente: la IA lanza Lightning Bolts contra el humano (nunca contra
- *  el oponente), así que MI vida no es determinista mientras el hechizo resuelve. */
-function waitOppLife(page: Page, expectedOpp: number, label: string, timeoutMs = 45_000): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const deadline = Date.now() + timeoutMs
-    const tick = () => {
-      const view = lastGameView(parseFrames(framesOf(page)))
-      const stack = (view?.stack ?? {}) as Record<string, unknown>
-      const opp = opponentPlayer(view)
-      if (Object.keys(stack).length === 0 && (opp?.life ?? -1) === expectedOpp) return resolve()
-      if (Date.now() > deadline) return reject(new Error(`timeout esperando ${label}`))
-      setTimeout(tick, 250)
-    }
-    tick()
-  })
+/** Motivo real del fin de partida (ganador + stats) para que los fallos de
+ *  "la partida terminó" digan POR QUÉ (p. ej. deck-out del humano). */
+function gameEndReason(page: Page): string {
+  const parsed = parseFrames(framesOf(page))
+  const over = [...parsed].reverse().find((f) => f.method === 'GAME_OVER' || f.method === 'END_GAME_INFO')
+  if (!over) return 'sin evento de fin en los frames'
+  const msg = String((over.data as { message?: unknown } | null)?.message ?? '')
+  const gv = gameViewOf(over)
+  const stats = ((gv?.players ?? []) as Array<Record<string, unknown>>)
+    .map((p) => `${p.name}: life=${p.life} lib=${p.libraryCount} hand=${p.handCount}`)
+    .join(' | ')
+  return `GAME_OVER "${msg}" — ${stats}`
 }
 
-/** Paga el maná del hechizo en curso: clic en fuentes del tablero (o reserva) hasta que
- *  el servidor devuelva la prioridad. El cursor por índice evita re-procesar el mismo ask. */
-async function payMana(page: Page): Promise<void> {
-  const rejected = new Set<string>()
-  let poolTry = 0
-  // lookback: el primer GAME_PLAY_MANA puede haber llegado mientras la acción
-  // anterior terminaba (p. ej. la verificación del target); un cursor estricto
-  // lo saltaría y esperaría un ask que ya no llega
-  let cursor = Math.max(0, parsedLen(page) - 10)
-  for (let i = 0; i < 14; i++) {
-    const { frame: mana, index: manaIndex } = await waitFrameAt(page, (f) => f.method === 'GAME_PLAY_MANA', `GAME_PLAY_MANA (${i})`, 45_000, cursor)
-    await expect(page.locator('.feedback-dialog')).toContainText(/Pagar maná/, { timeout: 10_000 })
-    // la confirmación del pago (hasMyPriority) puede llegar mientras el clic/espera
-    // de tap del source anterior termina; escanear desde el ask actual evita saltarla
-    cursor = manaIndex + 1
-    // pagar el color que el servidor pide (el ask trae "Pay {R}{W}…"): una Plains no
-    // puede pagar {R} y el servidor re-pregunta en bucle si el clic no sirve
-    const preferredName = requiredSourceName(mana.data?.message as string | undefined)
-    const sourceId = nextManaSource(gameViewOf(mana), rejected, preferredName)
-    if (sourceId) {
-      const clicked = await clickBattlefieldCard(page, sourceId)
-      expect(clicked, `clic sobre la fuente de maná (intento ${i})`).toBeTruthy()
-      let tapped = false
-      const startLen = parsedLen(page)
-      for (let w = 0; w < 25 && !tapped; w++) {
-        await page.waitForTimeout(200)
-        if (parsedLen(page) === startLen) continue
-        const perm = myBattlefield(lastGameView(parseFrames(framesOf(page))))[sourceId]
-        tapped = !perm || perm.tapped === true
-      }
-      if (!tapped) rejected.add(sourceId)
-    } else {
-      const poolButtons = page.locator('.feedback-dialog').getByRole('button', { name: /Pagar reserva/i })
-      const count = await poolButtons.count()
-      expect(count, `botones de reserva de maná (intento ${i})`).toBeGreaterThan(0)
-      await poolButtons.nth(poolTry % count).click()
-      poolTry++
-    }
-    const { frame: next, index: nextIndex } = await waitFrameAt(
-      page,
-      (f) => f.method === 'GAME_PLAY_MANA' || hasMyPriority(f),
-      `maná pagado o nuevo ask (${i})`,
-      45_000,
-      cursor,
-    )
-    if (next.method !== 'GAME_PLAY_MANA') return
-    // el ask siguiente sigue sin pagar: no avanzar el cursor más allá de él,
-    // o la siguiente iteración esperaría un ask posterior que nunca llega
-    cursor = nextIndex
-  }
-  throw new Error('no se pudo pagar el maná del hechizo')
-}
-
-/** Resuelve un GAME_TARGET eligiendo al jugador oponente (header del canvas o botón del diálogo). */
-async function targetOpponent(page: Page, target: GameFrame, label: string): Promise<void> {
-  const opp = opponentPlayer(lastGameView(parseFrames(framesOf(page))))
-  const ids = targetIdsOf(target)
-  if (opp?.playerId && ids.includes(opp.playerId)) {
-    // el hit-area del header se construye en el siguiente tick del fx: clicar y
-    // verificar que el UUID salió de verdad (reintento por si el área no estaba)
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const before = sentOf(page).length
-      const clicked = await clickPlayerTarget(page, opp.playerId)
-      expect(clicked, label).toBeTruthy()
-      await page.waitForTimeout(300)
-      const sentAfter = sentOf(page).slice(before)
-      if (sentAfter.some((s) => s.includes('sendPlayerUUID'))) return
-    }
-    const dialog = page.locator('.feedback-dialog')
-    const oppName = opp?.name
-    const button = oppName
-      ? dialog.getByRole('button', { name: new RegExp(escapeRegExp(oppName)) }).first()
-      : dialog.getByRole('button').first()
-    await expect(button, label).toBeVisible({ timeout: 15_000 })
-    await button.click()
-    return
-  }
-  const dialog = page.locator('.feedback-dialog')
-  const oppName = opp?.name
-  const button = oppName
-    ? dialog.getByRole('button', { name: new RegExp(escapeRegExp(oppName)) }).first()
-    : dialog.getByRole('button').first()
-  await expect(button, label).toBeVisible({ timeout: 15_000 })
-  await button.click()
-}
-
-/** Pasa prioridad continuamente hasta tener prioridad en MI main phase (o timeout/partida terminada). */
-async function passUntilMyMainPhase(page: Page, timeoutMs: number): Promise<boolean> {
-  const passButton = page.getByRole('button', { name: 'Pasar prioridad' })
+/** Espera a que una carta sea jugable en MI main phase con SUFICIENTE maná
+ *  (el HumanHelper desarrolla tierras en paralelo). Timeout en milisegundos.
+ *  Se exige MI main phase: como instantáneo la carta es "jugable" también en el
+ *  turno del rival y clicar ahí es una carrera con la ventana (flake). El maná
+ *  mínimo es clave: los X-cost son "jugables" con X=0 y sin maná suficiente el
+ *  pago del test falla (impagable). La jugabilidad se lee de los frames
+ *  (canPlayObjects de los GAME_SELECT es autoritativo), no de la escena. */
+async function waitPlayable(
+  page: Page,
+  name: string,
+  timeoutMs = 30_000,
+  minUntapped = 1,
+  needPlains = false,
+): Promise<string | null> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
-    if (gameEnded(framesOf(page))) return false
+    if (gameEnded(framesOf(page))) return null
     const view = lastGameView(parseFrames(framesOf(page)))
     const me = controlledPlayer(view)
-    if (view && me && (me as { hasPriority?: boolean }).hasPriority === true && view.phase === 'PRECOMBAT_MAIN') return true
-    if (await passButton.isEnabled()) {
-      await passButton.click()
+    const myMain = !!view && me?.isActive === true && view.phase === 'PRECOMBAT_MAIN'
+    if (myMain) {
+      const lands = countUntappedLands(view)
+      if (lands.count >= minUntapped && (!needPlains || lands.plains >= 1)) {
+        const id = playableInView(view, name)
+        if (id) return id
+      }
     }
     await page.waitForTimeout(250)
   }
-  return false
-}
-
-/**
- * Espera a que una carta sea jugable, desarrollando tierras (prefiriendo Plains).
- * La prioridad rota por fase en modo test, así que cada ventana se consume en MI
- * main phase (pasando el resto de fases); una tierra por turno.
- */
-async function waitPlayable(page: Page, name: string, maxWindows: number): Promise<string | null> {
-  const passButton = page.getByRole('button', { name: 'Pasar prioridad' })
-  for (let w = 0; w < maxWindows; w++) {
-    if (gameEnded(framesOf(page))) return null
-    // la comprobación debe hacerse CON prioridad en mi main phase (el inicio de la
-    // ventana siempre ve un frame posterior al pase, fuera del main phase)
-    if (!(await passUntilMyMainPhase(page, 90_000))) return null
-    const id = await isPlayable(page, name)
-    if (id) return id
-    const plainsId = await isPlayable(page, 'Plains')
-    const mountainId = await isPlayable(page, 'Mountain')
-    if (plainsId || mountainId) {
-      await clickHandCard(page, plainsId ? 'Plains' : 'Mountain')
-      await page.waitForTimeout(600)
-      // tras jugar la tierra sigo con prioridad en el mismo main phase (el servidor
-      // manda otro GAME_SELECT con PRECOMBAT_MAIN); pasar ya para que cada ventana
-      // consuma un turno y no dos
-      if (await passButton.isEnabled()) {
-        await passButton.click()
-      }
-    } else if (await passButton.isEnabled()) {
-      await passButton.click()
-    }
-  }
+  const dump = parseFrames(framesOf(page))
+    .slice(-20)
+    .map((f) => {
+      const v = gameViewOf(f)
+      if (!v) return f.method
+      const me = controlledPlayer(v)
+      const objs = (v.canPlayObjects as Record<string, unknown> | undefined)?.objects as Record<string, unknown> | undefined
+      const hand = myHandEntries(v).map(([, c]) => c.name)
+      return `${f.method} t${v.turn} ${v.phase} act=${(me as { isActive?: boolean } | undefined)?.isActive} cpo=${objs ? Object.keys(objs).length : '-'} hand=${hand.join('/')}`
+    })
+  console.log(`[dbg] waitPlayable(${name}) agotado: ${JSON.stringify(dump)}`)
   return null
 }
 
-/** Una partida completa contra IA con el mazo avanzado; devuelve 'ok' o el motivo de reintento. */
-/** Login, mesa con el mazo avanzado, IA, sorteo, mulligan y desarrollo de tierras.
- *  Devuelve el botón de pasar prioridad o lanza con el motivo del fallo. */
-async function setupAdvancedGame(
-  page: Page,
-  username: string,
-  tableName: string,
-  opts: { minUntapped: number; needPlains: boolean },
-): Promise<{ passButton: ReturnType<Page['getByRole']> }> {
+/** Login, mesa con el mazo avanzado, Sim y arranque. El desarrollo de tierras lo
+ *  hace el HumanHelper (WS directo al proxy): la partida avanza sola y el test
+ *  solo espera a que el hechizo del guion sea jugable. */
+async function setupAdvancedGame(page: Page, username: string, tableName: string): Promise<void> {
   await page.goto('/')
-  await expect(page.locator('form.login-card')).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('form.login-card')).toBeVisible({ timeout: 20_000 })
   await page.getByLabel('Servidor del proxy (host)').fill('localhost')
   await page.getByLabel('Puerto del servidor XMage').fill('17171')
   await page.getByLabel('Usuario').fill(username)
@@ -615,165 +653,95 @@ async function setupAdvancedGame(
   const lobby = page.getByRole('heading', { name: 'Lobby' })
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      await expect(lobby).toBeVisible({ timeout: 25_000 })
+      await expect(lobby).toBeVisible({ timeout: 15_000 })
       break
     } catch {
       await page.getByRole('button', { name: 'Conectar' }).click()
     }
   }
-  await expect(lobby).toBeVisible({ timeout: 25_000 })
+  await expect(lobby).toBeVisible({ timeout: 15_000 })
 
   await page.getByRole('button', { name: 'Nueva mesa' }).click()
   await expect(page.getByRole('heading', { name: 'Nueva mesa' })).toBeVisible()
   await page.getByLabel('Nombre').fill(tableName)
   await page.getByLabel('Tu mazo').selectOption('Mage Web advanced')
+  // partida determinista: sin barajar, la mano/robos son el orden exacto del mazo
+  await page.getByLabel('No barajar el mazo inicial (modo test)').check()
+  // partida determinista: sin sorteo aleatorio de starting player (el primer
+  // jugador de la mesa empieza; no llega ningún GAME_TARGET de sorteo)
+  await page.getByLabel('Sin sorteo de jugador inicial (modo test)').check()
+  // oponente simulado determinista: el proxy une el asiento SIM con su propia
+  // sesión (mazo por defecto = solo tierras) y juega sin tiempos de IA
+  await page.getByRole('button', { name: 'SIM' }).click()
   await page.getByRole('button', { name: 'Crear mesa' }).click()
 
   const row = page.locator('.table-row', { hasText: tableName }).first()
-  await expect(row).toBeVisible({ timeout: 30_000 })
-  await expect(row.locator('.table-seats')).toHaveText(/1\/2/, { timeout: 15_000 })
-  await row.getByRole('button', { name: 'Unirse IA' }).click()
-  await expect(row.locator('.table-seats')).toHaveText(/2\/2/, { timeout: 30_000 })
+  await expect(row).toBeVisible({ timeout: 20_000 })
+  // el asiento SIM lo une el proxy inmediatamente: la mesa nace casi llena
+  await expect(row.locator('.table-seats')).toHaveText(/2\/2/, { timeout: 20_000 })
   const startButton = row.getByRole('button', { name: 'Empezar' })
   await expect(startButton).toBeVisible({ timeout: 15_000 })
   await startButton.click()
-  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 20_000 })
 
-  // sorteo de "starting player": si llega, clicar el primer botón (el auto-mulligan
-  // puede limpiar el diálogo antes de que el test lo vea; no es un fallo)
-  let startupCursor = parsedLen(page)
-  for (let i = 0; i < 2; i++) {
-    try {
-      await waitFrame(
-        page,
-        (f) => f.method === 'GAME_TARGET' && /starting player/i.test(String(f.data?.message ?? '')),
-        'sorteo de starting player',
-        12_000,
-        startupCursor,
-      )
-    } catch {
-      break
-    }
-    startupCursor = parsedLen(page)
-    const button = page.locator('.feedback-dialog').getByRole('button').first()
-    try {
-      await expect(button).toBeVisible({ timeout: 4_000 })
-      await button.click()
-      await page.waitForTimeout(800)
-    } catch {
-      break
-    }
-  }
-
-  // auto-keep del mulligan; esperar la mano definitiva con prioridad
-  await waitFrame(
-    page,
-    (f) => {
-      const view = gameViewOf(f)
-      return !!view && myHandEntries(view).length <= 7 && hasMyPriority(f)
-    },
-    'mano definitiva con prioridad',
-    60_000,
-  )
-
-  // desarrollo de tierras: `minUntapped` sin girar (+ Plains si hace falta). Una
-  // tierra por turno; cada ventana se consume en MI main phase.
-  const passButton = page.getByRole('button', { name: 'Pasar prioridad' })
-  for (let w = 0; w < 24; w++) {
-    if (gameEnded(framesOf(page))) throw new Error('la partida terminó durante el desarrollo de tierras')
-    const view = lastGameView(parseFrames(framesOf(page)))
-    const lands = untappedLands(view)
-    if (lands.count >= opts.minUntapped && (!opts.needPlains || lands.plains >= 1)) break
-    if (!(await passUntilMyMainPhase(page, 90_000))) throw new Error('la partida terminó esperando mi main phase')
-    const plainsId = await isPlayable(page, 'Plains')
-    const mountainId = await isPlayable(page, 'Mountain')
-    if (plainsId || mountainId) {
-      await clickHandCard(page, plainsId ? 'Plains' : 'Mountain')
-      await page.waitForTimeout(600)
-      if (await passButton.isEnabled()) {
-        await passButton.click()
-      }
-    } else if (await passButton.isEnabled()) {
-      await passButton.click()
-    }
-  }
-  const devLands = untappedLands(lastGameView(parseFrames(framesOf(page))))
-  if (opts.needPlains && devLands.plains < 1) throw new Error('no se consiguió un Plains en el campo (robo adverso)')
-  if (devLands.count < opts.minUntapped) throw new Error(`no se consiguieron ${opts.minUntapped}+ tierras sin girar (robo adverso)`)
-  return { passButton }
+  // SIN auto-pase del web: lo sustituye el HumanHelper (WS) para evitar que sus
+  // pases compitan con la ventana donde el test va a lanzar el hechizo.
 }
 
-test.describe.configure({ retries: 2 })
-
-/** Monta la partida (login → mesa → IA → sorteo → mulligan → tierras), activa el
- *  watcher de descarte y devuelve el contexto del test (frames, sent, pageerrors). */
-async function startAdvancedGame(
-  page: Page,
-  opts: { minUntapped?: number; needPlains?: boolean } = {},
-): Promise<{
-  frames: string[]
-  sent: string[]
+/** Monta la partida (login → mesa → Sim → arranque), arranca el HumanHelper
+ *  (desarrollo de tierras, descartes y asks por WS) y devuelve el contexto. */
+async function startAdvancedGame(page: Page): Promise<{
+  frames: Array<Record<string, unknown> | null>
+  sent: Array<Record<string, unknown> | null>
   pageErrors: Error[]
   username: string
-  passButton: ReturnType<Page['getByRole']>
+  helper: HumanHelper
 }> {
-  test.setTimeout(300_000)
   const pageErrors: Error[] = []
-  const frames: string[] = []
-  const sent: string[] = []
-  ;(page as unknown as { __frames: string[] }).__frames = frames
-  ;(page as unknown as { __sent: string[] }).__sent = sent
+  const frames: Array<Record<string, unknown> | null> = []
+  const sent: Array<Record<string, unknown> | null> = []
+  ;(page as unknown as { __frames: Array<Record<string, unknown> | null> }).__frames = frames
+  ;(page as unknown as { __sent: Array<Record<string, unknown> | null> }).__sent = sent
   page.on('pageerror', (err) => pageErrors.push(err))
   page.on('websocket', (ws) => {
-    ws.on('framereceived', (e) => frames.push(`<< ${String(e.payload)}`))
-    ws.on('framesent', (e) => sent.push(`>> ${String(e.payload)}`))
+    // con auto-pase los turnos vuelan y los frames se acumulan sin límite
+    // (OOM: ~4GB en un minuto); se guardan solo los últimos MAX_FRAMES,
+    // ya parseados (re-parsear en cada poll también agotaba el heap)
+    ws.on('framereceived', (e) => {
+      try {
+        const f = JSON.parse(String(e.payload)) as Record<string, unknown>
+        f.__t = Date.now()
+        frames.push(f)
+      } catch {
+        frames.push(null)
+      }
+      if (frames.length > MAX_FRAMES) frames.splice(0, frames.length - MAX_FRAMES)
+    })
+    ws.on('framesent', (e) => {
+      try {
+        const f = JSON.parse(String(e.payload)) as Record<string, unknown>
+        f.__t = Date.now()
+        sent.push(f)
+      } catch {
+        sent.push(null)
+      }
+      if (sent.length > MAX_FRAMES) sent.splice(0, sent.length - MAX_FRAMES)
+    })
   })
   const username = `sp-${String(Date.now()).slice(-10)}`
+  cleanupUser(username)
 
-  // watcher de descarte: el cliente NO auto-descarta y con mano >7 la partida se
-  // bloquea. Prefiere tierras (para no comerse los hechizos del escenario). Vive
-  // hasta que Playwright cierra la página al terminar el test.
-  let discardCursor = 0
-  const discardTimer = setInterval(() => {
-    void (async () => {
-      try {
-        const parsed = parseFrames(framesOf(page))
-        const idx = parsed.findIndex(
-          (f, i) => i >= discardCursor && f.method === 'GAME_TARGET' && /discard/i.test(String(f.data?.message ?? '')),
-        )
-        if (idx < 0 || idx < discardCursor) return
-        for (let i = 0; i < 12; i++) {
-          const dialog = page.locator('.feedback-dialog')
-          if (!(await dialog.isVisible().catch(() => false))) {
-            await page.waitForTimeout(200)
-            continue
-          }
-          if (!/discard/i.test(await dialog.textContent().catch(() => ''))) {
-            await page.waitForTimeout(200)
-            continue
-          }
-          const land = dialog.getByRole('button', { name: /Mountain|Plains/i }).first()
-          const button = (await land.isVisible().catch(() => false)) ? land : dialog.getByRole('button').first()
-          if (!(await button.isVisible().catch(() => false))) {
-            await page.waitForTimeout(200)
-            continue
-          }
-          await button.click()
-          discardCursor = idx + 1
-          return
-        }
-      } catch {
-        // noop: el watcher nunca debe romper el test
-      }
-    })()
-  }, 350)
-  page.once('close', () => clearInterval(discardTimer))
+  // helper WS: desarrolla tierras, descarta y responde asks — la partida avanza
+  // sola y el test solo espera a que el hechizo del guion sea jugable. Se arranca
+  // ANTES de crear la mesa para que capture el START_GAME (gameId) desde el inicio.
+  const helper = new HumanHelper(username, 'x')
+  registerHelper(helper)
+  await helper.start()
 
-  const { passButton } = await setupAdvancedGame(page, username, `${username}-t`, {
-    minUntapped: opts.minUntapped ?? 3,
-    needPlains: opts.needPlains ?? true,
-  })
-  return { frames, sent, pageErrors, username, passButton }
+  await setupAdvancedGame(page, username, `${username}-t`)
+
+  await helper.waitGameId(20_000)
+  return { frames, sent, pageErrors, username, helper }
 }
 
 async function resolveInteger(page: Page, expected: number, label: string): Promise<void> {
@@ -790,58 +758,64 @@ async function resolveInteger(page: Page, expected: number, label: string): Prom
 }
 
 test('Blaze {X}{R}: diálogo integer X=2, targeting visual y pago de maná', async ({ page }) => {
-  const { frames, sent, pageErrors, passButton } = await startAdvancedGame(page)
+  const { frames, sent, pageErrors, helper } = await startAdvancedGame(page)
   const canvas = page.locator('.board-wrap canvas')
-  const blazeId = await waitPlayable(page, 'Blaze', 14)
-  if (!blazeId) throw new Error('Blaze no fue jugable en ~14 turnos (robo adverso)')
+  const blazeId = await waitPlayable(page, 'Blaze', 30_000, 3)
+  if (!blazeId) throw new Error('Blaze no fue jugable en 30s (robo adverso)')
   const beforeShot = await canvas.screenshot()
   const cursor = parsedLen(page)
-  await clickHandCard(page, 'Blaze')
-  await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Blaze', 30_000, cursor)
+  // el lanzamiento va por WS (determinista); los diálogos se verifican por UI
+  expect(await helper.playCard(blazeId), 'el Blaze debería lanzarse por WS').toBeTruthy()
+  await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Blaze', 15_000, cursor)
   await resolveInteger(page, 2, 'Blaze')
   const target = await waitFrame(
     page,
     (f) => f.method === 'GAME_TARGET' && !/discard/i.test(String(f.data?.message ?? '')),
     'GAME_TARGET del Blaze',
-    30_000,
+    15_000,
     cursor,
   )
   await expect(page.locator('.feedback-dialog')).toContainText(/Elige objetivo/, { timeout: 15_000 })
-  await page.waitForTimeout(250)
+  // dar tiempo al render del targeting (el pulso/la línea) antes de capturar;
+  // el pulso es periódico: reintentar capturas hasta cogerlo en fase visible
+  await page.waitForTimeout(700)
   await page.locator('.feedback-backdrop').evaluate((el) => {
     el.style.background = 'transparent'
   })
-  const shotA = await canvas.screenshot()
+  let shotA = await canvas.screenshot()
+  for (let attempt = 0; attempt < 4 && Buffer.compare(beforeShot, shotA) === 0; attempt++) {
+    await page.waitForTimeout(300)
+    shotA = await canvas.screenshot()
+  }
   expect(Buffer.compare(beforeShot, shotA) !== 0, 'el canvas debe cambiar al entrar en targeting').toBeTruthy()
   fs.mkdirSync(SHOTS_DIR, { recursive: true })
   fs.writeFileSync(TARGETING_SHOT, shotA)
-  await targetOpponent(page, target, 'objetivo del Blaze')
-  await payMana(page)
-  // leer la vida ANTES de pasar prioridad: la resolución en testMode es casi
-  // instantánea y una lectura posterior calcularía el objetivo mal
+  await targetOpponent(page, target, 'objetivo del Blaze', helper)
+  // la vida del oponente se lee ANTES de pagar: el hechizo puede resolver durante
+  // payMana (el helper pasa la prioridad del stack al instante tras el pago) y
+  // restar el daño sobre una vida ya dañada esperaría un daño extra (18-2=16)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
-  await expect(passButton).toBeEnabled({ timeout: 15_000 })
-  await passButton.click()
-  await waitOppLife(page, (opp?.life ?? 0) - 2, 'Blaze resuelto (oponente -2)', 45_000)
+  await payMana(page, helper)
+  await waitOppLife(page, (opp?.life ?? 20) - 2, 'Blaze resuelto (oponente -2)', 15_000)
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
-  await test.info().attach('ws-frames', { body: `${frames.join('\n')}\n${sent.join('\n')}`, contentType: 'text/plain' })
+  await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
 })
 
 test('Arc Trail {1}{R}: dos objetivos (segundo ask o auto-elección) y resolución', async ({ page }) => {
-  const { frames, sent, pageErrors, passButton } = await startAdvancedGame(page)
-  const arcId = await waitPlayable(page, 'Arc Trail', 14)
-  if (!arcId) throw new Error('Arc Trail no fue jugable en ~14 turnos (robo adverso)')
+  const { frames, sent, pageErrors, helper } = await startAdvancedGame(page)
+  const arcId = await waitPlayable(page, 'Arc Trail', 30_000, 2)
+  if (!arcId) throw new Error('Arc Trail no fue jugable en 30s (robo adverso)')
   const cursor = parsedLen(page)
-  await clickHandCard(page, 'Arc Trail')
+  expect(await helper.playCard(arcId), 'el Arc Trail debería lanzarse por WS').toBeTruthy()
   const { frame: arc1, index: arc1Idx } = await waitFrameAt(
     page,
     (f) => f.method === 'GAME_TARGET' && !/discard/i.test(String(f.data?.message ?? '')),
     'GAME_TARGET #1 de Arc Trail',
-    30_000,
+    15_000,
     cursor,
   )
   await expect(page.locator('.feedback-dialog')).toContainText(/Elige objetivo/, { timeout: 15_000 })
-  await targetOpponent(page, arc1, 'primer objetivo de Arc Trail')
+  await targetOpponent(page, arc1, 'primer objetivo de Arc Trail', helper)
   // El 2º objetivo es "any other target": solo se re-dispara si hay otro objetivo
   // legal (p. ej. una criatura en juego); si no, el servidor lo auto-elige y va
   // directo al pago de maná (verificado contra el servidor: los dos Target de
@@ -851,7 +825,7 @@ test('Arc Trail {1}{R}: dos objetivos (segundo ask o auto-elección) y resoluci�
       page,
       (f) => f.method === 'GAME_TARGET' && !/discard/i.test(String(f.data?.message ?? '')),
       'GAME_TARGET #2 de Arc Trail (re-disparo)',
-      12_000,
+      8_000,
       arc1Idx + 1,
     )
     const me = controlledPlayer(lastGameView(parseFrames(frames)))
@@ -868,24 +842,23 @@ test('Arc Trail {1}{R}: dos objetivos (segundo ask o auto-elección) y resoluci�
   } catch {
     // sin segundo objetivo legal: el servidor lo auto-elige (va directo al maná)
   }
-  await payMana(page)
+  // vida del oponente antes del pago (el daño puede aplicarse durante payMana)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
-  await expect(passButton).toBeEnabled({ timeout: 15_000 })
-  await passButton.click()
-  await waitOppLife(page, (opp?.life ?? 0) - 2, 'Arc Trail resuelto (oponente -2)', 45_000)
+  await payMana(page, helper)
+  await waitOppLife(page, (opp?.life ?? 20) - 2, 'Arc Trail resuelto (oponente -2)', 15_000)
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
-  await test.info().attach('ws-frames', { body: `${frames.join('\n')}\n${sent.join('\n')}`, contentType: 'text/plain' })
+  await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
 })
 
 test('Boros Charm {R}{W}: GAME_CHOOSE_ABILITY del modo "4 damage" y pago multi-color', async ({ page }) => {
-  const { frames, sent, pageErrors, passButton } = await startAdvancedGame(page)
-  const borosId = await waitPlayable(page, 'Boros Charm', 14)
-  if (!borosId) throw new Error('Boros Charm no fue jugable en ~14 turnos (¿sin Mountain+Plains sin girar?)')
+  const { frames, sent, pageErrors, helper } = await startAdvancedGame(page)
+  const borosId = await waitPlayable(page, 'Boros Charm', 30_000, 2, true)
+  if (!borosId) throw new Error('Boros Charm no fue jugable en 30s (¿sin Mountain+Plains sin girar?)')
   const cursor = parsedLen(page)
-  await clickHandCard(page, 'Boros Charm')
+  expect(await helper.playCard(borosId), 'el Boros Charm debería lanzarse por WS').toBeTruthy()
   // el modo llega como GAME_CHOOSE_ABILITY (chooseMode -> AbilityPickerView), no como
   // GAME_CHOOSE_CHOICE (verificado contra el servidor en human-test)
-  await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del modo de Boros Charm', 30_000, cursor)
+  await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del modo de Boros Charm', 15_000, cursor)
   const modeButton = page.locator('.feedback-dialog .feedback-options').getByRole('button', { name: /4 damage|4 daño|deals 4/i }).first()
   await expect(modeButton, 'modo "4 damage" de Boros Charm').toBeVisible({ timeout: 15_000 })
   await modeButton.click()
@@ -893,57 +866,32 @@ test('Boros Charm {R}{W}: GAME_CHOOSE_ABILITY del modo "4 damage" y pago multi-c
     page,
     (f) => f.method === 'GAME_TARGET' && !/discard/i.test(String(f.data?.message ?? '')),
     'GAME_TARGET de Boros Charm',
-    30_000,
+    15_000,
     cursor,
   )
-  await targetOpponent(page, target, 'objetivo de Boros Charm')
-  await payMana(page)
-  // leer la vida ANTES de pasar prioridad (la resolución en testMode es casi instantánea)
+  await targetOpponent(page, target, 'objetivo de Boros Charm', helper)
+  // vida del oponente antes del pago (el daño puede aplicarse durante payMana)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
-  await expect(passButton).toBeEnabled({ timeout: 15_000 })
-  await passButton.click()
-  await waitOppLife(page, (opp?.life ?? 0) - 4, 'Boros Charm resuelto (oponente -4)', 45_000)
+  await payMana(page, helper)
+  await waitOppLife(page, (opp?.life ?? 20) - 4, 'Boros Charm resuelto (oponente -4)', 15_000)
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
-  await test.info().attach('ws-frames', { body: `${frames.join('\n')}\n${sent.join('\n')}`, contentType: 'text/plain' })
+  await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
 })
 
 test('Walking Ballista {X}{X}: GAME_CHOOSE_ABILITY "Cast", X=4 y 4 contadores en el campo', async ({ page }) => {
-  const { frames, sent, pageErrors, passButton } = await startAdvancedGame(page, { minUntapped: 8, needPlains: false })
-  let ballistaId: string | null = null
-  for (let w = 0; w < 24 && !ballistaId; w++) {
-    if (gameEnded(frames)) throw new Error('la partida terminó esperando Walking Ballista')
-    if (!(await passUntilMyMainPhase(page, 90_000))) throw new Error('la partida terminó esperando mi main phase (Walking Ballista)')
-    const candidate = await isPlayable(page, 'Walking Ballista')
-    if (candidate) {
-      ballistaId = candidate
-      break
-    }
-    const plainsId = await isPlayable(page, 'Plains')
-    const mountainId = await isPlayable(page, 'Mountain')
-    if (plainsId || mountainId) {
-      await clickHandCard(page, plainsId ? 'Plains' : 'Mountain')
-      await page.waitForTimeout(600)
-      if (await passButton.isEnabled()) {
-        await passButton.click()
-      }
-    } else if (await passButton.isEnabled()) {
-      await passButton.click()
-    }
-    await waitFrame(page, hasMyPriority, `prioridad propia esperando Walking Ballista (${w})`, 60_000)
-  }
-  if (!ballistaId) throw new Error('Walking Ballista no fue jugable con 8+ maná en ~24 turnos (robo adverso)')
+  const { frames, sent, pageErrors, helper } = await startAdvancedGame(page)
+  const ballistaId = await waitPlayable(page, 'Walking Ballista', 60_000, 8)
+  if (!ballistaId) throw new Error('Walking Ballista no fue jugable con 8+ maná en 60s (robo adverso)')
   const cursor = parsedLen(page)
-  await clickHandCard(page, 'Walking Ballista')
+  expect(await helper.playCard(ballistaId), 'el Walking Ballista debería lanzarse por WS').toBeTruthy()
   // las criaturas con habilidades activadas piden GAME_CHOOSE_ABILITY ("Cast") antes del X
-  await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del Walking Ballista', 30_000, cursor)
+  await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del Walking Ballista', 15_000, cursor)
   const castButton = page.locator('.feedback-dialog .feedback-options').getByRole('button', { name: /Cast/i }).first()
   await expect(castButton, 'opción "Cast" del Walking Ballista').toBeVisible({ timeout: 15_000 })
   await castButton.click()
-  await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Walking Ballista', 30_000, cursor)
+  await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Walking Ballista', 15_000, cursor)
   await resolveInteger(page, 4, 'Walking Ballista')
-  await payMana(page)
-  await expect(passButton).toBeEnabled({ timeout: 15_000 })
-  await passButton.click()
+  await payMana(page, helper)
   await waitFrame(
     page,
     (f) => {
@@ -954,7 +902,7 @@ test('Walking Ballista {X}{X}: GAME_CHOOSE_ABILITY "Cast", X=4 y 4 contadores en
       )
     },
     'Walking Ballista en el campo con 4 contadores',
-    60_000,
+    20_000,
   )
   const ballistaView = myBattlefield(lastGameView(parseFrames(frames)))
   const ballista = Object.values(ballistaView).find((p) => p.name === 'Walking Ballista' || p.displayName === 'Walking Ballista')
@@ -962,5 +910,5 @@ test('Walking Ballista {X}{X}: GAME_CHOOSE_ABILITY "Cast", X=4 y 4 contadores en
   const counterTotal = (ballista?.counters ?? []).reduce((sum, c) => sum + (c.count ?? 0), 0)
   expect(counterTotal, 'contadores totales del Walking Ballista').toBe(4)
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
-  await test.info().attach('ws-frames', { body: `${frames.join('\n')}\n${sent.join('\n')}`, contentType: 'text/plain' })
+  await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
 })

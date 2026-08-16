@@ -210,10 +210,13 @@ public class Deck implements Serializable, Copyable<Deck> {
 
     // TODO: delete and replace by getCards()
     public Set<Card> getMaindeckCards() {
+        // LinkedHashSet: preserva el orden del mazo (la librería se construye con
+        // addAll; Collectors.toSet() rompía el orden y los tests deterministas
+        // con skipInitShuffling no veían la mano planeada)
         return cards
                 .stream()
                 .filter(card -> !card.isExtraDeckCard())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public Card findCard(UUID cardId) {

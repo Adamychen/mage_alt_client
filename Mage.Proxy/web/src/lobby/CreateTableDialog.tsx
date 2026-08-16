@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import * as cmds from '../net/commands'
 import type { GameTypeInfo } from '../net/commands'
 import { useStore } from '../state/store'
-import { DECKS, DEFAULT_DECK, type Deck } from './decks'
+import { DECKS, DEFAULT_DECK, LANDS_DECK, type Deck } from './decks'
 import './CreateTableDialog.css'
 
 export default function CreateTableDialog({ onClose }: { onClose: () => void }) {
@@ -15,8 +15,11 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const [deck, setDeck] = useState<Deck>(DEFAULT_DECK)
   const [playerTypesSel, setPlayerTypesSel] = useState<string[]>([])
   const [humanSeat, setHumanSeat] = useState(true)
+  const [simDeck, setSimDeck] = useState<Deck>(LANDS_DECK)
   const [name, setName] = useState(`${username}'s table`)
   const [wins, setWins] = useState(1)
+  const [skipInitShuffling, setSkipInitShuffling] = useState(false)
+  const [skipStartingPlayerChoice, setSkipStartingPlayerChoice] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -43,12 +46,16 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
     const maxAi = Math.max(0, maxPlayers - (humanSeat ? 1 : 0))
     const aiTypes = (playerTypesSel.length ? playerTypesSel : ['COMPUTER_MAD', 'COMPUTER_MAD']).slice(0, maxAi)
     const playerTypesFinal = humanSeat ? ['HUMAN', ...aiTypes] : aiTypes
+    const simSeats = aiTypes.filter((pt) => pt === 'SIM').length
     const res = await cmds.createTable({
       name: name || `${username}'s table`,
       gameType,
       deckType,
       winsNeeded: wins,
       playerTypes: playerTypesFinal,
+      skipInitShuffling,
+      skipStartingPlayerChoice,
+      simDecks: simSeats > 0 ? Array.from({ length: simSeats }, () => simDeck) : undefined,
     })
     setBusy(false)
     if (!res.ok) {
@@ -127,9 +134,23 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
             </button>
           </div>
         </div>
+        <label className="toggle">
+          <input type="checkbox" checked={skipInitShuffling} onChange={(e) => setSkipInitShuffling(e.target.checked)} />
+          No barajar el mazo inicial (modo test)
+        </label>
+        <label className="toggle">
+          <input type="checkbox" checked={skipStartingPlayerChoice} onChange={(e) => setSkipStartingPlayerChoice(e.target.checked)} />
+          Sin sorteo de jugador inicial (modo test)
+        </label>
         <div className="field">
           <span>Jugadores IA</span>
           <div className="chip-row">
+            <button
+              className={playerTypesSel.includes('SIM') ? 'chip on' : 'chip'}
+              onClick={() => toggleAi('SIM')}
+            >
+              SIM
+            </button>
             {playerTypes.map((pt) => (
               <button
                 key={pt}
@@ -141,6 +162,18 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
             ))}
           </div>
         </div>
+        {playerTypesSel.includes('SIM') && (
+          <label>
+            Mazo del Sim
+            <select value={simDeck.name} onChange={(e) => setSimDeck(DECKS.find((d) => d.name === e.target.value) ?? LANDS_DECK)}>
+              {DECKS.map((d) => (
+                <option key={d.name} value={d.name}>
+                  {d.name} ({d.cards.reduce((sum, c) => sum + c.amount, 0)} cartas)
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {error && <div className="error-box">{error}</div>}
         <div className="dialog-actions">
           <button onClick={onClose}>Cancelar</button>

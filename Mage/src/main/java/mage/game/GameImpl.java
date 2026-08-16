@@ -1314,6 +1314,16 @@ public abstract class GameImpl implements Game {
         }
 
         //20091005 - 103.2
+        if (startingPlayerId == null && gameOptions.skipStartingPlayerChoice) {
+            // test determinista: el primer jugador de la mesa empieza, sin sorteo
+            // aleatorio ni ask "Select a starting player" (el sorteo aleatorio hacía
+            // los E2E no deterministas y rompía la partida si la respuesta fallaba)
+            Player first = state.getPlayers().values().stream().findFirst().orElse(null);
+            if (first == null) {
+                return;
+            }
+            startingPlayerId = first.getId();
+        }
         Player choosingPlayer = null;
         if (startingPlayerId == null) {
             TargetPlayer targetPlayer = new TargetPlayer();

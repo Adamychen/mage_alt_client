@@ -676,6 +676,8 @@ public class TableController {
             gameOptions.planeChase = match.getOptions().isPlaneChase();
             gameOptions.perPlayerEmblemCards = match.getOptions().getPerPlayerEmblemCards();
             gameOptions.globalEmblemCards = match.getOptions().getGlobalEmblemCards();
+            gameOptions.skipInitShuffling = match.getOptions().isSkipInitShuffling(); // modo test: mazo en orden enviado
+            gameOptions.skipStartingPlayerChoice = match.getOptions().isSkipStartingPlayerChoice(); // modo test: sin sorteo aleatorio
             match.getGame().setGameOptions(gameOptions);
             managerFactory.gameManager().createGameSession(match.getGame(), userPlayerMap, table.getId(), choosingPlayerId, gameOptions);
             String creator = null;

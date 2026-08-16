@@ -22,6 +22,7 @@ describe('commands', () => {
     await commands.startMatch('table-1')
     await commands.watchTable('table-1')
     await commands.watchGame('game-1')
+    await commands.joinGame('game-1')
     await commands.stopWatching('game-1')
     await commands.leaveTable('table-1')
     await commands.removeTable('table-1')
@@ -29,7 +30,21 @@ describe('commands', () => {
     expect(send).toHaveBeenCalledWith('connect', { host: 'localhost', port: 17171, username: 'alice', password: 'secret' })
     expect(send).toHaveBeenCalledWith('sendChatMessage', { chatId: 'chat-1', text: 'hello' })
     expect(send).toHaveBeenCalledWith('watchGame', { gameId: 'game-1' })
+    expect(send).toHaveBeenCalledWith('joinGame', { gameId: 'game-1' })
     expect(send).toHaveBeenCalledWith('joinTable', expect.objectContaining({ tableId: 'table-1', playerType: 'HUMAN' }))
+  })
+
+  it('createTable reenvía los mazos de los asientos SIM', async () => {
+    const simDeck = { name: 'Sim deck', cards: [{ cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 60 }], sideboard: [] }
+    await commands.createTable({
+      name: 'table',
+      gameType: 'duel',
+      deckType: 'modern',
+      winsNeeded: 1,
+      playerTypes: ['HUMAN', 'SIM'],
+      simDecks: [simDeck],
+    })
+    expect(send).toHaveBeenCalledWith('createTable', expect.objectContaining({ playerTypes: ['HUMAN', 'SIM'], simDecks: [simDeck] }))
   })
 
   it('maps every player input with the gameId', async () => {

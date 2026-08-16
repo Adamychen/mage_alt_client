@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { sendPlayerBoolean } from '../net/commands'
-import { makeGameView, makePlayer, minimalGameView } from '../__fixtures__/gameViews'
+import { joinGame, sendPlayerBoolean, sendPlayerUUID } from '../net/commands'
+import { makeCard, makeGameView, makePermanent, makePlayer, minimalGameView } from '../__fixtures__/gameViews'
 import { getState, handleMessage, maybeAutoPass, reset, setSetting } from './store'
 
 vi.mock('../net/commands', () => ({
@@ -18,6 +18,7 @@ vi.mock('../net/commands', () => ({
   startMatch: vi.fn(),
   watchTable: vi.fn(),
   watchGame: vi.fn(),
+  joinGame: vi.fn(),
   stopWatching: vi.fn(),
   leaveTable: vi.fn(),
   removeTable: vi.fn(),
@@ -67,7 +68,23 @@ describe('handleMessage', () => {
     expect(getState().feedback).toBeNull()
   })
 
-  it('START_GAME sets phase "game" and the gameId', () => {
+  it('ignores a game view OLDER than the current one (no pisa el estado con turnos pasados)', () => {
+    const t3 = makeGameView({ turn: 3, phase: 'COMBAT', step: 'DECLARE_ATTACKERS' })
+    const t1 = makeGameView({ turn: 1, phase: 'PRECOMBAT_MAIN', step: 'PRECOMBAT_MAIN' })
+    handleMessage({ type: 'event', method: 'GAME_UPDATE', messageId: 1, objectId: 'g-1', data: t3 })
+    handleMessage({ type: 'event', method: 'GAME_UPDATE_AND_INFORM', messageId: 2, objectId: 'g-1', data: { gameView: t1 } })
+    expect(getState().game).toBe(t3)
+  })
+
+  it('reemplaza la vista si el mismo turno+paso trae estado nuevo (carta movida)', () => {
+    const first = makeGameView({ turn: 2, phase: 'PRECOMBAT_MAIN', step: 'PRECOMBAT_MAIN' })
+    const second = makeGameView({ turn: 2, phase: 'PRECOMBAT_MAIN', step: 'PRECOMBAT_MAIN', myHand: { 'h-1': makeCard({ name: 'Bolt' }) } })
+    handleMessage({ type: 'event', method: 'GAME_UPDATE', messageId: 1, objectId: 'g-1', data: first })
+    handleMessage({ type: 'event', method: 'GAME_UPDATE', messageId: 2, objectId: 'g-1', data: second })
+    expect(getState().game).toBe(second)
+  })
+
+  it('START_GAME sets phase "game", the gameId and joins the game (sin esperar los 10s)', () => {
     handleMessage({
       type: 'event',
       method: 'START_GAME',
@@ -77,6 +94,13 @@ describe('handleMessage', () => {
     })
     expect(getState().phase).toBe('game')
     expect(getState().gameId).toBe('g-42')
+    expect(joinGame).toHaveBeenCalledWith('g-42')
+  })
+
+  it('START_GAME con el mismo gameId no re-une la partida (evita join duplicado)', () => {
+    handleMessage({ type: 'event', method: 'START_GAME', messageId: 1, objectId: 'g-1', data: { gameId: 'g-1' } })
+    handleMessage({ type: 'event', method: 'START_GAME', messageId: 2, objectId: 'g-1', data: { gameId: 'g-1' } })
+    expect(joinGame).toHaveBeenCalledTimes(1)
   })
 
   it('result with ok:false sets the error', () => {
@@ -124,6 +148,30 @@ describe('handleMessage', () => {
       data: { question: 'Choose a card from your hand', options: [] },
     })
     expect(sendPlayerBoolean).not.toHaveBeenCalled()
+  })
+
+  it('GAME_TARGET starting player auto-resolves and keeps the feedback until the next ask', () => {
+    handleMessage({
+      type: 'event',
+      method: 'GAME_TARGET',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { message: 'Select a starting player', targets: ['p1', 'p2'] },
+    })
+    expect(sendPlayerUUID).toHaveBeenCalledWith('p1', 'g-1')
+    // el feedback se MANTIENE: es la barrera que evita que el auto-pase mande
+    // booleanos en la ventana del sorteo (respuesta inválida para un ask de
+    // target → el servidor re-dispara y acaba la partida)
+    expect(getState().feedback?.method).toBe('GAME_TARGET')
+    // el ask del mulligan (auto-keep) cierra el prompt
+    handleMessage({
+      type: 'event',
+      method: 'GAME_ASK',
+      messageId: 2,
+      objectId: 'g-1',
+      data: { question: 'Mulligan?', options: ['Keep hand', 'Mulligan'] },
+    })
+    expect(getState().feedback).toBeNull()
   })
 
   it('GAME_ASK respects the autoKeepMulligan setting', () => {
@@ -180,6 +228,7 @@ describe('maybeAutoPass', () => {
     })
     const game = makeGameView({
       players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+      myHand: { 'h-1': makeCard({ name: 'Lightning Bolt', parentId: 'h-1' }) },
     })
     maybeAutoPass(game)
     expect(sendPlayerBoolean).toHaveBeenCalledWith(false, 'g-1')
@@ -200,5 +249,235 @@ describe('maybeAutoPass', () => {
     })
     maybeAutoPass(game)
     expect(sendPlayerBoolean).not.toHaveBeenCalled()
+  })
+
+  it('does not pass in my precombat main phase while something is playable', () => {
+    setSetting('autoPass', true)
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { gameId: 'g-1' },
+    })
+    const game = makeGameView({
+      phase: 'PRECOMBAT_MAIN',
+      players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+      canPlayObjects: { objects: { 'h-1': {} } },
+    })
+    maybeAutoPass(game)
+    expect(sendPlayerBoolean).not.toHaveBeenCalled()
+  })
+
+  it('passes in my precombat main phase when nothing is playable', () => {
+    setSetting('autoPass', true)
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { gameId: 'g-1' },
+    })
+    const game = makeGameView({
+      phase: 'PRECOMBAT_MAIN',
+      players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+      myHand: { 'h-1': makeCard({ name: 'Lightning Bolt', parentId: 'h-1' }) },
+    })
+    maybeAutoPass(game)
+    expect(sendPlayerBoolean).toHaveBeenCalledWith(false, 'g-1')
+  })
+
+  it('does not pass in my precombat main phase with a basic land in hand (el auto-pase no se salta el drop de tierra)', () => {
+    setSetting('autoPass', true)
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { gameId: 'g-1' },
+    })
+    const game = makeGameView({
+      phase: 'PRECOMBAT_MAIN',
+      players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true, isActive: true })],
+      myHand: { 'h-1': makeCard({ name: 'Mountain', parentId: 'h-1' }) },
+    })
+    maybeAutoPass(game)
+    expect(sendPlayerBoolean).not.toHaveBeenCalled()
+  })
+
+  it('passes in the opponent main phase with a basic land in hand (no se puede jugar tierra en el turno del rival)', () => {
+    setSetting('autoPass', true)
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { gameId: 'g-1' },
+    })
+    const game = makeGameView({
+      phase: 'PRECOMBAT_MAIN',
+      players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true, isActive: false })],
+      myHand: { 'h-1': makeCard({ name: 'Mountain', parentId: 'h-1' }) },
+    })
+    maybeAutoPass(game)
+    expect(sendPlayerBoolean).toHaveBeenCalledWith(false, 'g-1')
+  })
+
+  it('passes in non-main phases even with playables (el jugador solo actúa en su main phase)', () => {
+    setSetting('autoPass', true)
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { gameId: 'g-1' },
+    })
+    const game = makeGameView({
+      phase: 'UPKEEP',
+      players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+      canPlayObjects: { objects: { 'h-1': {} } },
+      myHand: { 'h-1': makeCard({ name: 'Lightning Bolt', parentId: 'h-1' }) },
+    })
+    maybeAutoPass(game)
+    expect(sendPlayerBoolean).toHaveBeenCalledWith(false, 'g-1')
+  })
+})
+
+describe('playables consolidados', () => {
+  beforeEach(() => {
+    reset()
+    vi.clearAllMocks()
+  })
+
+  const select = () =>
+    handleMessage({
+      type: 'event',
+      method: 'GAME_SELECT',
+      messageId: 1,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+          myHand: { 'h-1': makeCard({ name: 'Lightning Bolt', parentId: 'h-1' }) },
+          canPlayObjects: { objects: { 'h-1': {} } },
+        }),
+      },
+    })
+
+  it('GAME_SELECT with playables sets them', () => {
+    select()
+    expect(getState().playableIds).toEqual(['h-1'])
+  })
+
+  it('GAME_UPDATE without canPlayObjects keeps the last playables (no flicker)', () => {
+    select()
+    handleMessage({
+      type: 'event',
+      method: 'GAME_UPDATE',
+      messageId: 2,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual(['h-1'])
+  })
+
+  it('regression: un GAME_UPDATE con hasPriority=false en la MISMA ventana conserva los playables', () => {
+    select()
+    handleMessage({
+      type: 'event',
+      method: 'GAME_UPDATE',
+      messageId: 2,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: false })],
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual(['h-1'])
+  })
+
+  it('un cambio de fase (nueva ventana) sin canPlayObjects limpia los playables', () => {
+    select()
+    handleMessage({
+      type: 'event',
+      method: 'GAME_UPDATE',
+      messageId: 2,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          phase: 'END',
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: false })],
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual([])
+  })
+
+  it('an empty GAME_SELECT is authoritative (playables were used)', () => {
+    select()
+    handleMessage({
+      type: 'event',
+      method: 'GAME_SELECT',
+      messageId: 3,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual([])
+  })
+
+  it('GAME_PLAY_MANA lists battlefield mana sources', () => {
+    handleMessage({
+      type: 'event',
+      method: 'GAME_PLAY_MANA',
+      messageId: 1,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [
+            makePlayer({
+              playerId: 'p1',
+              name: 'Alice',
+              controlled: true,
+              hasPriority: true,
+              battlefield: { 'p-untapped': makePermanent({ name: 'Mountain', parentId: 'p-untapped' }) },
+            }),
+          ],
+          canPlayObjects: { objects: { 'p-untapped': {} } },
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual(['p-untapped'])
+  })
+
+  it('a GAME_SELECT clears a stale GAME_TARGET dialog', () => {
+    handleMessage({
+      type: 'event',
+      method: 'GAME_TARGET',
+      messageId: 1,
+      objectId: 'g-1',
+      data: { message: 'Choose target', cardsView1: { 'p-1': {} } },
+    })
+    expect(getState().feedback?.method).toBe('GAME_TARGET')
+    handleMessage({
+      type: 'event',
+      method: 'GAME_SELECT',
+      messageId: 2,
+      objectId: 'g-1',
+      data: {
+        gameView: makeGameView({
+          players: [makePlayer({ playerId: 'p1', name: 'Alice', controlled: true, hasPriority: true })],
+        }),
+      },
+    })
+    expect(getState().feedback).toBeNull()
   })
 })

@@ -14,7 +14,16 @@ if (!VALID.has(target)) {
   console.error(`destino inválido: ${target} (server|proxy|vite|all)`)
   process.exit(1)
 }
-const wants = (t) => target === 'all' || target === t
+
+/** Lista de componentes a detener/arrancar según target (con sus dependencias). */
+function targetsOf() {
+  const list = target === 'all' ? ['server', 'proxy', 'vite'] : [target]
+  // el proxy guarda la sesión del servidor: reiniciar el servidor sin reiniciar el
+  // proxy deja a JBoss Remoting con estado corrupto (NoClassDefFoundError en
+  // InternalTransporterServices) y todo connect falla hasta reiniciar el proxy
+  if (target === 'server' && !list.includes('proxy')) list.splice(list.indexOf('server') + 1, 0, 'proxy')
+  return list
+}
 
 function startServer() {
   log('arrancando servidor XMage (headless, testMode)…')
@@ -55,10 +64,11 @@ function startVite() {
   return true
 }
 
-function stop(target) {
-  if (wants('vite')) stopPid('vite')
-  if (wants('proxy')) stopPid('proxy')
-  if (wants('server')) stopPid('server')
+function stopTargets(list) {
+  // orden inverso de arranque: vite primero, proxy, servidor al final
+  if (list.includes('vite')) stopPid('vite')
+  if (list.includes('proxy')) stopPid('proxy')
+  if (list.includes('server')) stopPid('server')
 }
 
 function status() {
@@ -75,9 +85,10 @@ function status() {
   }
 }
 
-async function startAll() {
+async function startAll(only) {
+  const list = only ?? targetsOf()
   // 1) servidor
-  if (wants('server')) {
+  if (list.includes('server')) {
     stopPid('server')
     if (!startServer()) process.exit(1)
     await waitForRequiredPort(PORTS.server, 'servidor XMage', 60_000)
@@ -85,7 +96,7 @@ async function startAll() {
   }
 
   // 2) proxy
-  if (wants('proxy')) {
+  if (list.includes('proxy')) {
     stopPid('proxy')
     if (!startProxy()) process.exit(1)
     await waitForRequiredPort(PORTS.proxy, 'proxy WebSocket', 30_000)
@@ -93,7 +104,7 @@ async function startAll() {
   }
 
   // 3) vite
-  if (wants('vite')) {
+  if (list.includes('vite')) {
     stopPid('vite')
     startVite()
     await waitForRequiredPort(PORTS.vite, 'Vite', 60_000)
@@ -118,12 +129,12 @@ async function main() {
       await startAll()
       break
     case 'stop':
-      stop(target)
+      stopTargets(targetsOf())
       break
     case 'restart':
-      stop('all')
+      stopTargets(targetsOf())
       await new Promise((r) => setTimeout(r, 1500))
-      await startAll()
+      await startAll(targetsOf())
       break
     case 'status':
       status()

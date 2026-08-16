@@ -99,6 +99,26 @@ async function main() {
   let fails = 0
   let skips = 0
 
+  // warm-up del stack antes de las capas E2E: la PRIMERA partida tras un arranque
+  // en frío del servidor puede perder el socket de callbacks (SESSION CALLBACK
+  // EXCEPTION) y tumbarse un WATCHGAME/GAME_INIT; una partida descartable la
+  // "tripa" fuera de los tests (no afecta al conteo de la suite).
+  const e2eLayers = selected.filter((l) => l === 'self-test' || l === 'human-test' || l === 'e2e')
+  if (e2eLayers.length > 0) {
+    const upServer = await stackUp(PORTS.server, 'servidor')
+    if (upServer) {
+      const warmStart = Date.now()
+      const warm = run('node', ['scripts/warmup.mjs'], { quiet: true })
+      const warmSecs = ((Date.now() - warmStart) / 1000).toFixed(1)
+      const warmOut = `${(warm.stdout + warm.stderr).trim().split(/\r?\n/).filter(Boolean).pop() ?? ''}`
+      if (warm.code === 0) {
+        log(`${warmOut || '[warmup] OK'} (${warmSecs}s)`)
+      } else {
+        log(`[warmup] falló (${warmSecs}s) — los tests seguirán con sus reintentos: ${warmOut}`)
+      }
+    }
+  }
+
   for (const name of selected) {
     const layerStart = Date.now()
     let res = null

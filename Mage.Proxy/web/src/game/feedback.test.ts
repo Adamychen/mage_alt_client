@@ -106,6 +106,15 @@ describe('parseFeedback', () => {
     expect(parseFeedback('GAME_TARGET', 'game-2', { targets: [], gameView: {} })?.chosenTargets).toBeUndefined()
   })
 
+  it('maps "pass anyway?" asks to a boolean (XMage: true = pass)', () => {
+    const prompt = parseFeedback('GAME_ASK', 'game-1', {
+      message: 'You still have mana in your mana pool. Do you want to continue playing or pass anyway?',
+      options: { 'pass-anyway': 'Pass anyway?', 'continue': 'Continue playing' },
+    })
+    expect(prompt?.mode).toBe('boolean')
+    expect(prompt?.options.map((option) => option.value)).toEqual(['true', 'false'])
+  })
+
   it('maps mulligan boolean labels via no/yes keywords and positional fallbacks', () => {
     const prompt = parseFeedback('GAME_ASK', 'game-1', {
       message: 'Mulligan?',

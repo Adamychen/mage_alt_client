@@ -46,6 +46,14 @@ public class GameOptions implements Serializable, Copyable<GameOptions> {
     public boolean skipInitShuffling = false;
 
     /**
+     * If true (test mode), the starting player is chosen deterministically
+     * (first player in table order) without the random toss and without the
+     * "Select a starting player" GAME_TARGET ask. Makes test games fully
+     * deterministic.
+     */
+    public boolean skipStartingPlayerChoice = false;
+
+    /**
      * If true, players can rollback turn if all players agree
      */
     public boolean rollbackTurnsAllowed = true;
@@ -82,6 +90,7 @@ public class GameOptions implements Serializable, Copyable<GameOptions> {
         this.stopOnTurn = options.stopOnTurn;
         this.stopAtStep = options.stopAtStep;
         this.skipInitShuffling = options.skipInitShuffling;
+        this.skipStartingPlayerChoice = options.skipStartingPlayerChoice;
         this.rollbackTurnsAllowed = options.rollbackTurnsAllowed;
         this.bannedUsers.addAll(options.bannedUsers);
         this.planeChase = options.planeChase;

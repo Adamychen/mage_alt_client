@@ -18,6 +18,11 @@ import java.util.*;
  */
 public class MatchOptions implements Serializable {
 
+    // UID fijado al valor implícito de la clase original (1.4.60-V3): añadir
+    // campos no debe romper la serialización con servidores sin modificar
+    // (el campo extra se ignora al deserializar con la clase vieja)
+    private static final long serialVersionUID = -6545123451908010934L;
+
     protected String name;
     protected MultiplayerAttackOption attackOption = MultiplayerAttackOption.LEFT;
     protected RangeOfInfluence range = RangeOfInfluence.ALL;
@@ -42,6 +47,8 @@ public class MatchOptions implements Serializable {
     protected int edhPowerLevel;
     protected boolean rated;
     protected Set<String> bannedUsers = new HashSet<>();
+    protected boolean skipInitShuffling; // modo test: no barajar el mazo inicial (la librería queda en el orden enviado)
+    protected boolean skipStartingPlayerChoice; // modo test: sin sorteo aleatorio ni ask de starting player (primer jugador empieza)
 
     protected MatchTimeLimit matchTimeLimit = MatchTimeLimit.NONE; // total time limit for priority
     protected MatchBufferTime matchBufferTime = MatchBufferTime.NONE; // additional/buffer time limit for each priority before real time ticking starts
@@ -251,6 +258,22 @@ public class MatchOptions implements Serializable {
 
     public void setBannedUsers(Set<String> bannedUsers) {
         this.bannedUsers = bannedUsers;
+    }
+
+    public boolean isSkipInitShuffling() {
+        return skipInitShuffling;
+    }
+
+    public void setSkipInitShuffling(boolean skipInitShuffling) {
+        this.skipInitShuffling = skipInitShuffling;
+    }
+
+    public boolean isSkipStartingPlayerChoice() {
+        return skipStartingPlayerChoice;
+    }
+
+    public void setSkipStartingPlayerChoice(boolean skipStartingPlayerChoice) {
+        this.skipStartingPlayerChoice = skipStartingPlayerChoice;
     }
 
     public ResultProtos.MatchOptionsProto toProto() {

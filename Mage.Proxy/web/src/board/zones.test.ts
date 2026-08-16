@@ -20,15 +20,34 @@ describe('computeZones', () => {
     expect(z.myPiles.exile).toEqual({ x: 1126, y: 596 })
   })
 
-  it('scales to 0.5 at 800x450', () => {
+  it('scales to 0.5 at 800x450 (diseño completo escalado)', () => {
     const z = computeZones(800, 450)
     expect(z.scale).toBe(0.5)
-    expect(z.oppHeader).toEqual({ x: 16, y: 10 })
-    expect(z.myHeader).toEqual({ x: 16, y: 416 })
-    expect(z.myBattle).toEqual({ x: 16, y: 248 })
-    expect(z.myHand).toEqual({ x: 400, y: 336 })
+    expect(z.oppHeader).toEqual({ x: 8, y: 5 })
+    expect(z.myHeader).toEqual({ x: 8, y: 433 })
+    expect(z.myBattle).toEqual({ x: 8, y: 298 })
+    expect(z.myHand).toEqual({ x: 400, y: 342 })
     expect(z.stack).toEqual({ x: 363.5, y: 174 })
-    expect(z.oppPiles.library).toEqual({ x: 715, y: 48 })
+    expect(z.oppPiles.library).toEqual({ x: 721, y: 24 })
+  })
+
+  it('centra el mundo horizontalmente en ventanas anchas', () => {
+    const z = computeZones(2000, 1000)
+    expect(z.scale).toBeCloseTo(10 / 9, 5)
+    expect(z.offX).toBeCloseTo(111.111, 2)
+    expect(z.offY).toBeCloseTo(0, 5)
+    expect(z.oppHeader.x).toBeCloseTo(111.111 + 16 * (10 / 9), 2)
+    expect(z.myHand.y).toBeCloseTo(1000 - 204 * (10 / 9) - 12 * (10 / 9), 2)
+    expect(z.stack.x).toBeCloseTo(2000 / 2 - 146 * (10 / 9) / 2, 2)
+  })
+
+  it('centra el mundo verticalmente en ventanas altas', () => {
+    const z = computeZones(800, 1200)
+    expect(z.scale).toBe(0.5)
+    expect(z.offX).toBe(0)
+    expect(z.offY).toBe(375)
+    expect(z.myHand.y).toBe(375 + 444 - 102)
+    expect(z.oppHeader.y).toBe(375 + 5)
   })
 })
 
@@ -64,7 +83,7 @@ describe('handFanned', () => {
 
 describe('battlefieldRow', () => {
   it('starts at the zone plus half a card and spaces by 0.88 of the card width', () => {
-    const slots = battlefieldRow({ x: 16, y: 596 }, 3, 1, 146)
+    const slots = battlefieldRow({ x: 16, y: 596 }, 3, 1, 146, 1600)
     expect(slots).toHaveLength(3)
     expect(slots[0]).toEqual({ x: 89, y: 596 })
     expect(slots[1].x - slots[0].x).toBeCloseTo(146 * 0.88, 5)
@@ -72,7 +91,20 @@ describe('battlefieldRow', () => {
   })
 
   it('returns [] for zero permanents', () => {
-    expect(battlefieldRow({ x: 16, y: 596 }, 0, 1, 146)).toEqual([])
+    expect(battlefieldRow({ x: 16, y: 596 }, 0, 1, 146, 1600)).toEqual([])
+  })
+
+  it('compresses the spacing so a huge battlefield never overflows the world width', () => {
+    const slots = battlefieldRow({ x: 16, y: 596 }, 40, 1, 146, 1600)
+    const spacing = (1600 - 2 * 16 - 146) / 39
+    expect(spacing).toBeLessThan(146 * 0.88)
+    expect(slots[1].x - slots[0].x).toBeCloseTo(spacing, 5)
+    expect(slots[slots.length - 1].x + 73).toBeLessThanOrEqual(1600 - 16)
+  })
+
+  it('keeps a single row even with many permanents (no vertical overlap)', () => {
+    const slots = battlefieldRow({ x: 16, y: 596 }, 40, 1, 146, 1600)
+    expect(new Set(slots.map((s) => s.y)).size).toBe(1)
   })
 })
 

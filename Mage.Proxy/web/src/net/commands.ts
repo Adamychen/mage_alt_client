@@ -56,6 +56,10 @@ export interface CreateTableArgs {
   winsNeeded: number
   playerTypes: string[]
   password?: string
+  skipInitShuffling?: boolean
+  skipStartingPlayerChoice?: boolean
+  /** mazos de los asientos "SIM" (oponentes simulados que une el proxy) */
+  simDecks?: DeckJson[]
 }
 
 export async function createTable(args: CreateTableArgs) {
@@ -86,6 +90,10 @@ export async function watchTable(tableId: string) {
 
 export async function watchGame(gameId: string) {
   return getGateway().send('watchGame', { gameId })
+}
+
+export async function joinGame(gameId: string) {
+  return getGateway().send('joinGame', { gameId })
 }
 
 export async function stopWatching(gameId: string) {

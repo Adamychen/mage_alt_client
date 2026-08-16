@@ -49,16 +49,22 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
       return null
     case 'GAME_ASK': {
       const isMulligan = /mulligan|keep your hand|keep hand/i.test(message)
+      const isBooleanAsk = isMulligan || /pass anyway/i.test(message)
       const options = optionEntries(data.options)
       const choices = options.length
-        ? options.map((option, index) => ({ ...option, value: isMulligan ? booleanValue(option.label, index) : option.value }))
-        : isMulligan
-          ? [
-              { id: 'keep', label: 'Keep hand', value: 'false' },
-              { id: 'mulligan', label: 'Mulligan', value: 'true' },
-            ]
+        ? options.map((option, index) => ({ ...option, value: isBooleanAsk ? booleanValue(option.label, index) : option.value }))
+        : isBooleanAsk
+          ? isMulligan
+            ? [
+                { id: 'keep', label: 'Keep hand', value: 'false' },
+                { id: 'mulligan', label: 'Mulligan', value: 'true' },
+              ]
+            : [
+                { id: 'no', label: 'No', value: 'false' },
+                { id: 'yes', label: 'Yes', value: 'true' },
+              ]
           : []
-      return prompt(method, gameId, isMulligan ? 'Mulligan' : 'Confirmación', message, isMulligan ? 'boolean' : 'string', choices, bounds)
+      return prompt(method, gameId, isMulligan ? 'Mulligan' : 'Confirmación', message, isBooleanAsk ? 'boolean' : 'string', choices, bounds)
     }
     case 'GAME_TARGET':
       return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data), chosenTargetsOf(data))

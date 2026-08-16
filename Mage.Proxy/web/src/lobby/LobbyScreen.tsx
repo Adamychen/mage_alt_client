@@ -7,7 +7,8 @@ import ChatBox from './ChatBox'
 import { AI_OPPONENT_DECK, DEFAULT_DECK, STABLE_DECK } from './decks'
 import './LobbyScreen.css'
 
-const AI_PLAYER = 'COMPUTER_MAD'
+/** Asiento de oponente simulado: lo une el proxy con su propia sesión (determinista). */
+const SIM_PLAYER = 'SIM'
 
 /** Las promesas del proxy no deben colgar la UI: todo con timeout explícito. */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -48,7 +49,8 @@ export default function LobbyScreen() {
           gameType: 'Two Player Duel',
           deckType: 'Constructed - Modern',
           winsNeeded: 1,
-          playerTypes: [AI_PLAYER, AI_PLAYER],
+          playerTypes: [SIM_PLAYER, SIM_PLAYER],
+          simDecks: [STABLE_DECK, STABLE_DECK],
         }),
         15000,
         'createTable',
@@ -62,24 +64,7 @@ export default function LobbyScreen() {
         setNotice('la creación de mesa no devolvió tableId')
         return
       }
-      // unir a cada IA (igual que el cliente oficial: la mesa se crea vacía)
-      for (let i = 0; i < 2; i++) {
-        const join = await withTimeout(
-          cmds.joinTable({
-            tableId,
-            playerName: i === 0 ? 'Computer' : `Computer ${i + 1}`,
-            playerType: AI_PLAYER,
-            skill: 1,
-            deck: STABLE_DECK,
-          }),
-          15000,
-          `joinTable #${i + 1}`,
-        )
-        if (!join.ok) {
-          setNotice(`la IA ${i + 1} no se unió: ${join.error}`)
-          return
-        }
-      }
+      // los asientos SIM los une el proxy con sus propias sesiones
       const started = await withTimeout(cmds.startMatch(tableId), 20000, 'startMatch')
       if (!started.ok) {
         setNotice(`startMatch falló: ${started.error}`)

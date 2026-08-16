@@ -33,7 +33,7 @@ describe('buildPlacements', () => {
     expect(myHand[0].sourceId).toBe('h-1')
   })
 
-  it('exposes XMage playable object UUIDs without visual-zone prefixes', () => {
+  it('exposes XMage playable object UUIDs from hand only (not battlefield mana abilities)', () => {
     const game = {
       ...playerGameView,
       canPlayObjects: {
@@ -43,7 +43,20 @@ describe('buildPlacements', () => {
         },
       },
     }
-    expect(playableObjectIds(game)).toEqual(['h-1', 'p-untapped'])
+    expect(playableObjectIds(game)).toEqual(['h-1'])
+  })
+
+  it('includes battlefield mana sources during GAME_PLAY_MANA (las fuentes no están en myHand)', () => {
+    const game = {
+      ...playerGameView,
+      canPlayObjects: {
+        objects: {
+          'h-1': { basicCastAbilities: [{ id: 'ability-1', value: 'Cast Counterspell' }] },
+          'p-untapped': { basicManaAbilities: [] },
+        },
+      },
+    }
+    expect(playableObjectIds(game, { method: 'GAME_PLAY_MANA' })).toEqual(['h-1', 'p-untapped'])
   })
 
   it('rotates opponent tapped permanents the other way', () => {

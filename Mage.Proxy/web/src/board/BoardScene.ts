@@ -4,6 +4,8 @@ import { awaitImageUrl, cardName, CARD_H, CARD_W } from '../cards/cardImages'
 import { buildPlacements, type Placement } from './gameToScene'
 import { computeZones } from './zones'
 
+const BASIC_LANDS = ['Mountain', 'Plains', 'Island', 'Swamp', 'Forest']
+
 export class BoardScene {
   readonly app: Application
   private root = new Container()
@@ -291,8 +293,8 @@ export class BoardScene {
     this.publishSceneState()
   }
 
-  /** Estado en vivo del escenario para los E2E: posiciones reales de las cartas en el canvas
-   *  y los ids jugables actuales (el estado que de verdad acepta el servidor al clicar). */
+  /** Estado en vivo del escenario para los E2E: posiciones reales de las cartas en
+   *  el canvas, ids jugables actuales y el canal de clic lógico (dispatchClick). */
   private publishSceneState() {
     const cards: Record<string, { x: number; y: number }> = {}
     for (const [id, live] of this.liveCards) {
@@ -303,6 +305,13 @@ export class BoardScene {
     ;(globalThis as unknown as { __mageScene?: unknown }).__mageScene = {
       cards,
       playable: [...this.playableIds],
+      click: (id: string) => this.dispatchClick(id),
+      targeting: {
+        active: this.targetIds.size > 0,
+        source: this.targetSourceId ?? null,
+        ids: [...this.targetIds],
+        chosen: [...this.chosenTargetIds],
+      },
       game: this.game
         ? { turn: this.game.turn, phase: this.game.phase, step: this.game.step, priority: me?.hasPriority === true }
         : null,
@@ -440,20 +449,44 @@ export class BoardScene {
     }
   }
 
+  /** Canal de clic lógico (mismo code path que el pointertap real): lo usan los
+   *  E2E para actuar sin depender del estado del render del canvas. */
+  dispatchClick(sourceId: string): boolean {
+    if (this.targetIds.has(sourceId) && this.targetHandler) {
+      this.targetHandler(sourceId)
+      return true
+    }
+    if (this.playableIds.has(sourceId) && this.playableHandler) {
+      this.playableHandler(sourceId)
+      return true
+    }
+    // tierras básicas de la mano: el servidor no las lista de forma fiable en
+    // canPlayObjects (PlayLandAbility.canActivate exige la ventana exacta), pero
+    // son jugables siempre en MI main phase con prioridad — dejarlas clicar sin
+    // depender de playableIds (la 2ª tierra del turno el servidor la ignora).
+    // Sin check de hasPriority: el flag del gameView es poco fiable en partidas
+    // rápidas (E2E contra el Sim) y un clic sin prioridad es inofensivo (el
+    // servidor lo ignora y el test verifica el resultado real).
+    const me = this.game?.players?.find((p) => p.controlled)
+    const card = this.game?.myHand?.[sourceId]
+    if (
+      this.playableHandler &&
+      me?.isActive === true &&
+      (this.game?.phase === 'PRECOMBAT_MAIN' || this.game?.phase === 'POSTCOMBAT_MAIN') &&
+      card &&
+      (BASIC_LANDS.includes(card.name ?? '') || BASIC_LANDS.includes(card.displayName ?? ''))
+    ) {
+      this.playableHandler(sourceId)
+      return true
+    }
+    return false
+  }
+
   private renderHeaders(game: GameView) {
     const me = game.players?.find((p) => p.controlled)
     const opps = game.players?.filter((p) => !p.controlled) ?? []
     if (me) this.header(me, this.zones.myHeader, true)
     opps.forEach((opp, index) => this.header(opp, { x: this.zones.oppHeader.x, y: this.zones.oppHeader.y + index * 24 }, false))
-
-    const stackCount = Object.keys(game.stack ?? {}).length
-    const phase = new Text({
-      text: `Turno ${game.turn} · ${game.phase} · ${game.step}${stackCount ? ` · stack: ${stackCount}` : ''}`,
-      style: { fontSize: 13, fill: 0x9aa1c0 },
-    })
-    phase.anchor.set(0.5, 0)
-    phase.position.set(this.zones.w / 2, this.zones.h / 2 + 26)
-    this.overlay.addChild(phase)
   }
 
   private header(p: PlayerView, pos: { x: number; y: number }, isMine: boolean) {

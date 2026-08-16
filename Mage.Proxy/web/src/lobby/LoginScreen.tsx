@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { clearError, doConnect, useStore } from '../state/store'
+import { useEffect, useState } from 'react'
+import { clearError, doConnect, useStore, loadConn } from '../state/store'
 import './LoginScreen.css'
 
 export default function LoginScreen() {
@@ -9,6 +9,16 @@ export default function LoginScreen() {
   const [port, setPort] = useState('17171')
   const [username, setUsername] = useState('player1')
   const [password, setPassword] = useState('password')
+
+  useEffect(() => {
+    const saved = loadConn()
+    if (saved) {
+      setHost(saved.host)
+      setPort(String(saved.port))
+      setUsername(saved.username)
+      setPassword(saved.password)
+    }
+  }, [])
 
   const busy = phase === 'connecting'
 

@@ -12,11 +12,19 @@ const SERVER_HOST = 'localhost'
 const SERVER_PORT = 17171
 const USER = process.argv[2] ?? `selftest-${Date.now() % 100000}`
 
+// con Bolt en el mazo las partidas IA vs IA terminan en 2-3 turnos: una partida
+// sin win-con (solo tierras) corre 60+ turnos y su torrente de GAME_UPDATEs
+// inunda la cola de callbacks de la sesión (el WATCHGAME siguiente se pierde
+// silenciosamente: tryLock de Session.fireCallback agotado). El mazo está
+// ORDENADO (con skipInitShuffling) para que la partida sea determinista.
 const DEFAULT_DECK = {
   name: 'Mage Web starter',
   cards: [
-    { cardName: 'Island', setCode: 'LEA', cardNumber: '288', amount: 30 },
-    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 30 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 4 },
+    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 4 },
+    { cardName: 'Island', setCode: 'LEA', cardNumber: '288', amount: 20 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 16 },
+    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 4 },
   ],
   sideboard: [],
 }
@@ -162,6 +170,7 @@ async function main() {
         deckType: 'Constructed - Modern',
         winsNeeded: 1,
         playerTypes: ['COMPUTER_MAD', 'COMPUTER_MAD'],
+        skipInitShuffling: true,
       }),
       timeout(15000, 'createTable'),
     ])

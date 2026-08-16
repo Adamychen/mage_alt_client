@@ -8,8 +8,10 @@
   --text-dim: #9aa1c0;
   --accent: #7c5cff;
   --accent-2: #ffb03a;
+  --gold: #ffb03a;
   --good: #4cd07d;
   --bad: #ff5c6c;
+  --font-display: 'Cinzel', 'Merriweather', Georgia, serif;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 

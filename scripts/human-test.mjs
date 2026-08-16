@@ -15,16 +15,28 @@ const DEFAULT_DECK = {
   sideboard: [],
 }
 
+// ORDENADO para partidas deterministas (skipInitShuffling): mano inicial con
+// 3 Mountain + Plains + Bolt + Blaze + Arc Trail (todo jugable en los turnos
+// 2-4), Boros y Ballista en los dos primeros robos, y tierras después para el
+// Ballista X=4 (8 maná).
 const HUMAN_DECK = {
   name: 'Mage Web playable human test',
   cards: [
-    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 34 },
-    { cardName: 'Plains', setCode: 'LEA', cardNumber: '287', amount: 4 },
-    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 8 },
-    { cardName: 'Blaze', setCode: '6ED', cardNumber: '168', amount: 8 },
-    { cardName: 'Arc Trail', setCode: 'SOM', cardNumber: '81', amount: 4 },
-    { cardName: 'Boros Charm', setCode: 'FDN', cardNumber: '721', amount: 4 },
-    { cardName: 'Walking Ballista', setCode: '2XM', cardNumber: '306', amount: 4 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 3 },
+    { cardName: 'Plains', setCode: 'LEA', cardNumber: '287', amount: 1 },
+    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 1 },
+    { cardName: 'Blaze', setCode: '6ED', cardNumber: '168', amount: 1 },
+    { cardName: 'Arc Trail', setCode: 'SOM', cardNumber: '81', amount: 1 },
+    { cardName: 'Boros Charm', setCode: 'FDN', cardNumber: '721', amount: 1 },
+    { cardName: 'Walking Ballista', setCode: '2XM', cardNumber: '306', amount: 1 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 6 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 25 },
+    { cardName: 'Lightning Bolt', setCode: 'M10', cardNumber: '146', amount: 7 },
+    { cardName: 'Blaze', setCode: '6ED', cardNumber: '168', amount: 7 },
+    { cardName: 'Plains', setCode: 'LEA', cardNumber: '287', amount: 3 },
+    { cardName: 'Arc Trail', setCode: 'SOM', cardNumber: '81', amount: 3 },
+    { cardName: 'Boros Charm', setCode: 'FDN', cardNumber: '721', amount: 3 },
+    { cardName: 'Walking Ballista', setCode: '2XM', cardNumber: '306', amount: 3 },
   ],
   sideboard: [],
 }
@@ -565,6 +577,8 @@ async function main() {
         deckType: 'Constructed - Modern',
         winsNeeded: 1,
         playerTypes: ['HUMAN', 'COMPUTER_MAD'],
+        skipInitShuffling: true,
+        skipStartingPlayerChoice: true,
       }),
       timeout(15000, 'createTable'),
     ])

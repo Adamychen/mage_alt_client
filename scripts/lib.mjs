@@ -143,6 +143,17 @@ export function javaBin() {
   return 'java'
 }
 
+/** Límite actual de descriptores de archivo (soft) o null si no se puede medir. */
+function nofileLimit() {
+  try {
+    const res = spawnSync('sh', ['-c', 'ulimit -n'], { encoding: 'utf8' })
+    const n = Number((res.stdout ?? '').trim())
+    return Number.isFinite(n) ? n : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Lanza un proceso en segundo plano (detached) con salida redirigida a .run/.
  * Devuelve el PID.
@@ -153,6 +164,12 @@ export function daemon(name, cmd, args, { cwd } = {}) {
   const err = fs.openSync(errFile(name), 'a')
   // el stub de macOS (/usr/bin/java) falla si el JDK no está registrado en java_home
   if (cmd === 'java') cmd = javaBin()
+  // un límite bajo de descriptores puede tumbar los sockets de callbacks del
+  // servidor bajo carga (SESSION CALLBACK EXCEPTION - Unable to create socket)
+  const limit = nofileLimit()
+  if (limit !== null && limit < 10240) {
+    log(`AVISO: límite de descriptores bajo (ulimit -n = ${limit}) — sube el soft limit con "ulimit -n 65536" en tu shell antes de arrancar el stack`)
+  }
   // los binarios .cmd/.bat de Windows no se pueden spawnear directamente
   const useShell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(cmd)
   const child = spawn(cmd, args, {

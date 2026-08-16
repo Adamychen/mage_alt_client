@@ -23,8 +23,18 @@ function oppPlayers(game: GameView): PlayerView[] {
   return (game.players ?? []).filter((p) => !p.controlled)
 }
 
-export function playableObjectIds(game: GameView): string[] {
-  return Object.keys(game.canPlayObjects?.objects ?? {})
+export function playableObjectIds(game: GameView, feedback?: { method?: string }): string[] {
+  const myHand = game.myHand ?? {}
+  const objects = game.canPlayObjects?.objects ?? {}
+  // durante el pago de maná (GAME_PLAY_MANA) las fuentes de maná del battlefield
+  // son las clicables: canPlayObjects las lista (UUIDs en players[].battlefield),
+  // pero no están en myHand
+  if (feedback?.method === 'GAME_PLAY_MANA') {
+    const me = game.players?.find((p) => p.controlled)
+    const battlefield = me ? (me.battlefield ?? {}) : {}
+    return Object.keys(objects).filter((id) => id in myHand || id in battlefield)
+  }
+  return Object.keys(objects).filter((id) => id in myHand)
 }
 
 /**
@@ -77,7 +87,7 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
 
   const battlefield = (p: PlayerView, row: { x: number; y: number }, isMine: boolean) => {
     const perms = Object.entries(p.battlefield ?? {})
-    const slots = battlefieldRow(row, perms.length, zones.scale, cw)
+    const slots = battlefieldRow(row, perms.length, zones.scale, cw, zones.worldW)
     perms.forEach(([cardId, perm], i) => {
       const s = slots[i]
       add(cardId, perm, s.x, s.y, isMine ? 'myBattle' : 'oppBattle', {
@@ -132,11 +142,11 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
 
   const oppHands = Object.values(game.opponentHands ?? {})
   const oppHandCount = oppHands.reduce((acc, h) => acc + Object.keys(h).length, 0)
-  const oppSlots = handFanned({ x: zones.w / 2, y: 40 }, oppHandCount, zones.scale, zones.w, cw)
+  const oppSlots = handFanned({ x: zones.offX + zones.worldW / 2, y: zones.offY + 40 * zones.scale }, oppHandCount, zones.scale, zones.worldW, cw)
   let hi = 0
   for (const handView of oppHands) {
     for (const simple of Object.values(handView)) {
-      const slot = oppSlots[hi++] ?? { x: zones.w / 2, y: 40 }
+      const slot = oppSlots[hi++] ?? { x: zones.offX + zones.worldW / 2, y: zones.offY + 40 * zones.scale }
       const card = { name: '?', expansionSetCode: '', cardNumber: '0', parentId: simple.id, id: simple.id } as unknown as CardView
       add(simple.id, card, slot.x, slot.y, 'oppHand', { faceDown: true })
     }
@@ -144,10 +154,11 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
 
   const watched = Object.values(game.watchedHands ?? {})
   const watchedCards = watched.flatMap((hand) => Object.values(hand))
-  const watchedSlots = handFanned({ x: zones.w / 2, y: Math.max(48, zones.h * 0.25) }, watchedCards.length, zones.scale, zones.w, cw)
+  const watchedY = zones.offY + Math.max(48, zones.worldH * 0.25) * zones.scale
+  const watchedSlots = handFanned({ x: zones.offX + zones.worldW / 2, y: watchedY }, watchedCards.length, zones.scale, zones.worldW, cw)
   watchedCards.forEach((simple, i) => {
     const card = { name: simple.name ?? '?', expansionSetCode: '', cardNumber: '0', parentId: simple.id, id: simple.id } as unknown as CardView
-    const slot = watchedSlots[i] ?? { x: zones.w / 2, y: zones.h * 0.25 }
+    const slot = watchedSlots[i] ?? { x: zones.offX + zones.worldW / 2, y: watchedY }
     add(simple.id, card, slot.x, slot.y, 'watchedHand')
   })
 

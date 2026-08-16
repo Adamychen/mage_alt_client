@@ -1,10 +1,29 @@
-import { test, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { test, expect } from './fixtures'
+import { cleanupUser } from './cleanup'
 
 const SHOTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'shots')
 const FINAL_SHOT = path.join(SHOTS_DIR, 'full-flow-final.png')
+
+interface SceneState {
+  game: { turn: number; phase: string; step: string; priority: boolean } | null
+  cards: Record<string, { x: number; y: number }>
+}
+
+/** Estado del escenario en vivo (BoardScene lo publica en __mageScene). */
+async function sceneOf(page: Page): Promise<SceneState | null> {
+  try {
+    return (await page.evaluate(() => {
+      const s = (globalThis as unknown as { __mageScene?: SceneState }).__mageScene
+      return s ?? null
+    })) as SceneState | null
+  } catch {
+    return null
+  }
+}
 
 test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero avanza sin errores', async ({ page }) => {
   // (a) capturar todos los pageerror y console error
@@ -16,8 +35,14 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   })
   const wsFrames: string[] = []
   page.on('websocket', (ws) => {
-    ws.on('framesent', (e) => wsFrames.push(`>> ${String(e.payload).slice(0, 200)}`))
-    ws.on('framereceived', (e) => wsFrames.push(`<< ${String(e.payload).slice(0, 300)}`))
+    ws.on('framesent', (e) => {
+      wsFrames.push(`>> ${String(e.payload).slice(0, 200)}`)
+      if (wsFrames.length > 500) wsFrames.shift()
+    })
+    ws.on('framereceived', (e) => {
+      wsFrames.push(`<< ${String(e.payload).slice(0, 300)}`)
+      if (wsFrames.length > 500) wsFrames.shift()
+    })
   })
 
   // (b) formulario de login
@@ -26,6 +51,7 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
 
   // (c) credenciales únicas -> Conectar (XMage limita el nombre a 14 caracteres)
   const username = `e2e-${String(Date.now()).slice(-10)}`
+  cleanupUser(username)
   await page.getByLabel('Servidor del proxy (host)').fill('localhost')
   await page.getByLabel('Puerto del servidor XMage').fill('17171')
   await page.getByLabel('Usuario').fill(username)
@@ -33,37 +59,51 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   await page.getByRole('button', { name: 'Conectar' }).click()
 
   // (d) lobby (el broadcast de mesas llega cada ~2s)
-  await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 30_000 })
-  await expect(page.getByRole('heading', { name: /Mesas/ })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: /Mesas/ })).toBeVisible({ timeout: 15_000 })
 
   // (e) crear mesa IA vs IA y entrar como espectador
   await page.getByRole('button', { name: /Demo IA vs IA/ }).click()
 
   // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
-  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 60_000 })
+  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 20_000 })
   const canvas = page.locator('.board-wrap canvas')
-  await expect(canvas).toBeVisible({ timeout: 60_000 })
+  await expect(canvas).toBeVisible({ timeout: 20_000 })
   const gameStatus = page.getByTestId('game-status')
   await expect(gameStatus).toBeVisible()
   const initialGameStatus = await gameStatus.textContent()
-  await page.waitForTimeout(2500)
+  await page.waitForTimeout(1000)
 
   // (g) entrada del espectador en el GameLog (markup real: .gamelog-list > .gamelog-entry)
   await expect(page.locator('.gamelog-list')).toContainText(/Espectador: mirando la partida/, {
-    timeout: 30_000,
+    timeout: 15_000,
   })
 
-  // (h) verificación de avance: el tablero debe redibujarse (bytes del canvas cambian)
+  // (h) verificación de avance: el estado del escenario (__mageScene) avanza y el
+  // canvas se redibuja (bytes distintos). __mageScene es el check determinista;
+  // el byte-diff queda como humo de que el render real cambia.
   let baseline: Buffer | null = null
-  let changed = false
-  let semanticChanged = false
-  const deadline = Date.now() + 60_000
+  let redrew = false
+  let sceneAdvanced = false
+  let lastGame: SceneState['game'] | null = null
+  const deadline = Date.now() + 20_000
   while (Date.now() < deadline) {
     if ((await canvas.count()) === 0) {
       // la partida terminó y el tablero desapareció -> la partida avanzó de hecho
-      changed = true
-      semanticChanged = true
+      redrew = true
+      sceneAdvanced = true
       break
+    }
+    const scene = await sceneOf(page)
+    if (scene?.game) {
+      if (!lastGame) lastGame = scene.game
+      else if (
+        scene.game.turn !== lastGame.turn ||
+        scene.game.phase !== lastGame.phase ||
+        scene.game.step !== lastGame.step
+      ) {
+        sceneAdvanced = true
+      }
     }
     let shot: Buffer | null = null
     try {
@@ -75,17 +115,16 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
       if (!baseline) {
         baseline = shot
       } else if (Buffer.compare(baseline, shot) !== 0) {
-        changed = true
-        break
+        redrew = true
       }
     }
     const currentGameStatus = await gameStatus.textContent().catch(() => null)
-    if (currentGameStatus && currentGameStatus !== initialGameStatus) semanticChanged = true
-    if (semanticChanged) changed = true
-    await page.waitForTimeout(3000)
+    if (currentGameStatus && currentGameStatus !== initialGameStatus) sceneAdvanced = true
+    if (redrew && sceneAdvanced) break
+    await page.waitForTimeout(800)
   }
-  expect(semanticChanged, 'el estado semántico de la partida debería avanzar').toBeTruthy()
-  expect(changed, 'el tablero debería redibujarse: la partida IA vs IA no avanza').toBeTruthy()
+  expect(sceneAdvanced, 'el estado de la partida debería avanzar').toBeTruthy()
+  expect(redrew, 'el tablero debería redibujarse: la partida IA vs IA no avanza').toBeTruthy()
 
   // (i) aserciones finales: cero pageerrors y cero errores fatales de consola
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
@@ -111,4 +150,38 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
     body: wsFrames.join('\n'),
     contentType: 'text/plain',
   })
+  await test.info().attach('select-dump', {
+    body: summarizeSelects(wsFrames),
+    contentType: 'text/plain',
+  })
 })
+
+/** Resumen compacto de los GAME_SELECT / GAME_ASK recibidos (turno/step/msg) */
+function summarizeSelects(frames: string[]): string {
+  const out: string[] = []
+  let updates = 0
+  let informs = 0
+  let lastInform = ''
+  for (const f of frames) {
+    if (f.includes('GAME_SELECT')) {
+      const m = f.match(/"turn":(\d+)/)
+      const s = f.match(/"step":"([^"]+)/)
+      const msg = f.match(/"message":"([^"]{0,60})/)
+      out.push(
+        `SELECT turn=${m?.[1] ?? '?'} step=${s?.[1] ?? '?'} msg='${msg?.[1] ?? ''}'`,
+      )
+    } else if (f.includes('GAME_ASK')) {
+      const m = f.match(/"message":"([^"]{0,60})/)
+      out.push(`ASK msg='${m?.[1] ?? ''}'`)
+    } else if (f.includes('GAME_UPDATE_AND_INFORM')) {
+      informs++
+      const m = f.match(/"turn":(\d+)/)
+      const s = f.match(/"step":"([^"]+)/)
+      if (m && s) lastInform = `turn=${m[1]} step=${s[1]}`
+    } else if (f.includes('GAME_UPDATE')) {
+      updates++
+    }
+  }
+  out.push(`AND_INFORM count=${informs} last=${lastInform}`, `UPDATE count=${updates}`)
+  return out.join('\n')
+}
