@@ -13,7 +13,11 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:fake": "playwright test",
-    "test:e2e:real": "E2E_BACKEND=real playwright test"
+    "test:e2e:real": "E2E_BACKEND=real playwright test",
+    "test:e2e:spells": "playwright test --grep \"@spells\"",
+    "test:e2e:targeting": "playwright test --grep \"@targeting\"",
+    "test:e2e:combat": "playwright test --grep \"@combat\"",
+    "test:e2e:fullflow": "playwright test --grep \"@fullflow\""
   },
   "dependencies": {
     "pixi.js": "^8.19.0",

@@ -5,7 +5,7 @@
 // Capas: unit, coverage, typecheck, build, java, self-test, human-test, e2e
 
 import path from 'node:path'
-import { binName, log, logError, PORTS, repoRoot, run, waitForPort } from './lib.mjs'
+import { binName, log, logError, PORTS, repoRoot, run, waitForPort, waitForPortDown } from './lib.mjs'
 
 const WEB_DIR = path.join(repoRoot, 'Mage.Proxy', 'web')
 const STACK_HINT = 'el stack no está corriendo — ejecuta primero: node scripts/ctl.mjs start'
@@ -165,7 +165,20 @@ async function main() {
         if (!upVite) {
           res = { code: 1, stdout: '', stderr: STACK_HINT }
         } else {
-          res = run(binName('npx'), ['playwright', 'test'], { cwd: WEB_DIR })
+          // el e2e por defecto corre en FAKE (FixtureServer) en el puerto del
+          // proxy (8787): si el proxy está arriba se para para esta capa y se
+          // restaura al terminar (lo deja como estaba).
+          const proxyWasUp = await stackUp(PORTS.proxy, 'proxy')
+          if (proxyWasUp) {
+            log('e2e (fake) usa el puerto del proxy (8787): parando el proxy para esta capa')
+            run('node', ['scripts/ctl.mjs', 'stop', 'proxy'], { quiet: true })
+            await waitForPortDown(PORTS.proxy, 15_000)
+          }
+          try {
+            res = run(binName('npx'), ['playwright', 'test'], { cwd: WEB_DIR })
+          } finally {
+            if (proxyWasUp) run('node', ['scripts/ctl.mjs', 'start', 'proxy'], { quiet: true })
+          }
         }
         break
       }

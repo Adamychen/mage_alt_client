@@ -222,6 +222,44 @@ export function waitForPort(port, timeoutMs = 30000) {
   })
 }
 
+/** Espera a que un puerto deje de aceptar conexiones (proceso parado). */
+export function waitForPortDown(port, timeoutMs = 30000) {
+  const hosts = ['127.0.0.1', '::1', 'localhost']
+  return new Promise((resolve, reject) => {
+    const start = Date.now()
+    const tick = (hostIndex) => {
+      const host = hosts[hostIndex]
+      const socket = net.connect({ host, port })
+      socket.setTimeout(1500)
+      socket.once('connect', () => {
+        socket.destroy()
+        if (Date.now() - start > timeoutMs) {
+          reject(new Error(`el puerto ${port} sigue aceptando conexiones tras ${timeoutMs}ms`))
+        } else {
+          setTimeout(() => tick(0), 750)
+        }
+      })
+      socket.once('error', () => {
+        socket.destroy()
+        if (hostIndex + 1 < hosts.length) {
+          tick(hostIndex + 1)
+        } else {
+          resolve(true)
+        }
+      })
+      socket.once('timeout', () => {
+        socket.destroy()
+        if (hostIndex + 1 < hosts.length) {
+          tick(hostIndex + 1)
+        } else {
+          resolve(true)
+        }
+      })
+    }
+    tick(0)
+  })
+}
+
 /** Espera a que un fichero de log contenga una expresión regular. */
 export function waitForLog(file, pattern, timeoutMs = 30000, since = Date.now()) {
   return new Promise((resolve, reject) => {

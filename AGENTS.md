@@ -84,6 +84,17 @@ está PENDIENTE de cerrar** (caso abierto documentado en la skill `mage-e2e-sim`
 el agente `e2e-spells` está diseñado para ello). Cargar `mage-e2e-sim` antes de
 tocar o depurar cualquier e2e.
 
+**Arquitectura modular (2026-08-17)**: tests por funcionalidad, partida
+independiente por test. Librerías comunes en `Mage.Proxy/web/e2e/support/`
+(`frames.ts`, `start-game.ts`, `game-screen.ts`, `scene.ts`, `canvas.ts`,
+`fake-backend.ts`) y escenarios declarativos del FixtureServer en
+`Mage.Proxy/web/fixtures/scenarios/` (mini-motor `humanGame.ts`). Tags por
+dominio: `@spells`, `@targeting`, `@combat`, `@fullflow` (scripts
+`test:e2e:spells|targeting|combat|fullflow`). Todos los specs corren en fake
+(sin stack, ~56s) y en real (contrato). Al tocar `e2e/support/` o los escenarios,
+correr fake completo + real. **El helper NO responde el mulligan** (el auto-keep
+del web ya lo hace; un segundo false rompe la ventana del test).
+
 ## Reglas
 
 - **Tras tocar `Mage.Proxy/web`**: ejecutar `unit` y `typecheck` (y `build` si se
