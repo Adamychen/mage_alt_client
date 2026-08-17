@@ -3,7 +3,7 @@ import type { GameView } from '../net/types'
 import { createBoardScene, type BoardScene } from './BoardScene'
 import './BoardView.css'
 
-export default function BoardView({ game, targetIds = [], chosenTargetIds = [], onTargetClick, targetSourceId, playableIds = [], onPlayableClick }: {
+export default function BoardView({ game, targetIds = [], chosenTargetIds = [], onTargetClick, targetSourceId, playableIds = [], onPlayableClick, combatSelectable = [], combatChosen = [], combatMode = null, onCombatClick }: {
   game: GameView
   targetIds?: string[]
   chosenTargetIds?: string[]
@@ -11,6 +11,10 @@ export default function BoardView({ game, targetIds = [], chosenTargetIds = [], 
   targetSourceId?: string
   playableIds?: string[]
   onPlayableClick?: (id: string) => void
+  combatSelectable?: string[]
+  combatChosen?: string[]
+  combatMode?: 'attack' | 'block' | null
+  onCombatClick?: (id: string) => void
 }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<BoardScene | null>(null)
@@ -32,6 +36,7 @@ export default function BoardView({ game, targetIds = [], chosenTargetIds = [], 
         sceneRef.current = s
         s.setTargeting(targetIds, onTargetClick, targetSourceId, chosenTargetIds)
         s.setPlayable(playableIds, onPlayableClick)
+        s.setCombatSelect(combatSelectable, combatChosen, onCombatClick, combatMode)
         host.appendChild(s.app.canvas)
         s.resize(host.clientWidth, host.clientHeight)
         ro = new ResizeObserver(() => s.resize(host.clientWidth, host.clientHeight))
@@ -65,6 +70,10 @@ export default function BoardView({ game, targetIds = [], chosenTargetIds = [], 
   useEffect(() => {
     sceneRef.current?.setPlayable(playableIds, onPlayableClick)
   }, [playableIds, onPlayableClick])
+
+  useEffect(() => {
+    sceneRef.current?.setCombatSelect(combatSelectable, combatChosen, onCombatClick, combatMode)
+  }, [combatSelectable, combatChosen, combatMode, onCombatClick])
 
   if (initError) {
     return (

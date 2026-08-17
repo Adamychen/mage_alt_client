@@ -168,7 +168,7 @@ export default function LobbyScreen() {
         <div>
           <h1>Lobby</h1>
           <span className="conn-info">
-            {conn?.username} @ {conn?.host}:{conn?.port} — {users.length} usuarios
+            {conn?.username} @ {conn?.serverHost}:{conn?.port} — {users.length} usuarios
           </span>
         </div>
         <div className="lobby-actions">

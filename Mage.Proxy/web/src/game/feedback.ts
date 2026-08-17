@@ -1,4 +1,4 @@
-export type FeedbackMode = 'boolean' | 'string' | 'uuid' | 'integer' | 'multiString' | 'mana'
+export type FeedbackMode = 'boolean' | 'string' | 'uuid' | 'integer' | 'multiString' | 'mana' | 'combat'
 
 export interface FeedbackOption {
   id: string
@@ -30,6 +30,9 @@ export interface FeedbackPrompt {
   sourceName?: string
   /** Objetivos ya elegidos en consultas multi-target (options.chosenTargets del servidor). */
   chosenTargets?: string[]
+  /** Botón "Atacar con todos" disponible en la declaración de atacantes
+   *  (options.specialButton del servidor). */
+  special?: boolean
 }
 
 type JsonRecord = Record<string, unknown>
@@ -43,10 +46,36 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
   const bounds = boundsFrom(data)
 
   switch (method) {
-    case 'GAME_SELECT':
-      // XMage uses GAME_SELECT for priority. The board remains interactive while
-      // the player decides whether to play a card or pass with a boolean.
+    case 'GAME_SELECT': {
+      // XMage usa GAME_SELECT para la prioridad (el tablero sigue interactivo y
+      // pasar se hace con un booleano), PERO la declaración de atacantes y
+      // bloqueadores también llega como GAME_SELECT con options.possibleAttackers
+      // o options.possibleBlockers: aquí las criaturas se clican en el tablero y
+      // "Confirmar" (o "Atacar con todos") responde el paso de combate.
+      const options = asRecord(data.options)
+      const attackers = stringList(options.possibleAttackers)
+      const blockers = stringList(options.possibleBlockers)
+      if (attackers.length > 0 || blockers.length > 0) {
+        const attacking = attackers.length > 0
+        return prompt(
+          method,
+          gameId,
+          attacking ? 'Declara atacantes' : 'Declara bloqueadores',
+          message,
+          'combat',
+          [],
+          bounds,
+          undefined,
+          undefined,
+          true,
+          undefined,
+          undefined,
+          attacking && typeof options.specialButton === 'string',
+        )
+      }
+      // GAME_SELECT de prioridad: sin diálogo (el tablero queda interactivo)
       return null
+    }
     case 'GAME_ASK': {
       const isMulligan = /mulligan|keep your hand|keep hand/i.test(message)
       const isBooleanAsk = isMulligan || /pass anyway/i.test(message)
@@ -122,8 +151,9 @@ function prompt(
   required = true,
   sourceName?: string,
   chosenTargets?: string[],
+  special?: boolean,
 ): FeedbackPrompt {
-  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName, chosenTargets }
+  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName, chosenTargets, special }
 }
 
 function asRecord(value: unknown): JsonRecord {

@@ -25,6 +25,13 @@ export interface SceneTargeting {
   chosen: string[]
 }
 
+export interface SceneCombat {
+  active: boolean
+  mode: 'attack' | 'block' | null
+  selectable: string[]
+  chosen: string[]
+}
+
 /** Estado del escenario expuesto por la app (posiciones + playables en vivo). */
 export async function sceneState(page: Page): Promise<SceneState | null> {
   const scene = await page.evaluate(() => (globalThis as unknown as { __mageScene?: SceneState }).__mageScene ?? null)
@@ -124,4 +131,32 @@ export async function waitSceneTargeting(
   }
   const last = await sceneTargeting(page)
   throw new Error(`timeout esperando ${label} (último targeting: ${JSON.stringify(last)})`)
+}
+
+/** Estado de la declaración de atacantes/bloqueadores EN VIVO de la escena. */
+export async function sceneCombat(page: Page): Promise<SceneCombat | null> {
+  try {
+    return (await page.evaluate(() => {
+      const s = (globalThis as unknown as { __mageScene?: { combat?: SceneCombat } }).__mageScene
+      return s?.combat ?? null
+    })) as SceneCombat | null
+  } catch {
+    return null
+  }
+}
+
+export async function waitSceneCombat(
+  page: Page,
+  predicate: (c: SceneCombat) => boolean,
+  label: string,
+  timeoutMs = 15_000,
+): Promise<SceneCombat> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const c = await sceneCombat(page)
+    if (c && predicate(c)) return c
+    await page.waitForTimeout(200)
+  }
+  const last = await sceneCombat(page)
+  throw new Error(`timeout esperando ${label} (último combate: ${JSON.stringify(last)})`)
 }

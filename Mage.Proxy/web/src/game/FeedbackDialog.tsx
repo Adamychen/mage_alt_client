@@ -158,7 +158,27 @@ export default function FeedbackDialog() {
           </div>
         )}
 
-        {prompt.mode !== 'integer' && prompt.mode !== 'multiString' && (
+        {prompt.mode === 'combat' && (
+          <div className="feedback-options">
+            <p className="feedback-hint">
+              Haz clic en tus criaturas del tablero para declararlas (clic de nuevo para deseleccionar).
+            </p>
+            {prompt.special && (
+              <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo declarar el ataque')}>
+                Atacar con todos
+              </button>
+            )}
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo confirmar el combate')}
+            >
+              {prompt.title === 'Declara atacantes' ? 'Confirmar atacantes' : 'Confirmar bloqueadores'}
+            </button>
+          </div>
+        )}
+
+        {prompt.mode !== 'integer' && prompt.mode !== 'multiString' && prompt.mode !== 'combat' && (
           <div className="feedback-options">
             {prompt.options.map((option) => (
               <button

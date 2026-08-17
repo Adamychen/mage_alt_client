@@ -19,6 +19,7 @@ interface HandCard {
 interface GameViewLike {
   turn?: number
   phase?: string
+  step?: string
   players?: Array<{ playerId?: string; controlled?: boolean; hasPriority?: boolean; isActive?: boolean }>
   myHand?: Record<string, HandCard>
   stack?: Record<string, unknown>
@@ -30,6 +31,7 @@ interface EventDataLike {
   question?: string
   targets?: string[] | Record<string, unknown>
   cardsView1?: Record<string, unknown>
+  options?: { possibleAttackers?: unknown[]; possibleBlockers?: unknown[] }
 }
 
 export class HumanHelper {
@@ -42,11 +44,18 @@ export class HumanHelper {
   /** No pasar prioridad mientras el humano está pagando maná (GAME_PLAY_MANA):
    *  pasar con un pago incompleto cancela el hechizo. */
   private payingUntil = 0
+  /** No tocar las ventanas de DECLARE_ATTACKERS/DECLARE_BLOCKERS (el humano las
+   *  ejerce por la UI en los tests de combate): pasar ahí confirmaría el paso de
+   *  combate sin declarar nada. */
+  private skipCombat: boolean
 
   constructor(
     private readonly username: string,
     private readonly password: string,
-  ) {}
+    opts: { skipCombat?: boolean } = {},
+  ) {
+    this.skipCombat = opts.skipCombat ?? false
+  }
 
   get isStarted(): boolean {
     return this.ws !== null
@@ -88,6 +97,14 @@ export class HumanHelper {
   async playCard(cardId: string): Promise<boolean> {
     if (!this.gameId) return false
     return this.send('sendPlayerUUID', { gameId: this.gameId, value: cardId })
+  }
+
+  /** Pasa la prioridad del humano (sendPlayerBoolean false) para ventanas que el
+   *  test no ejerce por la UI (p. ej. el main tras lanzar la criatura de combate:
+   *  el fallback interno muere si coincide con un pago de maná). */
+  async passPriority(): Promise<boolean> {
+    if (!this.gameId) return false
+    return this.send('sendPlayerBoolean', { gameId: this.gameId, value: false })
   }
 
   // ============================ protocolo ============================
@@ -178,6 +195,16 @@ export class HumanHelper {
     const me = gv.players?.find((p) => p.controlled)
     if (!me) return
     if (me.hasPriority !== true) return
+    // ventanas de combate donde el HUMANO declara: mi ataque (activo con
+    // possibleAttackers) y mi bloqueo (defendiendo con possibleBlockers). El test
+    // las ejerce por la UI; pasar aquí cerraría el paso sin declarar nada.
+    // OJO: los selects de PRIORIDAD en pasos de combate (sin criaturas que
+    // declarar, "Play instants...") SÍ se pasan — son ventanas de instant.
+    const options = (data.options ?? {}) as { possibleAttackers?: unknown; possibleBlockers?: unknown }
+    const hasCombatSelect =
+      (Array.isArray(options.possibleAttackers) && options.possibleAttackers.length > 0) ||
+      (Array.isArray(options.possibleBlockers) && options.possibleBlockers.length > 0)
+    if (this.skipCombat && hasCombatSelect) return
     const myMain = me.isActive === true && gv.phase === 'PRECOMBAT_MAIN'
     if (myMain) {
       // el reloj del fallback mide la ventana ACTUAL (turno+fase): los re-selects

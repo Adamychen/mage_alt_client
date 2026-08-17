@@ -5,7 +5,8 @@ import './LoginScreen.css'
 export default function LoginScreen() {
   const phase = useStore((s) => s.phase)
   const error = useStore((s) => s.error)
-  const [host, setHost] = useState('localhost')
+  const [proxyHost, setProxyHost] = useState('localhost')
+  const [serverHost, setServerHost] = useState('localhost')
   const [port, setPort] = useState('17171')
   const [username, setUsername] = useState('player1')
   const [password, setPassword] = useState('password')
@@ -13,7 +14,8 @@ export default function LoginScreen() {
   useEffect(() => {
     const saved = loadConn()
     if (saved) {
-      setHost(saved.host)
+      setProxyHost(saved.wsHost)
+      setServerHost(saved.serverHost)
       setPort(String(saved.port))
       setUsername(saved.username)
       setPassword(saved.password)
@@ -25,7 +27,7 @@ export default function LoginScreen() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (busy) return
-    void doConnect(host.trim(), parseInt(port, 10) || 17171, username.trim(), password)
+    void doConnect(proxyHost.trim(), serverHost.trim() || proxyHost.trim(), parseInt(port, 10) || 17171, username.trim(), password)
   }
 
   return (
@@ -35,7 +37,11 @@ export default function LoginScreen() {
         <p className="subtitle">Cliente moderno para XMage</p>
         <label>
           Servidor del proxy (host)
-          <input value={host} onChange={(e) => setHost(e.target.value)} />
+          <input value={proxyHost} onChange={(e) => setProxyHost(e.target.value)} />
+        </label>
+        <label>
+          Host del servidor XMage
+          <input value={serverHost} onChange={(e) => setServerHost(e.target.value)} />
         </label>
         <label>
           Puerto del servidor XMage
@@ -60,7 +66,7 @@ export default function LoginScreen() {
         <button className="primary" disabled={busy} type="submit">
           {busy ? 'Conectando…' : 'Conectar'}
         </button>
-        <p className="hint">Requiere el proxy corriendo en ws://{host}:8787 y el servidor XMage en {host}:{port}</p>
+        <p className="hint">Requiere el proxy corriendo en ws://{proxyHost}:8787 y el servidor XMage en {serverHost}:{port}</p>
       </form>
     </div>
   )

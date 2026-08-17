@@ -46,6 +46,14 @@ export interface HumanGameOptions {
   simBattle?: string[]
   simAttack?: boolean
   simCombatDamage?: number
+  /** Criaturas propias ya en el campo al arrancar (ids `my-<nombre>`). */
+  myBattle?: string[]
+  /** El humano declara atacantes al pasar su main phase (ventana de combate). */
+  humanAttack?: boolean
+  /** El humano bloquea el ataque del Sim (ventana de bloqueo). */
+  humanBlock?: boolean
+  /** Daño de combate del humano al Sim al resolver el ataque. */
+  humanCombatDamage?: number
 }
 
 interface CastRuntime {
@@ -67,14 +75,18 @@ export class HumanGame {
   private simLife = 20
   private turn = 1
   private phase = 'PRECOMBAT_MAIN'
+  private step = 'PRECOMBAT_MAIN'
   private active: 'human' | 'sim' = 'human'
   private priority: 'human' | 'sim' = 'human'
   private stack: Record<string, CardView> = {}
   private combat: unknown[] = []
-  private stage: 'lobby' | 'main' | 'cast' | 'sim' | 'end' = 'lobby'
+  private stage: 'lobby' | 'main' | 'cast' | 'attack' | 'block' | 'sim' | 'end' = 'lobby'
   private cast: CastRuntime | null = null
   private playedLandTurn = -1
   private started = false
+  /** El turno del Sim está en pausa esperando el bloqueo del humano. */
+  private simPaused = false
+  private blockingId: string | null = null
 
   constructor(private readonly options: HumanGameOptions) {
     this.tableName = options.tableName ?? 'Mesa E2E'
@@ -85,6 +97,9 @@ export class HumanGame {
     }
     this.hand = options.hand.map((name, i) => ({ id: `human-${i}`, name }))
     this.simBattle = (options.simBattle ?? []).map((name) => makePermanent({ name, parentId: `sim-${name}` }))
+    for (const name of options.myBattle ?? []) {
+      this.myBattle.push(makePermanent({ name, parentId: `my-${name}`, controlled: true }))
+    }
   }
 
   scenario(): Scenario {
@@ -116,11 +131,23 @@ export class HumanGame {
           case 'removeTable':
           case 'leaveTable':
           case 'stopWatching':
-          case 'sendPlayerString':
           case 'sendPlayerManaType':
             conn.ok(requestId, action, {})
             break
+          case 'sendPlayerString':
+            conn.ok(requestId, action, {})
+            if (this.stage === 'attack' && String(args.value ?? '') === 'special') this.onAttackSpecial()
+            break
           case 'sendPlayerUUID':
+            conn.ok(requestId, action, {})
+            if (this.stage === 'block' && this.blockingId === null) {
+              this.onBlockUUID(String(args.value ?? ''))
+              break
+            }
+            if (this.stage === 'block') {
+              this.onBlockTarget(String(args.value ?? ''))
+              break
+            }
             this.onUUID(conn, requestId, action, String(args.value ?? ''))
             break
           case 'sendPlayerBoolean':
@@ -172,6 +199,7 @@ export class HumanGame {
     this.started = true
     this.stage = 'main'
     this.phase = 'PRECOMBAT_MAIN'
+    this.step = 'PRECOMBAT_MAIN'
     this.active = 'human'
     this.priority = 'human'
     this.emit('START_GAME', { gameId: this.gameId, tableName: this.tableName })
@@ -218,7 +246,7 @@ export class HumanGame {
       myPlayerId: HUMAN_PLAYER_ID,
       myHand,
       phase: this.phase,
-      step: 'PRECOMBAT_MAIN',
+      step: this.step,
       activePlayerId: this.active === 'human' ? HUMAN_PLAYER_ID : SIM_PLAYER_ID,
       activePlayerName: this.active === 'human' ? HUMAN_NAME : this.simName,
       priorityPlayerName: this.priority === 'human' ? HUMAN_NAME : this.simName,
@@ -239,6 +267,14 @@ export class HumanGame {
 
   private onUUID(conn: FakeConn, requestId: string | number, action: string, value: string): void {
     conn.ok(requestId, action, {})
+    if (this.stage === 'attack') {
+      this.onAttackUUID(value)
+      return
+    }
+    if (this.stage === 'block') {
+      this.onBlockUUID(value)
+      return
+    }
     if (this.stage === 'main') {
       const card = this.hand.find((c) => c.id === value)
       if (card && BASIC_LANDS.has(card.name)) {
@@ -256,10 +292,22 @@ export class HumanGame {
 
   private onBoolean(conn: FakeConn, requestId: string | number, action: string, _value: boolean): void {
     conn.ok(requestId, action, {})
+    if (this.stage === 'attack') {
+      this.finishHumanAttack()
+      return
+    }
+    if (this.stage === 'block') {
+      this.finishHumanBlock()
+      return
+    }
     if (this.stage !== 'main') return
     // el humano pasa su ventana main: si hay hechizo jugable, mantenerla (el test
     // va a lanzar; el pass del fallback del helper no debe romper la ventana)
     if (this.playableIds().length > 0) return
+    if (this.options.humanAttack && this.myBattle.length > 0) {
+      this.startHumanAttack()
+      return
+    }
     this.startSimTurn()
   }
 
@@ -387,6 +435,124 @@ export class HumanGame {
     return gv
   }
 
+  // ============================ combate del humano ============================
+
+  private startHumanAttack(): void {
+    this.stage = 'attack'
+    this.phase = 'COMBAT'
+    this.step = 'DECLARE_ATTACKERS'
+    this.emitAttackSelect()
+  }
+
+  private emitAttackSelect(): void {
+    const ids = this.myBattle.map((p) => p.parentId ?? p.name)
+    this.emit('GAME_SELECT', {
+      message: 'Select attackers',
+      options: { possibleAttackers: ids, specialButton: 'All attack' },
+      gameView: this.view(),
+    })
+  }
+
+  private onAttackUUID(value: string): void {
+    const perm = this.myBattle.find((p) => (p.parentId ?? p.name) === value)
+    if (!perm) return
+    const id = perm.parentId ?? perm.name
+    const groups = this.combat as Array<Record<string, Record<string, unknown>>>
+    const alreadyAttacking = groups.some((g) => g.attackers && id in g.attackers)
+    if (alreadyAttacking) {
+      this.combat = groups
+        .map((g) => {
+          const attackers = { ...g.attackers }
+          delete attackers[id]
+          return { ...g, attackers }
+        })
+        .filter((g) => Object.keys(g.attackers).length > 0)
+    } else {
+      this.combat = [{ attackers: { [id]: {} } }]
+    }
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitAttackSelect()
+  }
+
+  private onAttackSpecial(): void {
+    // "Atacar con todos": todas las criaturas propias atacan
+    this.combat = [{ attackers: Object.fromEntries(this.myBattle.map((p) => [p.parentId ?? p.name, {}])) }]
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.finishHumanAttack()
+  }
+
+  private finishHumanAttack(): void {
+    if (this.options.humanCombatDamage) this.simLife = Math.max(0, this.simLife - (this.options.humanCombatDamage ?? 0))
+    this.combat = []
+    this.step = 'PRECOMBAT_MAIN'
+    this.phase = 'PRECOMBAT_MAIN'
+    this.stage = 'main'
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.startSimTurn()
+  }
+
+  private startHumanBlock(): void {
+    this.stage = 'block'
+    this.phase = 'COMBAT'
+    this.step = 'DECLARE_BLOCKERS'
+    this.simPaused = true
+    this.emitBlockSelect()
+  }
+
+  private emitBlockSelect(): void {
+    const ids = this.myBattle.map((p) => p.parentId ?? p.name)
+    this.emit('GAME_SELECT', {
+      message: 'Select blockers',
+      options: { possibleBlockers: ids },
+      gameView: this.view(),
+    })
+  }
+
+  private onBlockUUID(value: string): void {
+    const perm = this.myBattle.find((p) => (p.parentId ?? p.name) === value)
+    if (!perm) return
+    this.blockingId = perm.parentId ?? perm.name
+    const attackerIds = Object.keys((this.combat[0] as Record<string, Record<string, unknown>> | undefined)?.attackers ?? {})
+    if (attackerIds.length === 1) {
+      // un solo atacante: asignación automática (igual que el servidor real)
+      this.assignBlocker(attackerIds[0])
+      return
+    }
+    this.emit('GAME_TARGET', {
+      message: 'Select attacker to block',
+      targets: attackerIds,
+      options: { possibleTargets: attackerIds, secondMessage: perm.name ?? '' },
+      gameView: this.view(),
+    })
+  }
+
+  private onBlockTarget(value: string): void {
+    this.assignBlocker(value)
+  }
+
+  private assignBlocker(attackerId: string): void {
+    if (!this.blockingId) return
+    const group = this.combat[0] as Record<string, Record<string, unknown>>
+    if (group) group.blockers = { [this.blockingId]: {} }
+    this.blockingId = null
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitBlockSelect()
+  }
+
+  private finishHumanBlock(): void {
+    // bloqueado: el Sim no hace daño de combate al humano
+    this.combat = []
+    this.step = 'PRECOMBAT_MAIN'
+    this.phase = 'PRECOMBAT_MAIN'
+    this.simPaused = false
+    this.stage = 'main'
+    this.active = 'human'
+    this.priority = 'human'
+    this.turn++
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emit('GAME_SELECT', { gameView: this.view() })
+  }
+
   // ============================ turno del Sim (combat) ============================
 
   private startSimTurn(): void {
@@ -396,14 +562,20 @@ export class HumanGame {
     this.priority = 'sim'
     let simStep = 0
     const tick = () => {
+      if (this.simPaused) return
       switch (simStep++) {
         case 0:
           this.emit('GAME_UPDATE', { gameView: this.view() })
           break
         case 1:
           if (this.options.simAttack) {
-            this.combat = [{ attackers: [{ attackerId: 'sim-attacker' }] }]
+            const simAttackerId = this.simAttackerId()
+            this.combat = [{ attackers: { [simAttackerId]: {} } }]
             this.emit('GAME_UPDATE', { gameView: this.view() })
+            if (this.options.humanBlock && this.myBattle.length > 0) {
+              this.startHumanBlock()
+              return
+            }
           }
           break
         case 2:
@@ -426,5 +598,9 @@ export class HumanGame {
       setTimeout(tick, 400)
     }
     tick()
+  }
+
+  private simAttackerId(): string {
+    return this.simBattle[0] ? (this.simBattle[0].parentId ?? this.simBattle[0].name) : 'sim-attacker'
   }
 }

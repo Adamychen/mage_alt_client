@@ -98,4 +98,34 @@ export const COMBAT_OPPONENT_DECK: Deck = {
   sideboard: [],
 }
 
-export const DECKS = [DEFAULT_DECK, ADVANCED_DECK, STABLE_DECK, COMBAT_OPPONENT_DECK, LANDS_DECK]
+// Mazo del humano en los E2E de combate humano: tierras + Raging Goblin (1/1
+// haste). ORDENADO para partidas deterministas (skipInitShuffling): mano inicial
+// con 4 Mountain + 1 Goblin → el humano lanza el Goblin en el turno 1-2 y puede
+// atacar ese mismo turno (haste) o bloquear el ataque del Sim.
+export const COMBAT_HUMAN_DECK: Deck = {
+  name: 'Mage Web combat human',
+  cards: [
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 4 },
+    { cardName: 'Raging Goblin', setCode: 'M10', cardNumber: '153', amount: 1 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 26 },
+    { cardName: 'Raging Goblin', setCode: 'M10', cardNumber: '153', amount: 19 },
+  ],
+  sideboard: [],
+}
+
+// Mazo del oponente Sim en el E2E de bloqueo humano: tierras + UN solo Raging
+// Goblin en la mano inicial (1/1 haste). ORDENADO (skipInitShuffling): el Sim
+// lanza el Goblin en su turno 1 y ataca SOLO con él cada turno (un atacante por
+// combate → el bloqueo del humano es de asignación automática, sin GAME_TARGET).
+export const COMBAT_BLOCK_SIM_DECK: Deck = {
+  name: 'Mage Web block sim',
+  cards: [
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 5 },
+    { cardName: 'Raging Goblin', setCode: 'M10', cardNumber: '153', amount: 1 },
+    { cardName: 'Mountain', setCode: 'LEA', cardNumber: '292', amount: 20 },
+    { cardName: 'Raging Goblin', setCode: 'M10', cardNumber: '153', amount: 24 },
+  ],
+  sideboard: [],
+}
+
+export const DECKS = [DEFAULT_DECK, ADVANCED_DECK, STABLE_DECK, AI_OPPONENT_DECK, COMBAT_OPPONENT_DECK, COMBAT_HUMAN_DECK, COMBAT_BLOCK_SIM_DECK, LANDS_DECK]

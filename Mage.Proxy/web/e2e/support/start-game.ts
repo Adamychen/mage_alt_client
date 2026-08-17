@@ -58,6 +58,7 @@ export async function login(page: Page, username: string, opts: LoginOptions = {
   await page.goto('/')
   await expect(page.locator('form.login-card')).toBeVisible({ timeout: 20_000 })
   await page.getByLabel('Servidor del proxy (host)').fill('localhost')
+  await page.getByLabel('Host del servidor XMage').fill('localhost')
   await page.getByLabel('Puerto del servidor XMage').fill('17171')
   await page.getByLabel('Usuario').fill(username)
   await page.getByLabel('Contraseña').fill('x')
@@ -141,6 +142,8 @@ export interface StartGameOptions extends CreateTableOptions {
   /** Prefijo del usuario único (sp/tg/cb/e2e...). */
   prefix?: string
   maxFrames?: number
+  /** El helper no toca las ventanas de combate (el humano las ejerce por la UI). */
+  skipCombat?: boolean
 }
 
 /** Monta la partida (login → mesa → Sim → arranque), arranca el HumanHelper
@@ -157,7 +160,7 @@ export async function startGame(page: Page, opts: StartGameOptions = {}): Promis
   await waitTableReady(page, tableName)
   // el helper se conecta ANTES de arrancar la partida para capturar el
   // START_GAME/GAME_INIT desde el primer evento (el waitGameId espera)
-  const helper = new HumanHelper(username, 'x')
+  const helper = new HumanHelper(username, 'x', { skipCombat: opts.skipCombat })
   registerHelper(helper)
   await helper.start()
   await startMatch(page, tableName)

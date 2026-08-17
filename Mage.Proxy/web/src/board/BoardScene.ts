@@ -21,6 +21,10 @@ export class BoardScene {
   private targetSourceId: string | undefined
   private playableIds = new Set<string>()
   private playableHandler: ((id: string) => void) | undefined
+  private combatSelectable = new Set<string>()
+  private combatChosen = new Set<string>()
+  private combatSelectHandler: ((id: string) => void) | undefined
+  private combatMode: 'attack' | 'block' | null = null
   private pulses = new Map<string, Graphics>()
   private chosenBadges = new Map<string, Text>()
   private playerHits = new Map<string, Graphics>()
@@ -119,6 +123,17 @@ export class BoardScene {
   setPlayable(ids: string[], handler?: (id: string) => void) {
     this.playableIds = new Set(ids)
     this.playableHandler = handler
+    this.publishSceneState()
+    if (this.game) this.render(this.game)
+  }
+
+  /** Declaración de atacantes/bloqueadores: criaturas clicables del campo propio
+   *  (options.possibleAttackers/possibleBlockers) + las ya declaradas (combate). */
+  setCombatSelect(ids: string[], chosen: string[], handler?: (id: string) => void, mode: 'attack' | 'block' | null = null) {
+    this.combatSelectable = new Set(ids)
+    this.combatChosen = new Set(chosen)
+    this.combatSelectHandler = handler
+    this.combatMode = ids.length > 0 ? (mode ?? 'attack') : null
     this.publishSceneState()
     if (this.game) this.render(this.game)
   }
@@ -312,6 +327,12 @@ export class BoardScene {
         ids: [...this.targetIds],
         chosen: [...this.chosenTargetIds],
       },
+      combat: {
+        active: this.combatSelectable.size > 0,
+        mode: this.combatMode,
+        selectable: [...this.combatSelectable],
+        chosen: [...this.combatChosen],
+      },
       game: this.game
         ? { turn: this.game.turn, phase: this.game.phase, step: this.game.step, priority: me?.hasPriority === true }
         : null,
@@ -391,6 +412,24 @@ export class BoardScene {
 
   private renderOverlays(p: Placement, cw: number, ch: number, overlays: Container) {
     overlays.removeChildren()
+    if (this.combatSelectable.has(p.sourceId)) {
+      const selectable = new Graphics()
+      const chosen = this.combatChosen.has(p.sourceId)
+      selectable.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({
+        width: chosen ? 4 : 3,
+        color: chosen ? 0x7ee787 : 0x58a6ff,
+        alpha: 0.95,
+      })
+      overlays.addChild(selectable)
+      if (chosen) {
+        const badge = new Text({
+          text: '✓',
+          style: { fontSize: 22, fill: 0x7ee787, stroke: { color: 0x000000, width: 4 }, fontWeight: '800' },
+        })
+        badge.position.set(cw - 22, -2)
+        overlays.addChild(badge)
+      }
+    }
     if (this.playableIds.has(p.sourceId)) {
       const playable = new Graphics()
       playable.roundRect(1, 1, cw - 2, ch - 2, 8).stroke({ width: 3, color: 0x63e6be, alpha: 0.9 })
@@ -439,6 +478,10 @@ export class BoardScene {
       holder.on('pointerout', () => {
         this.hoveredTargetId = undefined
       })
+    } else if (this.combatSelectable.has(id) && this.combatSelectHandler) {
+      holder.eventMode = 'static'
+      holder.cursor = 'pointer'
+      holder.on('pointertap', () => this.combatSelectHandler?.(id))
     } else if (this.playableIds.has(id) && this.playableHandler) {
       holder.eventMode = 'static'
       holder.cursor = 'pointer'
@@ -454,6 +497,10 @@ export class BoardScene {
   dispatchClick(sourceId: string): boolean {
     if (this.targetIds.has(sourceId) && this.targetHandler) {
       this.targetHandler(sourceId)
+      return true
+    }
+    if (this.combatSelectable.has(sourceId) && this.combatSelectHandler) {
+      this.combatSelectHandler(sourceId)
       return true
     }
     if (this.playableIds.has(sourceId) && this.playableHandler) {

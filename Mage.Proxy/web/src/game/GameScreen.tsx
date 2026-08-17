@@ -14,6 +14,8 @@ export default function GameScreen() {
   const feedback = useStore((s) => s.feedback)
   // playables consolidados por el store (el gameView de GAME_UPDATE no los trae)
   const playableIds = useStore((s) => s.playableIds)
+  // declaración de atacantes/bloqueadores (GAME_SELECT con possibleAttackers/Blockers)
+  const combat = useStore((s) => s.combat)
 
   useEffect(() => {
     if (game) maybeAutoPass(game)
@@ -35,6 +37,14 @@ export default function GameScreen() {
     if (!gameId) return
     const result = await cmds.sendPlayerUUID(id, gameId)
     if (!result.ok) setStoreError(result.error ?? 'No se pudo jugar la carta')
+  }
+
+  const onCombatClick = async (id: string) => {
+    if (!gameId) return
+    // declarar/quitar atacante o bloqueador: el servidor re-dispara el select de
+    // combate mientras la ventana siga abierta
+    const result = await cmds.sendPlayerUUID(id, gameId)
+    if (!result.ok) setStoreError(result.error ?? 'No se pudo declarar la criatura en combate')
   }
 
   return (
@@ -79,6 +89,10 @@ export default function GameScreen() {
                 targetSourceId={targetSourceId}
                 playableIds={playableIds}
                 onPlayableClick={onPlayableClick}
+                combatSelectable={combat?.selectable ?? []}
+                combatChosen={combat?.chosen ?? []}
+                combatMode={combat?.mode ?? null}
+                onCombatClick={onCombatClick}
               />
             ) : <div className="board-empty">Esperando al tablero…</div>}
         </div>

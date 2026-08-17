@@ -5,7 +5,11 @@ import type { ChatMessageEvent, GameView, LobbyEnvelope, ProxyMessage } from '..
 import { parseFeedback, type FeedbackPrompt } from '../game/feedback'
 import { playableObjectIds } from '../board/gameToScene'
 export interface ConnectionInfo {
-  host: string
+  /** Host del proxy WebSocket (ws://wsHost:8787). */
+  wsHost: string
+  /** Host del servidor XMage destino (distinto del proxy permite jugar contra
+   *  servers remotos con el proxy local). */
+  serverHost: string
   port: number
   username: string
   password: string
@@ -15,7 +19,21 @@ const STORAGE_KEY = 'mage-web-conn'
 export function loadConn(): ConnectionInfo | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as ConnectionInfo
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<ConnectionInfo> & { host?: string }
+      // migración del formato antiguo (host único): el mismo host servía para el
+      // WS del proxy y el server XMage
+      if (parsed && !parsed.wsHost) {
+        return {
+          wsHost: parsed.host ?? 'localhost',
+          serverHost: parsed.host ?? parsed.serverHost ?? 'localhost',
+          port: parsed.port ?? 17171,
+          username: parsed.username ?? '',
+          password: parsed.password ?? '',
+        }
+      }
+      return parsed as ConnectionInfo
+    }
   } catch {}
   return null
 }
@@ -52,6 +70,10 @@ interface AppState {
   playableIds: string[]
   /** turno+fase del view que originó los playables actuales (ventana de validez). */
   playableWindow: { turn: number; phase: string } | null
+  /** Declaración de atacantes/bloqueadores en curso (GAME_SELECT "Select
+   *  attackers/blockers"): criaturas propias clicables, botón "Atacar con todos"
+   *  disponible y criaturas ya declaradas (leídas del combate del GameView). */
+  combat: CombatState | null
   feedback: FeedbackPrompt | null
   log: LogEntry[]
   events: { method: string; time: number }[]
@@ -60,6 +82,16 @@ interface AppState {
     autoPass: boolean
   }
   error: string | null
+}
+
+export interface CombatState {
+  mode: 'attack' | 'block'
+  /** Criaturas propias seleccionables (options.possibleAttackers/possibleBlockers). */
+  selectable: string[]
+  /** El servidor ofrece el botón "Atacar con todos" (options.specialButton). */
+  special: boolean
+  /** Criaturas ya declaradas como atacantes/bloqueadores (del combate del GameView). */
+  chosen: string[]
 }
 
 const initialState: AppState = {
@@ -74,6 +106,7 @@ const initialState: AppState = {
   gameId: null,
   playableIds: [],
   playableWindow: null,
+  combat: null,
   feedback: null,
   log: [],
   events: [],
@@ -135,7 +168,7 @@ function handleMessage(msg: ProxyMessage) {
       setState({ phase: 'lobby', error: null })
       break
     case 'disconnected':
-      setState({ phase: 'idle', game: null, gameId: null, playableIds: [], playableWindow: null, feedback: null, lobby: null, roomChatId: null })
+      setState({ phase: 'idle', game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
       break
     case 'info':
       addLog('servidor', msg.message)
@@ -209,6 +242,16 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         if (method === 'GAME_SELECT' && state.feedback?.method === 'GAME_TARGET') {
           patch.feedback = null
         }
+        // declaración de atacantes/bloqueadores: GAME_SELECT con
+        // options.possibleAttackers/possibleBlockers (el resto de selects son
+        // prioridad y cierran la ventana de combate)
+        const combat = method === 'GAME_SELECT' ? combatFromSelect(data) : null
+        patch.combat = combat
+        if (!combat && embeddedGame && isCombatStep(embeddedGame)) {
+          // un GAME_UPDATE dentro de un paso de combate conserva la ventana
+          // (el combate declarado sigue visible mientras dura el paso)
+          patch.combat = { ...(state.combat ?? emptyCombat()), chosen: combatChosenFrom(embeddedGame) }
+        }
         setState(patch)
       }
       break
@@ -223,7 +266,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       break
     }
     case 'END_GAME_INFO':
-      setState({ game: null, gameId: null, playableIds: [], playableWindow: null, feedback: null, phase: 'lobby' })
+      setState({ game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, phase: 'lobby' })
       break
     case 'GAME_TARGET': {
       const d = data as { message?: string; options?: { targets?: unknown }; gameId?: string } | null
@@ -317,12 +360,64 @@ function consolidatePlayables(game: GameView, method: string): { ids: string[]; 
 
 const BASIC_LANDS = ['Mountain', 'Plains', 'Island', 'Swamp', 'Forest']
 
+function emptyCombat(): CombatState {
+  return { mode: 'attack', selectable: [], special: false, chosen: [] }
+}
+
+function isCombatStep(game: GameView): boolean {
+  return game.step === 'DECLARE_ATTACKERS' || game.step === 'DECLARE_BLOCKERS'
+}
+
+/** Ventana de combate del GAME_SELECT: options.possibleAttackers (declarar
+ *  atacantes) o options.possibleBlockers (declarar bloqueadores). null si el
+ *  select es de prioridad (cierra la ventana de combate). */
+function combatFromSelect(data: unknown): CombatState | null {
+  const record = (data ?? {}) as Record<string, unknown>
+  const options = (record.options ?? {}) as Record<string, unknown>
+  const attackers = stringList(options.possibleAttackers)
+  const blockers = stringList(options.possibleBlockers)
+  if (attackers.length === 0 && blockers.length === 0) return null
+  const selectable = attackers.length > 0 ? attackers : blockers
+  return {
+    mode: attackers.length > 0 ? 'attack' : 'block',
+    selectable,
+    special: attackers.length > 0 && typeof options.specialButton === 'string',
+    chosen: combatChosenFrom(state.game),
+  }
+}
+
+/** Criaturas declaradas como atacantes/bloqueadores según los grupos de combate
+ *  del GameView (attackers/blockers son CardsView: objeto UUID → carta). */
+function combatChosenFrom(game: GameView | null): string[] {
+  if (!game || !Array.isArray(game.combat)) return []
+  const chosen: string[] = []
+  for (const group of game.combat) {
+    const record = group as Record<string, unknown>
+    for (const key of ['attackers', 'blockers']) {
+      const view = record[key]
+      if (view && typeof view === 'object' && !Array.isArray(view)) {
+        chosen.push(...Object.keys(view))
+      }
+    }
+  }
+  return chosen
+}
+
+function stringList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean)
+  if (value && typeof value === 'object') return Object.keys(value)
+  return []
+}
+
 /** Pasa prioridad si estamos en la partida y el modo auto-pass está activo.
  *  No pasa si en MI main phase hay algo jugable (el jugador quiere actuar ahí);
  *  el resto de fases se cruzan solas incluso con instantáneos jugables. */
 export function maybeAutoPass(game: GameView) {
   const me = game.players?.find((p) => p.controlled)
   if (!state.settings.autoPass || state.feedback || !me?.hasPriority || !state.gameId) return
+  // declaración de atacantes/bloqueadores: pasar aquí cerraría el paso de combate
+  // sin declarar nada; el humano decide (la ventana tiene sus propios botones)
+  if (state.combat) return
   // pre-juego (sorteo/keep): sin mano repartida no hay prioridad real que pasar;
   // responder ahí un booleano puede contaminar el ask de starting player
   const myHand = game.myHand ?? {}
@@ -409,7 +504,7 @@ export function attachGateway(g: Gateway) {
     setState({ wsAlive: true, error: null })
     if (state.conn && state.phase !== 'connecting') {
       addLog('conexión', 'reconectado: re-logueando…')
-      void cmds.connect(state.conn.host, state.conn.port, state.conn.username, state.conn.password)
+      void cmds.connect(state.conn.serverHost, state.conn.port, state.conn.username, state.conn.password)
     }
   }
   g.events.onClose = (reason) => {
@@ -441,13 +536,14 @@ export function setSetting<K extends keyof AppState['settings']>(key: K, value: 
   setState({ settings: { ...state.settings, [key]: value } })
 }
 
-export async function doConnect(host: string, port: number, username: string, password: string) {
-  setState({ phase: 'connecting', conn: { host, port, username, password }, error: null })
+export async function doConnect(wsHost: string, serverHost: string, port: number, username: string, password: string) {
+  const conn = { wsHost, serverHost, port, username, password }
+  setState({ phase: 'connecting', conn, error: null })
   detachGateway()
   const g = new Gateway()
   attachGateway(g)
   cmds.setGateway(g)
-  const url = `ws://${host}:8787`
+  const url = `ws://${wsHost}:8787`
   setState({ wsUrl: url })
   try {
     await g.connect(url)
@@ -455,16 +551,15 @@ export async function doConnect(host: string, port: number, username: string, pa
     setState({ phase: 'idle', error: `no se pudo conectar al proxy en ${url}: ${(e as Error).message}` })
     return
   }
-  const res = await cmds.connect(host, port, username, password)
+  const res = await cmds.connect(serverHost, port, username, password)
   if (!res.ok && /already connected/i.test(res.error ?? '')) {
     await cmds.disconnect()
     await new Promise((r) => setTimeout(r, 500))
-    return doConnect(host, port, username, password)
+    return doConnect(wsHost, serverHost, port, username, password)
   }
   if (res.ok) {
-    const connInfo = { host, port, username, password }
-    setState({ phase: 'lobby', error: null, conn: connInfo })
-    saveConn(connInfo)
+    setState({ phase: 'lobby', error: null, conn })
+    saveConn(conn)
     const chatId = await cmds.getRoomChatId()
     setState({ roomChatId: chatId ?? null })
     if (chatId) void cmds.sendChatMessage(chatId, '¡Hola desde el cliente web!')
