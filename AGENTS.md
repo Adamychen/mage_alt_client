@@ -19,6 +19,16 @@ log con fecha) y registra la fecha en el header.
 - Recompilar el jar del proxy: `node scripts/build.mjs proxy` (requiere detener
   el proxy; `build.mjs` lo para solo) — después `node scripts/ctl.mjs restart proxy`
 - Compilación completa (servidor + plugins + proxy): `node scripts/build.mjs`
+- Versión de XMage: **1.4.61-V1** (upstream magefree/mage; merge del tag `xmage_1.4.61V1`).
+  Jar del proxy: `Mage.Proxy/target/mage-proxy-1.4.61.jar`. El server por defecto del
+  proxy es **`beta.xmage.today:17171`** (server oficial actual; `beta.xmage.de` está obsoleto).
+  Si el server remoto cambia de release (version check estricto `MAGE_VERSION_RELEASE_INFO_MUST_BE_SAME`),
+  el proxy no conecta: hay que actualizar el fork (fetch upstream + merge) y recompilar todo.
+- Smoke contra el server público: funciona vía proxy (probe WS: login, mesa SIM, WATCHGAME/GAME_INIT/updates).
+  Notas: (a) el login anónimo a beta.xmage.today es **intermitente** (a veces el server envía
+  `SHOW_USERMESSAGE` de news antes de completar el login y `connectUser` falla sin mensaje;
+  reintentar); (b) el login del web usa UN solo host para el WS del proxy y el server destino
+  → para jugar contra servers remotos desde el navegador hay que separar esos campos (pendiente).
 
 ## Suite de tests
 
