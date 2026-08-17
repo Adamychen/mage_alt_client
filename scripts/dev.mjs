@@ -39,7 +39,7 @@ function startServer() {
 }
 
 function startProxy() {
-  const jar = `${import.meta.dirname}/../Mage.Proxy/target/mage-proxy-1.4.60.jar`
+  const jar = `${import.meta.dirname}/../Mage.Proxy/target/mage-proxy-1.4.61.jar`
   if (!fs.existsSync(jar)) {
     logError(`falta el jar del proxy — ejecuta: node scripts/build.mjs`)
     return false

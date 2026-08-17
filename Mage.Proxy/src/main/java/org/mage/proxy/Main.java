@@ -14,7 +14,7 @@ import java.nio.file.Files;
  * <p>
  * Usage:
  * <pre>
- * java -jar mage-proxy.jar [--host beta.xmage.de] [--port 17171] [--username u] [--password p] [--wsPort 8787] [--httpPort 8788]
+ * java -jar mage-proxy.jar [--host beta.xmage.today] [--port 17171] [--username u] [--password p] [--wsPort 8787] [--httpPort 8788]
  * </pre>
  * Then open http://localhost:8788/index.html (test page) which connects to ws://localhost:8787
  */

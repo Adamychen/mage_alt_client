@@ -6,14 +6,14 @@
     <parent>
         <groupId>org.mage</groupId>
         <artifactId>mage-root</artifactId>
-        <version>1.4.60</version>
+        <version>1.4.61</version>
     </parent>
 
     <artifactId>mage-proxy</artifactId>
     <packaging>jar</packaging>
     <name>Mage Proxy (alternative client gateway)</name>
     <description>
-        Gateway between an XMage server (beta.xmage.de) and a modern web client.
+        Gateway between an XMage server (beta.xmage.today) and a modern web client.
         Speaks the XMage protocol (Java serialization over jboss remoting) on one side
         and JSON over WebSocket on the other side.
     </description>

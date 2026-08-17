@@ -11,7 +11,7 @@ import java.util.Set;
  */
 public class Config {
 
-    public static final String DEFAULT_SERVER_HOST = "beta.xmage.de";
+    public static final String DEFAULT_SERVER_HOST = "beta.xmage.today";
     public static final int DEFAULT_SERVER_PORT = 17171;
     public static final int DEFAULT_WS_PORT = 8787;
     public static final int DEFAULT_HTTP_PORT = 8788;
