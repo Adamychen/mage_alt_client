@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { Gateway } from '../net/Gateway'
 import * as cmds from '../net/commands'
-import type { ChatMessageEvent, GameView, LobbyEnvelope, ProxyMessage } from '../net/types'
+import type { ChatMessageEvent, DeckCardEntry, DeckJson, GameEndInfo, GameView, LobbyEnvelope, ProxyMessage } from '../net/types'
 import { parseFeedback, type FeedbackPrompt } from '../game/feedback'
 import { playableObjectIds } from '../board/gameToScene'
 export interface ConnectionInfo {
@@ -56,6 +56,8 @@ interface AppState {
   phase: 'idle' | 'connecting' | 'lobby' | 'game'
   conn: ConnectionInfo | null
   wsUrl: string | null
+  /** true cuando el cliente está intentando conectar/reconectar al proxy */
+  connecting: boolean
   /** false cuando el WebSocket al proxy está caído (reconexión en curso) */
   wsAlive: boolean
   lobby: LobbyEnvelope | null
@@ -74,7 +76,16 @@ interface AppState {
    *  attackers/blockers"): criaturas propias clicables, botón "Atacar con todos"
    *  disponible y criaturas ya declaradas (leídas del combate del GameView). */
   combat: CombatState | null
+  /** Resumen del fin de la última partida (END_GAME_INFO); en un match best-of-N
+   *  el match continúa (SIDEBOARD) o termina (matchView.endTime). */
+  gameEnd: GameEndInfo | null
+  /** Mazo propio (el que se usó para unirse a la mesa): el SIDEBOARD del match
+   *  lo exige para la siguiente partida. */
+  myDeck: DeckJson | null
   feedback: FeedbackPrompt | null
+  /** Sideboard del mazo actual (15 cartas). Se intercambian con el main deck
+   *  entre partidas de un match best-of-N. */
+  sideboard: DeckCardEntry[]
   log: LogEntry[]
   events: { method: string; time: number }[]
   settings: {
@@ -98,6 +109,7 @@ const initialState: AppState = {
   phase: 'idle',
   conn: loadConn(),
   wsUrl: null,
+  connecting: false,
   wsAlive: false,
   lobby: null,
   roomChatId: null,
@@ -107,7 +119,10 @@ const initialState: AppState = {
   playableIds: [],
   playableWindow: null,
   combat: null,
+  gameEnd: null,
+  myDeck: null,
   feedback: null,
+  sideboard: [],
   log: [],
   events: [],
   settings: { autoKeepMulligan: true, autoPass: false },
@@ -165,10 +180,10 @@ function addLog(from: string, text: string, gameId?: string) {
 function handleMessage(msg: ProxyMessage) {
   switch (msg.type) {
     case 'connected':
-      setState({ phase: 'lobby', error: null })
+      setState({ phase: 'lobby', connecting: false, error: null })
       break
     case 'disconnected':
-      setState({ phase: 'idle', game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
+      setState({ phase: 'idle', connecting: false, game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
       break
     case 'info':
       addLog('servidor', msg.message)
@@ -224,7 +239,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'START_GAME': {
       const d = data as { gameId?: string; tableName?: string } | null
       const isNewGame = !!d?.gameId && d.gameId !== state.gameId
-      setState({ phase: 'game', gameId: d?.gameId ?? null })
+      setState({ phase: 'game', gameId: d?.gameId ?? null, gameEnd: null })
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
       // unirse a la partida ya (como el cliente oficial): evita los 10s de forced-join
       if (isNewGame) void cmds.joinGame(d!.gameId!)
@@ -238,6 +253,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       if (embeddedGame) {
         const { ids, window: playableWindow } = consolidatePlayables(embeddedGame, method)
         const patch: Partial<AppState> = { playableIds: ids, playableWindow }
+        if (method === 'GAME_INIT') patch.gameEnd = null
         // el diálogo de targeting queda resuelto cuando llega un select de prioridad
         if (method === 'GAME_SELECT' && state.feedback?.method === 'GAME_TARGET') {
           patch.feedback = null
@@ -265,9 +281,48 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       addLog('partida', d?.message ?? 'Fin de partida', d?.gameId ?? undefined)
       break
     }
-    case 'END_GAME_INFO':
-      setState({ game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, phase: 'lobby' })
+    case 'END_GAME_INFO': {
+      // En un match best-of-N este evento llega TRAS CADA partida: matchInfo dice
+      // si el match continúa ("You need N more wins...") o terminó ("...won the
+      // match!") — señal fiable: matchView.endTime (solo se fija al final).
+      const end = (data ?? {}) as GameEndInfo
+      const matchOver = end.matchView?.endTime != null || /won the match/i.test(end.matchInfo ?? '')
+      addLog('partida', matchOver ? (end.matchInfo ?? 'Fin del match') : (end.matchInfo ?? 'Fin de la partida'))
+      if (matchOver) {
+        // la mesa se cierra: vuelta al lobby con el resumen visible
+        setState({
+          game: null,
+          gameId: null,
+          playableIds: [],
+          playableWindow: null,
+          combat: null,
+          feedback: null,
+          phase: 'lobby',
+          gameEnd: end,
+        })
+      } else {
+        // el match continúa: se mantiene la pantalla de partida; el SIDEBOARD
+        // llega a continuación y arranca la siguiente partida
+        setState({ gameEnd: end })
+      }
       break
+    }
+    case 'SIDEBOARD': {
+      const d = (data ?? {}) as { currentTableId?: string } | null
+      const tableId = d?.currentTableId
+      if (tableId && state.myDeck) {
+        const deck = { ...state.myDeck }
+        const testSide = (typeof window !== 'undefined' && Array.isArray(window.__mageSideboard))
+          ? (window.__mageSideboard as DeckCardEntry[])
+          : [...state.sideboard]
+        const swap = testSide.splice(0, Math.min(15, testSide.length))
+        deck.sideboard = testSide
+        deck.cards = [...deck.cards, ...swap]
+        addLog('partida', `Sideboard: intercambiando ${swap.length} carta(s) para la siguiente partida…`)
+        void cmds.submitDeck(tableId, deck)
+      }
+      break
+    }
     case 'GAME_TARGET': {
       const d = data as { message?: string; options?: { targets?: unknown }; gameId?: string } | null
       const question = d?.message ?? ''
@@ -501,14 +556,14 @@ export function attachGateway(g: Gateway) {
   gateway = g
   g.events.onMessage = handleMessage
   g.events.onOpen = () => {
-    setState({ wsAlive: true, error: null })
+    setState({ connecting: false, wsAlive: true, error: null })
     if (state.conn && state.phase !== 'connecting') {
       addLog('conexión', 'reconectado: re-logueando…')
       void cmds.connect(state.conn.serverHost, state.conn.port, state.conn.username, state.conn.password)
     }
   }
   g.events.onClose = (reason) => {
-    setState({ wsAlive: false })
+    setState({ connecting: false, wsAlive: false })
     addLog('conexión', `desconectado: ${reason}`)
   }
 }
@@ -532,13 +587,21 @@ export function clearFeedback() {
   setState({ feedback: null })
 }
 
+export function setMyDeck(deck: DeckJson | null) {
+  setState({ myDeck: deck, sideboard: deck?.sideboard ?? [] })
+}
+
+export function clearGameEnd() {
+  setState({ gameEnd: null })
+}
+
 export function setSetting<K extends keyof AppState['settings']>(key: K, value: AppState['settings'][K]) {
   setState({ settings: { ...state.settings, [key]: value } })
 }
 
 export async function doConnect(wsHost: string, serverHost: string, port: number, username: string, password: string) {
   const conn = { wsHost, serverHost, port, username, password }
-  setState({ phase: 'connecting', conn, error: null })
+  setState({ phase: 'connecting', conn, connecting: true, error: null })
   detachGateway()
   const g = new Gateway()
   attachGateway(g)
@@ -548,7 +611,7 @@ export async function doConnect(wsHost: string, serverHost: string, port: number
   try {
     await g.connect(url)
   } catch (e) {
-    setState({ phase: 'idle', error: `no se pudo conectar al proxy en ${url}: ${(e as Error).message}` })
+    setState({ phase: 'idle', connecting: false, error: `no se pudo conectar al proxy en ${url}: ${(e as Error).message}` })
     return
   }
   const res = await cmds.connect(serverHost, port, username, password)
@@ -558,13 +621,13 @@ export async function doConnect(wsHost: string, serverHost: string, port: number
     return doConnect(wsHost, serverHost, port, username, password)
   }
   if (res.ok) {
-    setState({ phase: 'lobby', error: null, conn })
+    setState({ phase: 'lobby', connecting: false, error: null, conn })
     saveConn(conn)
     const chatId = await cmds.getRoomChatId()
     setState({ roomChatId: chatId ?? null })
     if (chatId) void cmds.sendChatMessage(chatId, '¡Hola desde el cliente web!')
   } else {
-    setState({ phase: 'idle', error: res.error ?? 'login fallido' })
+    setState({ phase: 'idle', connecting: false, error: res.error ?? 'login fallido' })
   }
 }
 

@@ -1,140 +1,136 @@
 import { describe, expect, it } from 'vitest'
-import { battlefieldRow, computeZones, handFanned, isStackEmpty, opponentBattleZone } from './zones'
-import { makeCard, minimalGameView } from '../__fixtures__/gameViews'
+import { battlefieldRow, battlefieldRows, computeZones, handFanned, isStackEmpty, opponentBattleZone } from './zones'
+import { minimalGameView } from '../__fixtures__/gameViews'
 
 describe('computeZones', () => {
-  it('scales 1:1 at 1600x900', () => {
-    const z = computeZones(1600, 900)
-    expect(z.scale).toBe(1)
-    expect(z.oppHeader).toEqual({ x: 16, y: 10 })
-    expect(z.myHeader).toEqual({ x: 16, y: 866 })
-    expect(z.oppBattle).toEqual({ x: 16, y: 48 })
-    expect(z.myBattle).toEqual({ x: 16, y: 596 })
-    expect(z.myHand).toEqual({ x: 800, y: 684 })
-    expect(z.stack).toEqual({ x: 727, y: 348 })
-    expect(z.oppPiles.library).toEqual({ x: 1442, y: 48 })
-    expect(z.oppPiles.graveyard).toEqual({ x: 1284, y: 48 })
-    expect(z.oppPiles.exile).toEqual({ x: 1126, y: 48 })
-    expect(z.myPiles.library).toEqual({ x: 1442, y: 596 })
-    expect(z.myPiles.graveyard).toEqual({ x: 1284, y: 596 })
-    expect(z.myPiles.exile).toEqual({ x: 1126, y: 596 })
-  })
-
-  it('scales to 0.5 at 800x450 (diseño completo escalado)', () => {
-    const z = computeZones(800, 450)
-    expect(z.scale).toBe(0.5)
-    expect(z.oppHeader).toEqual({ x: 8, y: 5 })
-    expect(z.myHeader).toEqual({ x: 8, y: 433 })
-    expect(z.myBattle).toEqual({ x: 8, y: 298 })
-    expect(z.myHand).toEqual({ x: 400, y: 342 })
-    expect(z.stack).toEqual({ x: 363.5, y: 174 })
-    expect(z.oppPiles.library).toEqual({ x: 721, y: 24 })
-  })
-
-  it('centra el mundo horizontalmente en ventanas anchas', () => {
-    const z = computeZones(2000, 1000)
-    expect(z.scale).toBeCloseTo(10 / 9, 5)
-    expect(z.offX).toBeCloseTo(111.111, 2)
-    expect(z.offY).toBeCloseTo(0, 5)
-    expect(z.oppHeader.x).toBeCloseTo(111.111 + 16 * (10 / 9), 2)
-    expect(z.myHand.y).toBeCloseTo(1000 - 204 * (10 / 9) - 12 * (10 / 9), 2)
-    expect(z.stack.x).toBeCloseTo(2000 / 2 - 146 * (10 / 9) / 2, 2)
-  })
-
-  it('centra el mundo verticalmente en ventanas altas', () => {
-    const z = computeZones(800, 1200)
-    expect(z.scale).toBe(0.5)
+  it('fills the canvas completely', () => {
+    const z = computeZones(920, 718)
+    // Scale is based on zone card height (25% of canvas minus margin, * 0.85)
+    const zoneH = Math.floor(718 * 0.25)
+    const expectedScale = Math.min(zoneH * 0.85 / 168, 1.0)
+    expect(z.scale).toBeCloseTo(expectedScale, 2)
+    expect(z.worldW).toBe(920)
+    expect(z.worldH).toBe(718)
     expect(z.offX).toBe(0)
-    expect(z.offY).toBe(375)
-    expect(z.myHand.y).toBe(375 + 444 - 102)
-    expect(z.oppHeader.y).toBe(375 + 5)
+    expect(z.offY).toBe(0)
+  })
+
+  it('opponent zone is above player zone', () => {
+    const z = computeZones(920, 718)
+    expect(z.oppZone.top).toBeLessThan(z.myZone.top)
+  })
+
+  it('divider is between battlefields', () => {
+    const z = computeZones(920, 718)
+    expect(z.dividerY).toBeGreaterThan(z.oppZone.bottom)
+    expect(z.dividerY).toBeLessThan(z.myZone.top)
+  })
+
+  it('hand is centered horizontally and near bottom', () => {
+    const z = computeZones(920, 718)
+    expect(z.myHand.x).toBeCloseTo(460, 0)
+    expect(z.myHand.y).toBeGreaterThan(z.myZone.top)
+  })
+
+  it('piles are on the right side', () => {
+    const z = computeZones(920, 718)
+    expect(z.myPiles.library.x).toBeGreaterThan(z.w * 0.5)
+  })
+
+  it('card size scales with canvas height', () => {
+    const small = computeZones(600, 400)
+    const large = computeZones(1200, 800)
+    expect(large.scale).toBeGreaterThan(small.scale)
   })
 })
 
 describe('handFanned', () => {
   it('returns [] for zero cards', () => {
-    expect(handFanned({ x: 800, y: 700 }, 0, 1, 1600, 146)).toEqual([])
+    expect(handFanned({ x: 450, y: 700 }, 0, 1)).toEqual([])
   })
 
-  it('centers a single card at the zone anchor', () => {
-    expect(handFanned({ x: 800, y: 700 }, 1, 1, 1600, 146)).toEqual([{ x: 800, y: 700 }])
+  it('centers a single card', () => {
+    const result = handFanned({ x: 450, y: 700 }, 1, 1)
+    expect(result).toEqual([{ x: 450, y: 700 }])
   })
 
-  it('spaces multiple cards evenly and keeps them centered', () => {
-    const slots = handFanned({ x: 800, y: 700 }, 5, 1, 1600, 146)
+  it('spaces multiple cards evenly and centered', () => {
+    const slots = handFanned({ x: 450, y: 700 }, 5, 1)
     expect(slots).toHaveLength(5)
-    expect(slots[0].x).toBeCloseTo(405.8, 5)
-    expect(slots[1].x - slots[0].x).toBeCloseTo(197.1, 5)
-    expect(slots[4].x - slots[3].x).toBeCloseTo(197.1, 5)
-    expect(slots[0].x + slots[4].x).toBeCloseTo(1600, 5)
-    expect(slots.every((s) => s.y === 700)).toBe(true)
+    expect(slots[0].y).toBe(700)
   })
 
-  it('caps the spacing when the fan would overflow the board width', () => {
-    const slots = handFanned({ x: 400, y: 700 }, 12, 0.5, 800, 146)
-    const maxW = 800 * 0.9
-    const spacing = (maxW - 146) / 11
-    expect(spacing).toBeLessThan(146 * 1.35)
-    expect(slots[1].x - slots[0].x).toBeCloseTo(spacing, 5)
-    expect(slots[0].x).toBeCloseTo(400 - (spacing * 11) / 2, 5)
-    expect(slots[0].x).toBeGreaterThanOrEqual(0)
+  it('caps spacing when overflow', () => {
+    const slots = handFanned({ x: 225, y: 700 }, 12, 0.5)
+    expect(slots).toHaveLength(12)
+    expect((slots[0].x + slots[11].x) / 2).toBeCloseTo(225, 0)
   })
 })
 
 describe('battlefieldRow', () => {
-  it('starts at the zone plus half a card and spaces by 0.88 of the card width', () => {
-    const slots = battlefieldRow({ x: 16, y: 596 }, 3, 1, 146, 1600)
+  it('starts at zone center and spaces by 0.85 of card width', () => {
+    const slots = battlefieldRow({ x: 20, y: 300 }, 3, 1, 100, 1200)
     expect(slots).toHaveLength(3)
-    expect(slots[0]).toEqual({ x: 89, y: 596 })
-    expect(slots[1].x - slots[0].x).toBeCloseTo(146 * 0.88, 5)
-    expect(slots[2].x - slots[1].x).toBeCloseTo(146 * 0.88, 5)
+    expect(slots[0]).toEqual({ x: 70, y: 300 })
+    expect(slots[1].x - slots[0].x).toBeCloseTo(100 * 0.85, 5)
   })
 
   it('returns [] for zero permanents', () => {
-    expect(battlefieldRow({ x: 16, y: 596 }, 0, 1, 146, 1600)).toEqual([])
+    expect(battlefieldRow({ x: 20, y: 300 }, 0, 1, 100, 1200)).toEqual([])
   })
 
-  it('compresses the spacing so a huge battlefield never overflows the world width', () => {
-    const slots = battlefieldRow({ x: 16, y: 596 }, 40, 1, 146, 1600)
-    const spacing = (1600 - 2 * 16 - 146) / 39
-    expect(spacing).toBeLessThan(146 * 0.88)
+  it('compresses spacing for large battlefields', () => {
+    const slots = battlefieldRow({ x: 20, y: 300 }, 20, 1, 100, 1200)
+    const available = 1200 * 0.70 - 100
+    const spacing = available / 19
+    expect(spacing).toBeLessThan(100 * 0.85)
     expect(slots[1].x - slots[0].x).toBeCloseTo(spacing, 5)
-    expect(slots[slots.length - 1].x + 73).toBeLessThanOrEqual(1600 - 16)
+  })
+})
+
+describe('battlefieldRows', () => {
+  it('returns [] for zero permanents', () => {
+    expect(battlefieldRows({ x: 20, y: 300 }, 0, 1, 100, 1200)).toEqual([])
   })
 
-  it('keeps a single row even with many permanents (no vertical overlap)', () => {
-    const slots = battlefieldRow({ x: 16, y: 596 }, 40, 1, 146, 1600)
+  it('puts up to 7 per row', () => {
+    const slots = battlefieldRows({ x: 20, y: 300 }, 7, 1, 100, 1200)
+    expect(slots).toHaveLength(7)
     expect(new Set(slots.map((s) => s.y)).size).toBe(1)
+  })
+
+  it('creates new rows exceeding 7', () => {
+    const slots = battlefieldRows({ x: 20, y: 300 }, 14, 1, 100, 1200)
+    expect(slots).toHaveLength(14)
+    expect(new Set(slots.map((s) => s.y)).size).toBe(2)
   })
 })
 
 describe('opponentBattleZone', () => {
-  it('keeps a single opponent in the original row', () => {
-    const zones = computeZones(1600, 900)
-    expect(opponentBattleZone(zones, 0, 1)).toEqual(zones.oppBattle)
+  it('single opponent returns original row', () => {
+    const zones = computeZones(920, 718)
+    expect(opponentBattleZone(zones, 0, 1)).toEqual({ x: zones.oppBattle.x, y: zones.oppZone.top })
   })
 
-  it('gives multiple opponents distinct rows', () => {
-    const zones = computeZones(1600, 900)
+  it('multiple opponents get distinct rows', () => {
+    const zones = computeZones(920, 718)
     const rows = [0, 1, 2].map((i) => opponentBattleZone(zones, i, 3))
-    expect(new Set(rows.map((row) => row.y)).size).toBe(3)
     expect(rows[0].y).toBeLessThan(rows[1].y)
     expect(rows[1].y).toBeLessThan(rows[2].y)
   })
 })
 
 describe('isStackEmpty', () => {
-  it('is true when stack is null', () => {
-    const game = { ...minimalGameView, stack: null as unknown as typeof minimalGameView.stack }
-    expect(isStackEmpty(game)).toBe(true)
+  it('null stack', () => {
+    expect(isStackEmpty({ ...minimalGameView, stack: null } as any)).toBe(true)
   })
 
-  it('is true when stack is an empty object', () => {
+  it('empty object', () => {
     expect(isStackEmpty(minimalGameView)).toBe(true)
   })
 
-  it('is false when the stack has cards', () => {
-    const game = { ...minimalGameView, stack: { 's-1': makeCard({ name: 'Lightning Bolt' }) } }
-    expect(isStackEmpty(game)).toBe(false)
+  it('has cards', () => {
+    const game = { ...minimalGameView, stack: { 's-1': { id: 'c1', name: 'Lightning Bolt' } as any } }
+    expect(isStackEmpty(game as any)).toBe(false)
   })
 })

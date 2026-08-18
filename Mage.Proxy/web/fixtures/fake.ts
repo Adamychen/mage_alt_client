@@ -211,11 +211,12 @@ export class FakeServer {
     for (const c of [...this.conns]) c.close()
     this.conns.clear()
     await new Promise<void>((resolve) => {
-      const timer = setTimeout(() => resolve(), 500)
+      const timer = setTimeout(() => resolve(), 2000)
       this.wss.close(() => {
         clearTimeout(timer)
         resolve()
       })
     })
+    await new Promise((r) => setTimeout(r, 500))
   }
 }

@@ -10,6 +10,7 @@ import type { Page } from '@playwright/test'
 
 export interface GameFrame {
   method: string
+  objectId?: string | null
   data?: Record<string, unknown> & { gameView?: Record<string, unknown> }
 }
 
@@ -39,7 +40,7 @@ export function parseFrames(frames: Array<Record<string, unknown> | null>): Game
   for (const frame of frames) {
     if (!frame || typeof frame !== 'object') continue
     if (typeof frame.method === 'string') {
-      out.push({ method: frame.method, data: frame.data as GameFrame['data'] })
+      out.push({ method: frame.method, objectId: frame.objectId as string | null | undefined, data: frame.data as GameFrame['data'] })
     }
   }
   return out
@@ -196,8 +197,22 @@ export function targetIdsOf(frame: GameFrame): string[] {
   return []
 }
 
+/** Id del juego actual (el último START_GAME/GAME_INIT del buffer). En un match
+ *  best-of-N el buffer acumula partidas viejas: sus eventos de fin no deben
+ *  contar como "la partida terminó". */
+export function lastGameId(frames: Array<Record<string, unknown> | null>): string | null {
+  for (const frame of [...parseFrames(frames)].reverse()) {
+    if ((frame.method === 'START_GAME' || frame.method === 'GAME_INIT') && frame.objectId) return frame.objectId
+  }
+  return null
+}
+
+/** ¿La partida ACTUAL terminó? (GAME_OVER/END_GAME_INFO del último juego). */
 export function gameEnded(frames: Array<Record<string, unknown> | null>): boolean {
-  return parseFrames(frames).some((f) => f.method === 'GAME_OVER' || f.method === 'END_GAME_INFO')
+  const currentId = lastGameId(frames)
+  return parseFrames(frames).some(
+    (f) => (f.method === 'GAME_OVER' || f.method === 'END_GAME_INFO') && (currentId == null || f.objectId === currentId),
+  )
 }
 
 /** Motivo real del fin de partida (ganador + stats) para que los fallos de

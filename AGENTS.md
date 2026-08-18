@@ -25,10 +25,10 @@ log con fecha) y registra la fecha en el header.
   Si el server remoto cambia de release (version check estricto `MAGE_VERSION_RELEASE_INFO_MUST_BE_SAME`),
   el proxy no conecta: hay que actualizar el fork (fetch upstream + merge) y recompilar todo.
 - Smoke contra el server público: funciona vía proxy (probe WS: login, mesa SIM, WATCHGAME/GAME_INIT/updates).
-  Notas: (a) el login anónimo a beta.xmage.today es **intermitente** (a veces el server envía
-  `SHOW_USERMESSAGE` de news antes de completar el login y `connectUser` falla sin mensaje;
-  reintentar); (b) el login del web usa UN solo host para el WS del proxy y el server destino
-  → para jugar contra servers remotos desde el navegador hay que separar esos campos (pendiente).
+  Notas: (a) ~~el login anónimo a beta.xmage.today es intermitente~~ **RESUELTO (2026-08-17)**
+  con el handshake buffer en `ProxyClient`; (b) el login del web usa UN solo host para el WS del proxy
+  y el server destino → para jugar contra servers remotos desde el navegador hay que separar esos
+  campos (pendiente, Fase 3).
 
 ## Suite de tests
 

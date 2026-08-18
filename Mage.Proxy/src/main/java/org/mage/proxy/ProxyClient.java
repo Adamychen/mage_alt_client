@@ -95,6 +95,7 @@ public class ProxyClient implements MageClient {
     private volatile int serverPort = 0;
 
     private volatile boolean connected = false;
+    private final List<ClientCallback> handshakeBuffer = new java.util.LinkedList<>();
 
     public ProxyClient(Config config, Gateway gateway) {
         this.config = config;
@@ -174,6 +175,15 @@ public class ProxyClient implements MageClient {
         ev.addProperty("type", "connected");
         ev.addProperty("info", message == null ? "Connected" : message);
         broadcastAuthorized(ev.toString());
+
+        List<ClientCallback> toFlush;
+        synchronized (handshakeBuffer) {
+            toFlush = new java.util.LinkedList<>(handshakeBuffer);
+            handshakeBuffer.clear();
+        }
+        for (ClientCallback cb : toFlush) {
+            callbackExecutor.execute(() -> processCallback(cb));
+        }
     }
 
     @Override
@@ -215,6 +225,16 @@ public class ProxyClient implements MageClient {
     private void processCallback(ClientCallback callback) {
         try {
             callback.decompressData();
+
+            // Buffer MESSAGE callbacks that arrive before the handshake completes.
+            // The server may send SHOW_USERMESSAGE (news/disclaimer) before connected()
+            // is called; flushing them after connected guarantees correct event ordering.
+            if (!connected && callback.getMethod().getType() == ClientCallbackType.MESSAGE) {
+                synchronized (handshakeBuffer) {
+                    handshakeBuffer.add(callback);
+                }
+                return;
+            }
 
             // ignore outdated game updates on reconnect/bad network (same logic as original client)
             if (!callback.getMethod().getType().equals(ClientCallbackType.CLIENT_SIDE_EVENT)) {

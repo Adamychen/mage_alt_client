@@ -15,9 +15,11 @@ import mage.utils.MageVersion;
 import mage.view.CardView;
 import mage.view.CardsView;
 import mage.view.GameClientMessage;
+import mage.view.GameEndView;
 import mage.view.GameView;
 import mage.view.PermanentView;
 import mage.view.PlayerView;
+import mage.view.TableClientMessage;
 
 import java.io.Serializable;
 import java.util.List;
@@ -251,14 +253,30 @@ public class SimPlayer implements MageClient {
                 case GAME_OVER:
                     logger.info("sim " + username + ": game over");
                     break;
-                case END_GAME_INFO:
-                    if (gameId != null) {
-                        try {
-                            session.quitMatch(gameId);
-                        } catch (Exception ignored) {
+                case SIDEBOARD: {
+                    // match best-of-N: el match continúa y el servidor espera el
+                    // mazo de la siguiente partida — devolver el mismo mazo
+                    if (data instanceof TableClientMessage) {
+                        TableClientMessage msg = (TableClientMessage) data;
+                        if (msg.getCurrentTableId() != null) {
+                            logger.info("sim " + username + " sideboard: enviando el mazo (match continúa)");
+                            session.submitDeck(msg.getCurrentTableId(), deck);
                         }
                     }
-                    stop();
+                    break;
+                }
+                case END_GAME_INFO:
+                    // tras cada game del match llega END_GAME_INFO; solo parar
+                    // cuando el MATCH termina (matchView.endTime se fija al final)
+                    if (isMatchOver(data)) {
+                        if (gameId != null) {
+                            try {
+                                session.quitMatch(gameId);
+                            } catch (Exception ignored) {
+                            }
+                        }
+                        stop();
+                    }
                     break;
                 default:
                     break;
@@ -478,6 +496,20 @@ public class SimPlayer implements MageClient {
 
     static boolean isMulliganAsk(String msg) {
         return msg != null && (msg.contains("keep your hand") || msg.contains("mulligan") || msg.contains("keep hand"));
+    }
+
+    /** true si el END_GAME_INFO corresponde al fin del MATCH (no de un game
+     *  intermedio): matchView.endTime solo se fija cuando alguien llega a
+     *  winsNeeded. */
+    private static boolean isMatchOver(Object data) {
+        if (data instanceof GameEndView) {
+            GameEndView end = (GameEndView) data;
+            if (end.getMatchView() != null && end.getMatchView().getEndTime() != null) {
+                return true;
+            }
+        }
+        String info = data == null ? "" : data.toString();
+        return info.contains("won the match");
     }
 
     private static boolean isLand(CardView card) {

@@ -108,6 +108,14 @@ export async function removeTable(tableId: string) {
   return getGateway().send('removeTable', { tableId })
 }
 
+export async function submitDeck(tableId: string, deck: DeckJson) {
+  return getGateway().send('submitDeck', { tableId, deck })
+}
+
+export async function updateDeck(tableId: string, deck: DeckJson) {
+  return getGateway().send('updateDeck', { tableId, deck })
+}
+
 export async function quitMatch(gameId: string) {
   return getGateway().send('quitMatch', { gameId })
 }

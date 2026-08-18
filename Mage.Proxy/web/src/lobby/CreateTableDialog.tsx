@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as cmds from '../net/commands'
 import type { GameTypeInfo } from '../net/commands'
-import { useStore } from '../state/store'
+import { setMyDeck, useStore } from '../state/store'
 import { DECKS, DEFAULT_DECK, LANDS_DECK, type Deck } from './decks'
 import './CreateTableDialog.css'
 
@@ -72,6 +72,8 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
         skill: 1,
         deck,
       })
+      // el mazo propio queda registrado para el SIDEBOARD del match (best-of-N)
+      setMyDeck(deck)
       if (!join.ok) {
         setError(join.error ?? 'no se pudo unir tu plaza')
         return

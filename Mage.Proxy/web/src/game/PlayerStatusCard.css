@@ -1,0 +1,88 @@
+.player-status-card {
+  position: absolute;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.my-status {
+  left: 2%;
+  bottom: 3%;
+}
+
+.opp-status {
+  left: 2%;
+  top: 3%;
+}
+
+.player-status-badges {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.player-status-badge {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #5a6399;
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-status-badge.filled {
+  border-color: #ffb03a;
+  background: rgba(255, 176, 58, 0.15);
+  font-size: 9px;
+  color: #ffb03a;
+}
+
+.player-status-badge.filled {
+  transform: rotate(0deg);
+  border-radius: 3px;
+}
+
+.player-status-body {
+  min-width: 170px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #171b30;
+  border: 1px solid #2e3560;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+}
+
+.player-status-name {
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c8cae6;
+  background: #1d2140;
+  border-bottom: 1px solid #2e3560;
+}
+
+.player-status-name[data-priority] {
+  color: #ffb03a;
+}
+
+.player-status-counters {
+  display: flex;
+}
+
+.player-status-counter {
+  flex: 1;
+  padding: 8px 0;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: #e8eaf6;
+}
+
+.player-status-counter + .player-status-counter {
+  border-left: 1px solid #2e3560;
+}
+
+.player-status-counter.life {
+  color: #ffb03a;
+}

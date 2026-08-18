@@ -1,9 +1,8 @@
 import type { CardView, GameView, PermanentView, PlayerView } from '../net/types'
-import { battlefieldRow, handFanned, opponentBattleZone, type ZoneLayout } from './zones'
+import { battlefieldAutoGrid, CARD_H, CARD_W, handFanned, SLOT_PAD, type ZoneLayout } from './zones'
 
 export interface Placement {
   id: string
-  /** UUID understood by XMage; id can include a visual-zone prefix. */
   sourceId: string
   card: CardView
   x: number
@@ -13,6 +12,22 @@ export interface Placement {
   faceDown: boolean
   group: string
   damage: number
+}
+
+export interface ZoneChange {
+  cardId: string
+  card: CardView
+  fromZone: string
+  toZone: string
+  fromX: number
+  fromY: number
+  toX: number
+  toY: number
+}
+
+export interface BuildResult {
+  placements: Placement[]
+  zoneChanges: ZoneChange[]
 }
 
 function myPlayer(game: GameView): PlayerView | undefined {
@@ -26,9 +41,6 @@ function oppPlayers(game: GameView): PlayerView[] {
 export function playableObjectIds(game: GameView, feedback?: { method?: string }): string[] {
   const myHand = game.myHand ?? {}
   const objects = game.canPlayObjects?.objects ?? {}
-  // durante el pago de maná (GAME_PLAY_MANA) las fuentes de maná del battlefield
-  // son las clicables: canPlayObjects las lista (UUIDs en players[].battlefield),
-  // pero no están en myHand
   if (feedback?.method === 'GAME_PLAY_MANA') {
     const me = game.players?.find((p) => p.controlled)
     const battlefield = me ? (me.battlefield ?? {}) : {}
@@ -37,12 +49,6 @@ export function playableObjectIds(game: GameView, feedback?: { method?: string }
   return Object.keys(objects).filter((id) => id in myHand)
 }
 
-/**
- * Localiza la carta que pide el objetivo (el hechizo en el stack o el permanente
- * cuya habilidad se activa) por nombre, y devuelve el sourceId de su placement.
- * El servidor no manda el UUID de la fuente (solo options.secondMessage = nombre),
- * así que el emparejamiento es por nombre: stack primero, battlefield después.
- */
 export function resolveTargetSourceId(game: GameView, sourceName: string | undefined): string | undefined {
   if (!sourceName) return undefined
   for (const [key, card] of Object.entries(game.stack ?? {})) {
@@ -56,9 +62,8 @@ export function resolveTargetSourceId(game: GameView, sourceName: string | undef
   return undefined
 }
 
-export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] {
+function buildPlacementsInternal(game: GameView, zones: ZoneLayout): Placement[] {
   const out: Placement[] = []
-  const cw = 146 * zones.scale
   const me = myPlayer(game)
   const opps = oppPlayers(game)
 
@@ -68,7 +73,7 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
     x: number,
     y: number,
     group: string,
-    opts: { rotation?: number; faceDown?: boolean; damage?: number; sourceId?: string } = {},
+    opts: { rotation?: number; faceDown?: boolean; damage?: number; sourceId?: string; scale?: number } = {},
   ) => {
     const perm = card as PermanentView
     out.push({
@@ -78,16 +83,16 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
       x,
       y,
       rotation: opts.rotation ?? 0,
-      scale: zones.scale,
+      scale: opts.scale ?? zones.scale,
       faceDown: opts.faceDown ?? false,
       group,
       damage: opts.damage ?? perm.damage ?? 0,
     })
   }
 
-  const battlefield = (p: PlayerView, row: { x: number; y: number }, isMine: boolean) => {
+  const battlefield = (p: PlayerView, centerCY: number, isMine: boolean) => {
     const perms = Object.entries(p.battlefield ?? {})
-    const slots = battlefieldRow(row, perms.length, zones.scale, cw, zones.worldW)
+    const slots = battlefieldAutoGrid(centerCY, perms.length, zones)
     perms.forEach(([cardId, perm], i) => {
       const s = slots[i]
       add(cardId, perm, s.x, s.y, isMine ? 'myBattle' : 'oppBattle', {
@@ -96,41 +101,25 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
     })
   }
 
-  const piles = (
-    p: PlayerView,
-    pos: { library: { x: number; y: number }; graveyard: { x: number; y: number }; exile: { x: number; y: number } },
-    side: 'my' | 'opp',
-    playerIndex = 0,
-  ) => {
-    add(`${side}${playerIndex}:library`, { name: 'library', expansionSetCode: '', cardNumber: '0' } as CardView, pos.library.x, pos.library.y, `${side}Library`, { faceDown: true })
-    const gy = Object.entries(p.graveyard ?? {})
-    if (gy.length) add(`${side}${playerIndex}:graveyard:${gy[gy.length - 1][0]}`, gy[gy.length - 1][1], pos.graveyard.x, pos.graveyard.y, `${side}Graveyard`)
-    const ex = Object.entries(p.exile ?? {})
-    if (ex.length) add(`${side}${playerIndex}:exile:${ex[ex.length - 1][0]}`, ex[ex.length - 1][1], pos.exile.x, pos.exile.y, `${side}Exile`)
+  if (me) {
+    battlefield(me, zones.myBattleCenterY, true)
   }
 
-  if (me) {
-    battlefield(me, zones.myBattle, true)
-    piles(me, zones.myPiles, 'my')
-  }
+  const oppsCount = opps.length
   for (const [index, opp] of opps.entries()) {
-    const battle = opponentBattleZone(zones, index, opps.length)
-    battlefield(opp, battle, false)
-    const offset = battle.y - zones.oppBattle.y
-    piles(
-      opp,
-      {
-        library: { x: zones.oppPiles.library.x, y: zones.oppPiles.library.y + offset },
-        graveyard: { x: zones.oppPiles.graveyard.x, y: zones.oppPiles.graveyard.y + offset },
-        exile: { x: zones.oppPiles.exile.x, y: zones.oppPiles.exile.y + offset },
-      },
-      'opp',
-      index,
-    )
+    // For spectators with 2+ opponents: stack opponent battlefields vertically
+    let oppCenterY: number
+    if (isSpectator(game) && oppsCount >= 2) {
+      const spacing = CARD_H * zones.scale + SLOT_PAD
+      oppCenterY = zones.oppZone.top + 0.45 * (zones.oppZone.bottom - zones.oppZone.top) + index * spacing
+    } else {
+      oppCenterY = zones.oppBattleCenterY
+    }
+    battlefield(opp, oppCenterY, false)
   }
 
   const myHandCards = Object.entries(game.myHand ?? {})
-  const mySlots = handFanned(zones.myHand, myHandCards.length, zones.scale, zones.w, cw)
+  const mySlots = handFanned(zones.myHand, myHandCards.length, zones.scale)
   myHandCards.forEach(([cardId, card], i) => add(
     `myHand:${cardId}`,
     card,
@@ -142,31 +131,79 @@ export function buildPlacements(game: GameView, zones: ZoneLayout): Placement[] 
 
   const oppHands = Object.values(game.opponentHands ?? {})
   const oppHandCount = oppHands.reduce((acc, h) => acc + Object.keys(h).length, 0)
-  const oppSlots = handFanned({ x: zones.offX + zones.worldW / 2, y: zones.offY + 40 * zones.scale }, oppHandCount, zones.scale, zones.worldW, cw)
+  const oppSlots = handFanned(zones.oppHand, oppHandCount, zones.scale)
   let hi = 0
   for (const handView of oppHands) {
     for (const simple of Object.values(handView)) {
-      const slot = oppSlots[hi++] ?? { x: zones.offX + zones.worldW / 2, y: zones.offY + 40 * zones.scale }
+      const slot = oppSlots[hi++] ?? zones.oppHand
       const card = { name: '?', expansionSetCode: '', cardNumber: '0', parentId: simple.id, id: simple.id } as unknown as CardView
       add(simple.id, card, slot.x, slot.y, 'oppHand', { faceDown: true })
     }
   }
 
+  // Watched hands (for spectators)
   const watched = Object.values(game.watchedHands ?? {})
   const watchedCards = watched.flatMap((hand) => Object.values(hand))
-  const watchedY = zones.offY + Math.max(48, zones.worldH * 0.25) * zones.scale
-  const watchedSlots = handFanned({ x: zones.offX + zones.worldW / 2, y: watchedY }, watchedCards.length, zones.scale, zones.worldW, cw)
-  watchedCards.forEach((simple, i) => {
-    const card = { name: simple.name ?? '?', expansionSetCode: '', cardNumber: '0', parentId: simple.id, id: simple.id } as unknown as CardView
-    const slot = watchedSlots[i] ?? { x: zones.offX + zones.worldW / 2, y: watchedY }
-    add(simple.id, card, slot.x, slot.y, 'watchedHand')
-  })
+  if (watchedCards.length > 0 && isSpectator(game)) {
+    const watchedY = zones.oppHandY - 30 // above opponent hand
+    const watchedSlots = handFanned({ x: zones.worldW / 2, y: watchedY }, watchedCards.length, zones.scale)
+    watchedCards.forEach((simple, i) => {
+      const card = { name: simple.name ?? '?', expansionSetCode: '', cardNumber: '0', parentId: simple.id, id: simple.id } as unknown as CardView
+      const slot = watchedSlots[i] ?? { x: zones.worldW / 2, y: watchedY }
+      add(simple.id, card, slot.x, slot.y, 'watchedHand')
+    })
+  }
 
+  // Stack — horizontal layout centered between zones
   const stackCards = Object.entries(game.stack ?? {})
-  stackCards.forEach(([cardId, card], i) => {
-    const off = 10 * zones.scale
-    add(cardId, card, zones.stack.x + i * off, zones.stack.y - i * off, 'stack')
-  })
+  if (stackCards.length > 0) {
+    const stackCenter = zones.stackZone.y + zones.stackZone.height / 2
+    const stackStartX = zones.w / 2 - ((stackCards.length - 1) * (CARD_W * zones.scale + 20)) / 2
+    stackCards.forEach(([cardId, card], i) => {
+      const off = 6 * zones.scale // vertical overlap
+      add(cardId, card, stackStartX + i * (CARD_W * zones.scale + 20), stackCenter - off * i, 'stack')
+    })
+  }
 
   return out
+}
+
+function isSpectator(game: GameView): boolean {
+  return !game.players?.some((p) => p.controlled)
+}
+
+function buildPlacementMap(game: GameView, zones: ZoneLayout): Map<string, Placement> {
+  const result = buildPlacementsInternal(game, zones)
+  const map = new Map<string, Placement>()
+  for (const p of result) {
+    if (!map.has(p.sourceId)) map.set(p.sourceId, p)
+  }
+  return map
+}
+
+export function buildPlacements(game: GameView, zones: ZoneLayout, previousGame?: GameView | null): BuildResult {
+  const placements = buildPlacementsInternal(game, zones)
+  const zoneChanges: ZoneChange[] = []
+
+  if (previousGame) {
+    const oldMap = buildPlacementMap(previousGame, zones)
+    const newMap = buildPlacementMap(game, zones)
+    for (const [sourceId, newP] of newMap) {
+      const oldP = oldMap.get(sourceId)
+      if (oldP && oldP.group !== newP.group) {
+        zoneChanges.push({
+          cardId: newP.sourceId,
+          card: newP.card,
+          fromZone: oldP.group,
+          toZone: newP.group,
+          fromX: oldP.x,
+          fromY: oldP.y,
+          toX: newP.x,
+          toY: newP.y,
+        })
+      }
+    }
+  }
+
+  return { placements, zoneChanges }
 }

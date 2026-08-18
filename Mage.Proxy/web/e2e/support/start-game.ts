@@ -90,6 +90,8 @@ export interface CreateTableOptions {
   skipStartingPlayer?: boolean
   /** Rellenar el asiento SIM (el proxy une un bot con su propia sesión). */
   sim?: boolean
+  /** Match best-of-N: victorias necesarias (1 = un solo game). */
+  winsNeeded?: number
 }
 
 export async function createTable(page: Page, tableName: string, opts: CreateTableOptions = {}): Promise<void> {
@@ -106,11 +108,15 @@ export async function createTable(page: Page, tableName: string, opts: CreateTab
   // sesión (mazo por defecto = solo tierras) y juega sin tiempos de IA
   if (opts.sim ?? true) await page.getByRole('button', { name: 'SIM' }).click()
   if (opts.simDeck) await page.getByLabel('Mazo del Sim').selectOption(opts.simDeck)
+  if (opts.winsNeeded && opts.winsNeeded > 1) {
+    await page.getByLabel('Victorias necesarias').selectOption(String(opts.winsNeeded))
+  }
   await page.getByRole('button', { name: 'Crear mesa' }).click()
 }
 
 /** Espera a que la mesa del usuario esté lista (asiento SIM unido, botón Empezar). */
 export async function waitTableReady(page: Page, tableName: string): Promise<void> {
+  await page.waitForTimeout(500)
   const row = page.locator('.table-row', { hasText: tableName }).first()
   await expect(row).toBeVisible({ timeout: 20_000 })
   // el asiento SIM lo une el proxy inmediatamente: la mesa nace casi llena

@@ -1,0 +1,36 @@
+.end-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 18, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.end-dialog {
+  max-width: 420px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.end-info {
+  color: #e8eaf6;
+}
+
+.end-match {
+  color: #ffb03a;
+  font-weight: 700;
+}
+
+.end-score {
+  color: #9aa1c0;
+  font-size: 13px;
+}
+
+.end-hint {
+  color: #9aa1c0;
+  font-size: 13px;
+}

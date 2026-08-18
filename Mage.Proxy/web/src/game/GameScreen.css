@@ -2,59 +2,72 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px 14px;
-  gap: 10px;
 }
 
 .game-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  padding: 6px 12px;
+  background: #0a0d1a;
+  border-bottom: 1px solid #1e2444;
+  min-height: 40px;
+  flex-shrink: 0;
 }
 
-.game-title {
-  color: var(--text-dim);
-  font-size: 13px;
+.game-top-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .game-state {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 4px;
-  padding: 6px 14px;
-  border: 1px solid rgb(200 169 78 / 45%);
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgb(200 169 78 / 16%), rgb(200 169 78 / 6%));
-  color: var(--gold);
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+  font-size: 13px;
+}
+
+.game-turn {
+  color: #ffb03a;
+  font-weight: 700;
+  font-family: 'Cinzel', 'Merriweather', Georgia, serif;
+}
+
+.game-phase {
+  color: #7c84a8;
 }
 
 .game-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.game-controls button {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
 }
 
 .toggle {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: var(--text-dim);
+  gap: 5px;
+  color: #6b7394;
   cursor: pointer;
+  font-size: 12px;
 }
 
-.game-main {
+.toggle input {
+  width: 14px;
+  height: 14px;
+}
+
+.game-body {
   flex: 1;
   display: flex;
-  gap: 10px;
   min-height: 0;
 }
 
@@ -62,6 +75,50 @@
   flex: 1;
   min-width: 0;
   display: flex;
+  position: relative;
+  background: #0f1220;
+}
+
+.zone-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.opp-zone {
+  top: 0;
+  height: 49%;
+  background: linear-gradient(180deg, rgba(20, 24, 48, 0.85) 0%, rgba(15, 18, 32, 0.4) 100%);
+  border-bottom: 1px solid rgba(74, 82, 136, 0.25);
+}
+
+.my-zone {
+  bottom: 0;
+  height: 51%;
+  background: linear-gradient(0deg, rgba(20, 24, 48, 0.85) 0%, rgba(15, 18, 32, 0.4) 100%);
+  border-top: 1px solid rgba(74, 82, 136, 0.25);
+}
+
+.zone-divider {
+  position: absolute;
+  top: 49%;
+  left: 0;
+  right: 0;
+  height: 2%;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(15, 18, 32, 0.4) 0%, rgba(30, 36, 68, 0.3) 50%, rgba(15, 18, 32, 0.4) 100%);
+}
+
+.zone-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 3%;
+  right: 3%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(74, 82, 136, 0.4), transparent);
 }
 
 .board-empty {
@@ -69,9 +126,61 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-dim);
-  border: 1px dashed var(--border);
+  color: #4a5080;
+  border: 1px dashed #1e2444;
   border-radius: 12px;
+  margin: 12px;
+}
+
+.game-right-panel {
+  width: 280px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  background: #0d1020;
+  border-left: 1px solid #1e2444;
+}
+
+.game-log-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid #1e2444;
+}
+
+.game-log-header {
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #4a5080;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #1e2444;
+}
+
+.game-log-entries {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.game-log-entry {
+  color: #6b7394;
+  padding: 2px 0;
+  word-break: break-word;
+}
+
+.game-log-player {
+  color: #7c5cff;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.game-log-text {
+  color: #8890b0;
 }
 
 .feedback-backdrop {
@@ -82,9 +191,6 @@
   place-items: center;
   padding: 20px;
   background: rgb(4 6 16 / 62%);
-  /* el fondo nunca bloquea el tablero ni la barra superior: los diálogos que
-     requieren clics (targeting, maná) necesitan el tablero accesible, y el
-     botón "Pasar prioridad" debe poder clicarse siempre */
   pointer-events: none;
 }
 

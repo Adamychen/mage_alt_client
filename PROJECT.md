@@ -2,7 +2,7 @@
 
 > Este documento es la **fuente de verdad del proyecto**: roadmap, fases, decisiones y
 > estado real verificado. Se actualiza en cada paso de trabajo, no solo al final de fases.
-> Última actualización: 2026-08-17 (XMage 1.4.61-V1 + smoke PASS contra el server oficial beta.xmage.today)
+> Última actualización: 2026-08-17 (XMage 1.4.61-V1 + handshake buffer para SHOW_USERMESSAGE + smoke PASS contra beta.xmage.today)
 
 ---
 
@@ -491,6 +491,7 @@ mesas humano vs IA, E2E targeting).
 | 2026-08-17 | F2 | **Higiene de docs**: la skill `mage-e2e-sim` y el agente `e2e-spells` pasan de "caso abierto" a estado real (spells cerrado 4/4 real+fake, flake de targeting = doble-false del mulligan); AGENTS.md sin marcas de pendiente obsoletas | commit `5e821c2281` |
 | 2026-08-17 | Up | **Actualización a XMage 1.4.61-V1** (upstream magefree/mage, tag `xmage_1.4.61V1`, 358 commits de desfase desde 2026-07-29): `git remote add upstream` + merge del tag (limpio, sin conflictos; nuestros 2 parches de test mode en `TableController.java` se conservan: upstream no los tocó). Subido `Mage.Proxy` a parent 1.4.61 (jar `mage-proxy-1.4.61.jar`, `dev.mjs` actualizado) y `DEFAULT_SERVER_HOST` → `beta.xmage.today` (server oficial actual; `beta.xmage.de` estaba obsoleto). Recompilado server+plugins+proxy | suite completa **8/8 PASS** (self-test/human-test/e2e con el server 1.4.61) ✅; e2e real **7/7 PASS** ✅ |
 | 2026-08-17 | Up | **Smoke de viabilidad contra el server oficial (beta.xmage.today:17171, 1.4.61-V1)**: probe WS por el proxy → login OK, `getServerInfo` 1.4.61-V1, mesa con 2 asientos SIM (SimPlayer conectan al server real y se unen), `watchTable`/`WATCHGAME`, `GAME_INIT` (2 jugadores) y `GAME_UPDATEs` fluyendo → **SMOKE PASS**. Hallazgos: (a) el login anónimo al server público es **intermitente** (a veces el server manda `SHOW_USERMESSAGE` de news antes de completar el login y `connectUser` falla sin mensaje; reintentar funciona); (b) el login del web usa UN solo host para el WS del proxy y el server destino → para jugar contra servers remotos desde el navegador hay que separar esos campos (pendiente, Fase 3) | commit `0fed93f4e9` (merge) + `7e8dd8e4bb` (ajustes) |
+| 2026-08-17 | Fx | **Fix: handshake buffer para `SHOW_USERMESSAGE`** (`ProxyClient.java`): el server XMage puede enviar callbacks de tipo `MESSAGE` (`SHOW_USERMESSAGE`, `SERVER_MESSAGE`) **antes** de que el RPC `connectUser` retorne y se invoque `connected()`. El cliente web recibía esos mensajes antes del evento `connected`, rompiendo el flujo de login. Fix: buffer en `ProxyClient.processCallback()` que intercepta `MESSAGE` mientras `!connected` y los libera en orden tras `connected()`. El login anónimo al server oficial ya no debería fallar por este motivo | `ProxyClient.java` + recompilado `mage-proxy-1.4.61.jar`; suite completa PASS (unit/typecheck/build/java/self-test 5/5) |
 
 ## 10. Notas de ejecución
 

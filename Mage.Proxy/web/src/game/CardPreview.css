@@ -1,0 +1,118 @@
+.card-preview {
+  width: 260px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: #0d1020;
+  border-left: 1px solid #1e2444;
+  overflow-y: auto;
+}
+
+.card-preview--empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.card-preview-hint {
+  color: #4a5080;
+  font-size: 13px;
+  text-align: center;
+}
+
+.card-preview-card {
+  width: 100%;
+  aspect-ratio: 488 / 680;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #141830;
+  flex-shrink: 0;
+}
+
+.card-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.card-preview-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5080;
+  font-size: 14px;
+  text-align: center;
+  padding: 12px;
+}
+
+.card-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-preview-name {
+  font-family: 'Cinzel', 'Merriweather', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8eaf6;
+}
+
+.card-preview-type {
+  font-size: 12px;
+  color: #7c84a8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-preview-text {
+  font-size: 13px;
+  color: #b0b8d8;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.card-preview-flavor {
+  font-size: 12px;
+  color: #6b7394;
+  font-style: italic;
+  line-height: 1.4;
+  border-top: 1px solid #1e2444;
+  padding-top: 6px;
+  margin-top: 2px;
+}
+
+.card-preview-pt {
+  font-family: 'Cinzel', 'Merriweather', Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffb03a;
+  align-self: flex-end;
+}
+
+.card-preview-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #a0a8c8;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.card-preview-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+}

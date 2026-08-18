@@ -1,0 +1,133 @@
+.sidebar {
+  --sidebar-w: 64px;
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  background: #0d1020;
+  border-right: 1px solid #1e2444;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-turn-info {
+  width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 4px 6px;
+  border-bottom: 1px solid #1e2444;
+  margin-bottom: 4px;
+}
+
+.sidebar-turn-label {
+  font-size: 9px;
+  color: #4a5080;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-turn-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffb03a;
+  font-family: var(--font-display);
+}
+
+.sidebar-timer-value {
+  font-size: 10px;
+  color: #6b7394;
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-icon-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar-sep {
+  width: 36px;
+  height: 1px;
+  background: #1e2444;
+  margin: 6px 0;
+}
+
+.sidebar-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7394;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  position: relative;
+}
+
+.sidebar-icon:hover {
+  background: #1a1f3a;
+  color: #a0a8c8;
+}
+
+.sidebar-icon.active {
+  background: #252b4a;
+  color: #7c5cff;
+}
+
+.sidebar-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-icon .icon-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c5cff;
+}
+
+.sidebar-icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7394;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.sidebar-icon-btn:hover {
+  background: #1a1f3a;
+  color: #a0a8c8;
+}
+
+.sidebar-icon-btn.danger:hover {
+  background: #2a1520;
+  color: #ff5c6c;
+}
+
+.sidebar-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sidebar-spacer {
+  flex: 1;
+}

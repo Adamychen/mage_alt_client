@@ -9,8 +9,8 @@ const RETRIES = 1
 let activeLoads = 0
 const loadQueue: (() => void)[] = []
 
-export const CARD_W = 146
-export const CARD_H = 204
+export const CARD_W = 120
+export const CARD_H = 168
 
 export function cardKey(card: CardView): string | null {
   const set = card.expansionSetCode

@@ -242,15 +242,22 @@ export class HumanHelper {
     void this.send('sendPlayerBoolean', { gameId: this.gameId, value: false })
   }
 
-  /** Pasa la ventana main actual si sigue abierta 1.5s después de abrirse
-   *  (nunca durante un pago de maná en curso). */
+  /** Pasa la ventana main actual si sigue abierta ~1.5s después de abrirse.
+   *  NUNCA durante un pago de maná en curso: si el fallback coincide con un
+   *  pago (payingUntil activo), REINTENTA en bucle hasta que el pago termina y
+   *  la ventana se pasa (un fallback single-shot moría tras el pago y dejaba la
+   *  ventana main abierta para siempre, colgando la partida). */
   private armFallback() {
     const winKey = this.mainWindow
-    setTimeout(() => {
-      if (this.mainWindow === winKey && this.gameId && Date.now() > this.payingUntil) {
+    const check = () => {
+      if (this.mainWindow !== winKey || !this.gameId) return
+      if (Date.now() > this.payingUntil) {
         void this.send('sendPlayerBoolean', { gameId: this.gameId, value: false })
+        return
       }
-    }, 1500)
+      setTimeout(check, 300)
+    }
+    setTimeout(check, 1500)
   }
 
   private handleTarget(data: EventDataLike) {
@@ -258,8 +265,12 @@ export class HumanHelper {
     let first: string | null = null
     const cards = data.cardsView1
     if (cards) {
-      const keys = Object.keys(cards)
-      if (keys.length > 0) first = keys[0]
+      const entries = Object.entries(cards as Record<string, { name?: string; displayName?: string }>)
+      const land = entries.find(([, c]) => BASIC_LANDS.includes(c.name ?? '') || BASIC_LANDS.includes(c.displayName ?? ''))
+      first = (land ?? entries[0])?.[0] ?? null
+    }
+    if (!first) {
+      first = firstBasicLand(data.gameView?.myHand)
     }
     if (!first) {
       const targets = data.targets

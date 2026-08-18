@@ -379,6 +379,44 @@ export interface DeckCardEntry {
   amount: number
 }
 
+// ─── Fin de partida / match (GameEndView del servidor) ───────────────────────
+
+export interface GameEndInfo {
+  gameInfo?: string
+  matchInfo?: string
+  additionalInfo?: string
+  won?: boolean
+  wins?: number
+  loses?: number
+  winsNeeded?: number
+  startTime?: string
+  endTime?: string
+  matchView?: {
+    matchId?: string
+    result?: string
+    players?: string
+    games?: string[]
+    startTime?: string
+    endTime?: string
+    [k: string]: unknown
+  }
+  players?: PlayerView[]
+}
+
+/** Evento SIDEBOARD del servidor (match best-of-N entre partidas). */
+export interface SideboardEvent {
+  deck?: {
+    name?: string
+    cards?: Record<string, unknown>
+    sideboard?: Record<string, unknown>
+  }
+  currentTableId?: string
+  parentTableId?: string
+  roomId?: string
+  time?: number
+  flag?: boolean
+}
+
 // ─── Métodos de evento del servidor (MageClient) más comunes ────────────────
 
 export const EVENT_METHODS = {
@@ -410,6 +448,7 @@ export const EVENT_METHODS = {
   gameEnd: 'GAME_END',
   gameOver: 'GAME_OVER',
   endGameInfo: 'END_GAME_INFO',
+  sideboard: 'SIDEBOARD',
   chat: 'CHATMESSAGE',
   serverMessage: 'SERVER_MESSAGE',
   joinedTable: 'JOINED_TABLE',

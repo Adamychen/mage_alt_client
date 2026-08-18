@@ -29,7 +29,13 @@ export default function BoardView({ game, targetIds = [], chosenTargetIds = [], 
     createBoardScene()
       .then((s) => {
         if (disposed) {
-          s.app.destroy(true)
+          // el componente se desmontó antes de crear el escenario: sin destroy
+          // (Pixi 8 revienta en el teardown) — solo parar el ticker
+          try {
+            s.app.ticker.stop()
+          } catch {
+            /* noop */
+          }
           return
         }
         scene = s
@@ -51,7 +57,22 @@ export default function BoardView({ game, targetIds = [], chosenTargetIds = [], 
     return () => {
       disposed = true
       ro?.disconnect()
-      scene?.app.destroy(true)
+      // Pixi 8 revienta dentro de destroy() en el teardown (bug de
+      // RenderTargetSystem/FilterSystem: "Cannot read properties of undefined
+      // (reading 'push')") — desmontar sin destruir: parar el ticker y soltar el
+      // canvas; el contexto WebGL se libera con el GC del escenario.
+      if (scene) {
+        try {
+          scene.app.ticker.stop()
+        } catch {
+          /* noop */
+        }
+        try {
+          host.removeChild(scene.app.canvas)
+        } catch {
+          /* noop */
+        }
+      }
       sceneRef.current = null
     }
   }, [])

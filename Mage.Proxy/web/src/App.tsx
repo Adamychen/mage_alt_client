@@ -3,10 +3,11 @@ import { usePhase, useStore } from './state/store'
 import LoginScreen from './lobby/LoginScreen'
 import LobbyScreen from './lobby/LobbyScreen'
 import GameScreen from './game/GameScreen'
+import GameEndDialog from './game/GameEndDialog'
 
 export default function App() {
   const phase = usePhase()
-  const conn = useStore((s) => s.conn)
+  const connecting = useStore((s) => s.connecting)
   const wsAlive = useStore((s) => s.wsAlive)
 
   useEffect(() => {
@@ -15,12 +16,13 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [])
 
-  const reconnecting = !!conn && !wsAlive
+  const reconnecting = connecting && !wsAlive
 
   return (
     <>
       {reconnecting && <div className="reconnect-banner">Conexión con el proxy perdida — reconectando…</div>}
       {phase === 'lobby' ? <LobbyScreen /> : phase === 'game' ? <GameScreen /> : <LoginScreen />}
+      <GameEndDialog />
     </>
   )
 }

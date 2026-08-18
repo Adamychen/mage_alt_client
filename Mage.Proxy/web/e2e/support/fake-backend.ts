@@ -19,3 +19,20 @@ export async function withFakeServer<T>(makeScenario: () => Scenario, run: () =>
     await server.stop()
   }
 }
+
+const _setSideboard: Array<() => void> = []
+
+export function setSideboard(_cards: import('../../src/net/types').DeckCardEntry[]): void {
+  // sideboard se carga en el store desde myDeck al unirse a la mesa;
+  // esta función es un placeholder para cuando haya un editor de mazos real.
+  // Por ahora el test verifica que el swap ocurre (sideboard no vacío tras él).
+  if (typeof window !== 'undefined') {
+    window.__mageSideboard = _cards
+  }
+}
+
+declare global {
+  interface Window {
+    __mageSideboard?: unknown[]
+  }
+}

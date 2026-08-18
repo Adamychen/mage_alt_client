@@ -1,0 +1,128 @@
+.game-chat {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  min-height: 120px;
+  border-top: 1px solid #1e2444;
+}
+
+.game-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.game-chat-entry {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #8890b0;
+  word-break: break-word;
+}
+
+.game-chat-player {
+  color: #7c5cff;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.game-chat-input {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid #1e2444;
+  background: #0a0d1a;
+}
+
+.game-chat-input input {
+  flex: 1;
+  background: #141830;
+  border: 1px solid #1e2444;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #e8eaf6;
+  font-size: 13px;
+  outline: none;
+}
+
+.game-chat-input input:focus {
+  border-color: #7c5cff;
+}
+
+.game-chat-send {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: #7c5cff;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.game-chat-send:hover {
+  background: #8f74ff;
+}
+
+.game-chat-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.game-chat-emoji-wrap {
+  position: relative;
+}
+
+.game-chat-emoji-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #1e2444;
+  border-radius: 6px;
+  background: #141830;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-chat-emoji-btn:hover {
+  background: #1a1f3a;
+}
+
+.game-chat-emoji-picker {
+  position: absolute;
+  bottom: 38px;
+  left: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 6px;
+  background: #141830;
+  border: 1px solid #2e3560;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.game-chat-emoji-picker button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.game-chat-emoji-picker button:hover {
+  background: #232a45;
+}

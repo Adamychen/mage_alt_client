@@ -54,6 +54,15 @@ export interface HumanGameOptions {
   humanBlock?: boolean
   /** Daño de combate del humano al Sim al resolver el ataque. */
   humanCombatDamage?: number
+  /** Match best-of-N: al llegar el daño a 0 de vidas del Sim, el game termina,
+   *  llega el SIDEBOARD y arranca la siguiente partida del match. */
+  match?: { winsNeeded: number }
+  /** Números de partida (matchGame, 1-indexed) que el Sim gana en lugar del
+   *  humano, p. ej. [1, 2] para sweep 0-2 del Sim, o [2] para 1-1 y game 3.
+   *  Cuando el Sim gana una partida, el match termina inmediatamente si el
+   *  humano ya no puede alcanzar winsNeeded, o se pide SIDEBOARD si puede
+   *  seguir (escenario de game 3). */
+  simWinsGame?: number[]
 }
 
 interface CastRuntime {
@@ -63,7 +72,7 @@ interface CastRuntime {
 
 export class HumanGame {
   readonly tableName: string
-  readonly gameId = GAME_ID
+  gameId = GAME_ID
   readonly tableId = TABLE_ID
   readonly simName = SIM_NAME
 
@@ -80,13 +89,23 @@ export class HumanGame {
   private priority: 'human' | 'sim' = 'human'
   private stack: Record<string, CardView> = {}
   private combat: unknown[] = []
-  private stage: 'lobby' | 'main' | 'cast' | 'attack' | 'block' | 'sim' | 'end' = 'lobby'
+  private stage: 'lobby' | 'main' | 'cast' | 'attack' | 'block' | 'sim' | 'end' | 'discard' = 'lobby'
   private cast: CastRuntime | null = null
   private playedLandTurn = -1
   private started = false
   /** El turno del Sim está en pausa esperando el bloqueo del humano. */
   private simPaused = false
   private blockingId: string | null = null
+  /** El humano debe descartar (mano > 7). */
+  private discarding = false
+  /** GameIds acumulados en el match actual. */
+  private gameIds: string[] = []
+  /** Número de partida DENTRO del match (1 = primer game del match). */
+  private matchGame = 0
+  /** Match best-of-N: victorias del humano, esperando el submitDeck del SIDEBOARD. */
+  private wins = 0
+  private waitingSideboard = false
+  private gameIndex = 1
 
   constructor(private readonly options: HumanGameOptions) {
     this.tableName = options.tableName ?? 'Mesa E2E'
@@ -137,6 +156,10 @@ export class HumanGame {
           case 'sendPlayerString':
             conn.ok(requestId, action, {})
             if (this.stage === 'attack' && String(args.value ?? '') === 'special') this.onAttackSpecial()
+            break
+          case 'submitDeck':
+            conn.ok(requestId, action, {})
+            this.startGame2()
             break
           case 'sendPlayerUUID':
             conn.ok(requestId, action, {})
@@ -197,6 +220,8 @@ export class HumanGame {
   private start(): void {
     if (this.started) return
     this.started = true
+    this.gameIds = [this.gameId]
+    this.matchGame = 1
     this.stage = 'main'
     this.phase = 'PRECOMBAT_MAIN'
     this.step = 'PRECOMBAT_MAIN'
@@ -267,6 +292,10 @@ export class HumanGame {
 
   private onUUID(conn: FakeConn, requestId: string | number, action: string, value: string): void {
     conn.ok(requestId, action, {})
+    if (this.discarding) {
+      this.onDiscard(value)
+      return
+    }
     if (this.stage === 'attack') {
       this.onAttackUUID(value)
       return
@@ -292,6 +321,12 @@ export class HumanGame {
 
   private onBoolean(conn: FakeConn, requestId: string | number, action: string, _value: boolean): void {
     conn.ok(requestId, action, {})
+    if (this.stage === 'discard') {
+      const land = this.hand.find((c) => BASIC_LANDS.has(c.name))
+      const card = land ?? this.hand[0]
+      if (card) this.onDiscard(card.id)
+      return
+    }
     if (this.stage === 'attack') {
       this.finishHumanAttack()
       return
@@ -409,18 +444,134 @@ export class HumanGame {
   private resolveCast(): void {
     this.cast = null
     this.stage = 'main'
-    // el hechizo entra al stack y resuelve en un instante
     this.stack = { 's-1': makeCard({ name: 'hechizo', parentId: 's-1' }) }
     this.emit('GAME_UPDATE', { gameView: this.view() })
-    if (this.options.damageToSim) this.simLife = Math.max(0, this.simLife - this.options.damageToSim)
+    if (this.options.damageToSim && !this.simWinsCurrentGame()) {
+      this.simLife = Math.max(0, this.simLife - this.options.damageToSim)
+    }
     for (const perm of this.options.resolveEffect?.addToMyBattle ?? []) {
       this.myBattle.push(makePermanent({ name: perm.name, parentId: `my-${perm.name}`, controlled: true, counters: perm.counters }))
     }
     this.stack = {}
     this.combat = []
     this.emit('GAME_UPDATE', { gameView: this.view() })
-    // siguiente main del humano (limpia el feedback: targeting off)
+    if (this.options.match) {
+      if (this.simWinsCurrentGame()) {
+        if (this.turn >= 4) this.endGame()
+        else {
+          this.turn++
+          this.emit('GAME_SELECT', { gameView: this.view() })
+        }
+        return
+      }
+      if (this.simLife <= 0) {
+        this.endGame()
+        return
+      }
+    }
+    if (this.hand.length > 7) {
+      this.requestDiscard()
+      return
+    }
+    if (this.waitingSideboard) {
+      this.turn++
+      if (this.simWinsCurrentGame() && this.turn >= 4) {
+        this.endGame()
+      } else {
+        this.emit('GAME_SELECT', { gameView: this.view() })
+      }
+      return
+    }
     this.turn++
+    this.emit('GAME_SELECT', { gameView: this.view() })
+  }
+
+  private simWinsCurrentGame(): boolean {
+    return (this.options.simWinsGame ?? []).includes(this.matchGame)
+  }
+
+  private requestDiscard(): void {
+    this.stage = 'discard'
+    this.discarding = true
+    const handView: Record<string, CardView> = {}
+    for (const card of this.hand) handView[card.id] = makeCard({ name: card.name, parentId: card.id })
+    this.emit('GAME_TARGET', {
+      message: 'Discard',
+      cardsView1: handView,
+      targets: this.hand.map((c) => c.id),
+      options: { possibleTargets: this.hand.map((c) => c.id) },
+      gameView: this.view(),
+    })
+  }
+
+  private onDiscard(cardId: string): void {
+    const card = this.hand.find((c) => c.id === cardId)
+    if (!card) return
+    this.hand = this.hand.filter((c) => c.id !== cardId)
+    this.discarding = false
+    this.stage = 'main'
+    this.turn++
+    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emit('GAME_SELECT', { gameView: this.view() })
+  }
+
+  // ============================ match best-of-N ============================
+
+private endGame(): void {
+    this.stage = 'end'
+    const simWins = this.simWinsCurrentGame()
+    if (!simWins) this.wins++
+    const winsNeeded = this.options.match?.winsNeeded ?? 1
+    const matchOver = !simWins && this.wins >= winsNeeded
+    this.emit('GAME_OVER', {
+      gameId: this.gameId,
+      message: simWins ? `${this.simName} won the game` : `${HUMAN_NAME} won the game`,
+    })
+    this.emit('END_GAME_INFO', {
+      gameInfo: simWins ? `The opponent won the game on turn ${this.turn}.` : `You won the game on turn ${this.turn}.`,
+      matchInfo: simWins ? 'You lost the match.' : matchOver ? 'You won the match!' : 'You need one more win to win the match.',
+      won: !simWins,
+      wins: this.wins,
+      loses: simWins ? 1 : 0,
+      winsNeeded,
+      matchView: {
+        result: simWins ? `0-${this.gameIds.length}` : `${this.wins}-0`,
+        games: [...this.gameIds],
+        endTime: matchOver || simWins ? 'end' : null,
+      },
+    })
+    if (matchOver || simWins) return
+    this.waitingSideboard = true
+    this.emit('SIDEBOARD', {
+      deck: { name: this.tableName, cards: {}, sideboard: {} },
+      currentTableId: this.tableId,
+      time: 180,
+      flag: false,
+    })
+  }
+
+  private startGame2(): void {
+    if (!this.waitingSideboard) return
+    this.waitingSideboard = false
+    this.gameIndex++
+    this.matchGame++
+    this.gameId = `${GAME_ID}-${this.gameIndex}`
+    this.gameIds.push(this.gameId)
+    this.hand = this.options.hand.map((name, i) => ({ id: `human-${i}`, name }))
+    this.myBattle = (this.options.lands ?? []).flatMap((land, i) =>
+      Array.from({ length: land.count }, (_, k) => makePermanent({ name: land.name, parentId: `land-${i}-${k}`, controlled: true })),
+    )
+    this.humanLife = 20
+    this.simLife = 20
+    this.turn = 1
+    this.phase = 'PRECOMBAT_MAIN'
+    this.stack = {}
+    this.combat = []
+    this.cast = null
+    this.stage = 'main'
+    this.playedLandTurn = -1
+    this.emit('START_GAME', { gameId: this.gameId, tableName: this.tableName })
+    this.emit('GAME_INIT', { gameView: this.view() })
     this.emit('GAME_SELECT', { gameView: this.view() })
   }
 
