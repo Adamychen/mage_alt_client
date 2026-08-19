@@ -28,21 +28,10 @@
   margin: 0 -2px;
 }
 
-.hand-zone.face-down .hand-card {
-  width: 50px;
-  height: 70px;
-}
-
-/* Compact mode cards — use dynamic --card-w from JS, capped by --bar-h */
+/* Compact mode cards — use dynamic --card-w from JS, sized by container */
 .hand-zone.compact .hand-card {
   width: var(--card-w, 100px);
   height: calc(var(--card-w, 100px) * 1.4);
-  max-height: calc(var(--bar-h, 70px) * 0.85);
-}
-
-.hand-zone.compact.face-down .hand-card {
-  height: calc(var(--bar-h, 70px) * 0.85);
-  width: calc(var(--bar-h, 70px) * 0.85 * 0.714);
 }
 
 /* Hover preview — large card above the hand */

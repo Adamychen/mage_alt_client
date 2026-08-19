@@ -5,6 +5,8 @@ interface PlayerInfoBarProps {
   player: PlayerView
   side: 'opp' | 'my'
   compact?: boolean
+  onClick?: () => void
+  isTarget?: boolean
 }
 
 function secondaryCounter(player: PlayerView): { label: string; value: number } {
@@ -15,11 +17,15 @@ function secondaryCounter(player: PlayerView): { label: string; value: number } 
   return { label: 'Veneno', value: 0 }
 }
 
-export default function PlayerInfoBar({ player, side, compact = false }: PlayerInfoBarProps) {
+export default function PlayerInfoBar({ player, side, compact = false, onClick, isTarget = false }: PlayerInfoBarProps) {
   const secondary = secondaryCounter(player)
 
   return (
-    <div className={`player-info-bar ${side} ${compact ? 'compact' : ''}`}>
+    <div
+      className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       <div className="player-avatar">
         <div className="avatar-frame">
           {player.name.charAt(0).toUpperCase()}

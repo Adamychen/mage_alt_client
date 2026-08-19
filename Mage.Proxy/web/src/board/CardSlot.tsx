@@ -3,6 +3,8 @@ import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName } from '../cards/cardImages'
 import './CardSlot.css'
 
+const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
+
 interface CardSlotProps {
   cardId?: string
   card: CardView | PermanentView
@@ -70,11 +72,7 @@ export default function CardSlot({
       style={style}
     >
       {faceDown ? (
-        <div className="card-back">
-          <div className="card-back-inner">
-            <div className="card-back-diamond" />
-          </div>
-        </div>
+        <img src={CARD_BACK_URL} alt="" className="card-image" draggable={false} />
       ) : imgUrl ? (
         <img
           src={imgUrl}

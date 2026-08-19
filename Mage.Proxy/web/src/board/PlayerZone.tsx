@@ -98,7 +98,12 @@ export default function PlayerZone({
 
       {/* Row 3: Unified row [life | hand | mana | deck | G | X] */}
       <div className="pz-row pz-bottom-row">
-        <PlayerInfoBar player={player} side="my" />
+        <PlayerInfoBar
+          player={player}
+          side="my"
+          onClick={onCardClick ? () => onCardClick(player.playerId) : undefined}
+          isTarget={targetIds.has(player.playerId)}
+        />
         <HandZone
           cards={hand}
           onCardClick={onHandCardClick}

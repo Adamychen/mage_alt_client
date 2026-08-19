@@ -70,6 +70,7 @@
   grid-template-columns: 64px minmax(0, 1fr) 280px;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 .board-wrap {
@@ -77,6 +78,7 @@
   min-height: 0;
   position: relative;
   background: #0f1220;
+  overflow: hidden;
 }
 
 .game-right-panel {

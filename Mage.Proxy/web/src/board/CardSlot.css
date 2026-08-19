@@ -28,11 +28,12 @@
 
 /* Tapped */
 .card-slot.tapped {
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(0.85);
   transform-origin: center center;
+  margin: 12px 0;
 }
 .card-slot.tapped.clickable:hover {
-  transform: rotate(90deg) scale(1.12);
+  transform: rotate(90deg) scale(0.92);
 }
 
 /* Playable glow */
@@ -65,35 +66,8 @@
 
 /* Face down */
 .card-slot.face-down {
-  background: linear-gradient(135deg, #1e2348 0%, #14182e 100%);
+  background: #1e2348;
   border-color: #5a6399;
-}
-
-.card-back {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1e2348 0%, #14182e 100%);
-  border-radius: 6px;
-}
-
-.card-back-inner {
-  width: 60%;
-  height: 60%;
-  border: 1.5px solid #5a6399;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-back-diamond {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #6370b8;
-  transform: rotate(45deg);
 }
 
 /* Card image */

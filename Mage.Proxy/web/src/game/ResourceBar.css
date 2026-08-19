@@ -122,16 +122,19 @@
   flex-shrink: 0;
 }
 
-/* Compact mode — sized via --bar-h (inherited from row) */
+/* Compact mode — fixed card-proportion stacks */
 .resource-bar.compact .resource-stack {
-  height: calc(var(--bar-h, 70px) * 0.8);
-  width: calc(var(--bar-h, 70px) * 0.8 * 0.714);
+  height: 72px;
+  width: 51px;
+  flex-shrink: 0;
+  max-height: 100%;
 }
 
 /* Full card size in non-compact */
 .resource-bar:not(.compact) .resource-stack {
   width: 48px;
   height: 67px;
+  flex-shrink: 0;
 }
 
 /* Library card back image */

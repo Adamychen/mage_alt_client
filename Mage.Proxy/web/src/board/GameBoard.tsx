@@ -94,7 +94,6 @@ export default function GameBoard({
     <div className="game-board">
       <OpponentZone
         player={opp0}
-        opponentHands={game?.opponentHands ?? {}}
         onCardClick={onTargetClick}
         onCardHover={onCardHover}
         targetIds={targetIdSet}

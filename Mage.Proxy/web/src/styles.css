@@ -33,6 +33,10 @@ html, body, #root {
   color: var(--text);
 }
 
+#root {
+  overflow-x: hidden;
+}
+
 button {
   font: inherit;
   color: inherit;

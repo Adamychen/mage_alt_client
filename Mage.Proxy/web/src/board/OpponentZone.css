@@ -19,21 +19,20 @@
 
 /* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */
 .oz-top-row {
-  flex: 0 0 auto;
-  --bar-h: clamp(50px, 6vh, 80px);
-  height: var(--bar-h);
+  flex: 2;
   align-items: center;
   gap: 6px;
+  min-height: 0;
 }
 
 /* Row 2: Lands + Others */
 .oz-permanents-row {
-  flex: 1;
+  flex: 4;
 }
 
 /* Row 3: Creatures */
 .oz-creatures-row {
-  flex: 1;
+  flex: 5;
 }
 
 /* Commander zone (1 card width) */
@@ -47,6 +46,7 @@
 /* Band containers */
 .oz-band {
   flex: 1;
+  height: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
