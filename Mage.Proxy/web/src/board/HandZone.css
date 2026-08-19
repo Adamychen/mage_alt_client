@@ -1,0 +1,77 @@
+.hand-zone {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 6px 12px;
+  min-height: calc(var(--card-w, 130px) * 1.4 + 12px);
+  position: relative;
+  z-index: 5;
+  flex: 1;
+}
+
+/* Compact mode — short row, cards overflow downward */
+.hand-zone.compact {
+  min-height: auto;
+  height: calc(var(--card-w, 130px) * 0.85);
+  padding: 0 4px;
+  align-items: flex-end;
+  overflow: visible;
+  transition: transform 0.2s ease-out;
+}
+
+.hand-zone.compact:hover {
+  transform: translateY(-30px);
+}
+
+.hand-zone {
+  align-items: flex-end;
+}
+
+.hand-zone .hand-card {
+  margin: 0 -18px;
+  transition: transform 0.15s ease-out, margin 0.15s ease-out;
+}
+
+.hand-zone .hand-card:hover {
+  margin: 0 -4px;
+}
+
+.hand-zone.face-down .hand-card {
+  width: 50px;
+  height: 70px;
+}
+
+/* Compact mode cards — use dynamic --card-w from JS */
+.hand-zone.compact .hand-card {
+  width: var(--card-w, 130px);
+  height: calc(var(--card-w, 130px) * 1.4);
+}
+
+.hand-zone.compact.face-down .hand-card {
+  height: 100%;
+  width: auto;
+  aspect-ratio: 0.714;
+}
+
+/* Hover preview — large card above the hand */
+.hand-preview {
+  position: absolute;
+  bottom: 100%;
+  left: var(--preview-x, 50%);
+  transform: translateX(-50%);
+  width: 200px;
+  height: 280px;
+  z-index: 100;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 2px rgba(255, 176, 58, 0.3);
+  pointer-events: none;
+}
+
+.hand-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}

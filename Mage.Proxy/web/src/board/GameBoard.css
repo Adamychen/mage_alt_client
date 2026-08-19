@@ -1,0 +1,35 @@
+.game-board {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+
+.board-divider {
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(74, 82, 136, 0.4) 20%,
+    rgba(74, 82, 136, 0.5) 50%,
+    rgba(74, 82, 136, 0.4) 80%,
+    transparent 100%
+  );
+  flex-shrink: 0;
+  position: relative;
+}
+
+.board-divider::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  background: linear-gradient(180deg,
+    rgba(124, 92, 255, 0.15) 0%,
+    transparent 100%
+  );
+}

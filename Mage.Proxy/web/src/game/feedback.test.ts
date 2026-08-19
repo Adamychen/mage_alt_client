@@ -83,6 +83,15 @@ describe('parseFeedback', () => {
     expect(parseFeedback('GAME_TARGET', 'game-2', { targets: [], gameView: {} })?.sourceName).toBeUndefined()
   })
 
+  it('strips HTML tags from secondMessage', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-2', {
+      targets: ['perm-1'],
+      options: { secondMessage: "<FONT COLOR='#FF6347'>Lightning Bolt</FONT> [e67]" },
+      gameView: { players: [] },
+    })
+    expect(prompt?.sourceName).toBe('Lightning Bolt [e67]')
+  })
+
   it('labels array-form card targets by id or parentId', () => {
     const prompt = parseFeedback('GAME_TARGET', 'game-2', {
       message: 'Choose a target',

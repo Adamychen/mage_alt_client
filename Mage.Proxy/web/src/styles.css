@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  --bg: #0f1220;
+  --bg: #000000;
   --panel: #1a1e33;
   --panel-2: #232a45;
   --border: #2e3560;
@@ -18,7 +18,7 @@
   --top-h: 200px;
   --bottom-h: 220px;
   --hand-h: 160px;
-  --card-w: 90px;
+  --card-w: 96px;
   --card-aspect: 0.714;
 
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;

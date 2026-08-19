@@ -1,0 +1,72 @@
+.player-zone {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+.player-zone.empty {
+  flex: 1;
+}
+
+.pz-row {
+  display: flex;
+  gap: 6px;
+  min-height: 0;
+}
+
+/* Row 1: Commander + Creatures (equal with Row 2) */
+.pz-creatures-row {
+  flex: 1;
+}
+
+/* Row 2: Lands + Others (equal with Row 1) */
+.pz-permanents-row {
+  flex: 1;
+}
+
+/* Row 3: Info + Hand + Resources */
+.pz-bottom-row {
+  flex: 0 0 auto;
+  height: calc(var(--card-w, 130px) * 0.85);
+  align-items: center;
+  gap: 8px;
+}
+
+/* Commander zone (1 card width) */
+.pz-commander {
+  width: var(--card-w, 90px);
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: none;
+}
+
+/* Band containers */
+.pz-band {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  overflow: visible;
+  border-radius: 8px;
+  border: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.creatures-band {
+  background: transparent;
+}
+
+.other-band {
+  background: transparent;
+}
+
+.lands-band {
+  background: transparent;
+}

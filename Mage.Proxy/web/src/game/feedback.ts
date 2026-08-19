@@ -166,7 +166,13 @@ function stringValue(value: unknown): string | undefined {
 
 function secondMessageOf(data: JsonRecord): string | undefined {
   const value = asRecord(data.options).secondMessage
-  return stringValue(value)
+  const raw = stringValue(value)
+  return raw ? stripHtml(raw) : undefined
+}
+
+/** Elimina tags HTML de un string (el servidor envía secondMessage con <FONT> etc.). */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '')
 }
 
 function chosenTargetsOf(data: JsonRecord): string[] | undefined {
