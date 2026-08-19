@@ -124,24 +124,32 @@
   flex-shrink: 0;
 }
 
-/* Graveyard & exile — full card width × half height with Scryfall card back */
-.graveyard-stack,
-.exile-stack {
-  width: var(--card-w, 130px);
-  height: calc(var(--card-w, 130px) * 0.5);
-  border-radius: 6px;
-}
-
 /* Full card size in non-compact */
 .resource-bar:not(.compact) .resource-stack {
   width: 48px;
   height: 67px;
 }
 
-.resource-bar:not(.compact) .graveyard-stack,
-.resource-bar:not(.compact) .exile-stack {
-  width: 48px;
-  height: 67px;
+/* Library card back image */
+.stack-back-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 5px;
+}
+
+/* Graveyard / exile — last card image, shaded */
+.stack-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 5px;
+}
+
+.stack-card-img.shaded {
+  filter: brightness(0.35) saturate(0.5);
 }
 
 .stack-card-back {
@@ -155,14 +163,13 @@
   justify-content: center;
 }
 
-/* Scryfall card back — show top half (Magic logo + oval) */
 .graveyard-back {
-  background: url('https://cards.scryfall.io/back.png') center top / cover no-repeat;
+  background: radial-gradient(circle at 50% 40%, #2a2540, #1a1530 75%);
   border-color: #7c5cff;
 }
 
 .exile-back {
-  background: url('https://cards.scryfall.io/back.png') center top / cover no-repeat;
+  background: radial-gradient(circle at 50% 40%, #1e3040, #121a2a 75%);
   border-color: #4cd07d;
 }
 
@@ -195,10 +202,4 @@
 
 .compact .stack-count {
   font-size: 14px;
-}
-
-/* Bigger count for graveyard/exile (full card width) */
-.graveyard-stack .stack-count,
-.exile-stack .stack-count {
-  font-size: 18px;
 }
