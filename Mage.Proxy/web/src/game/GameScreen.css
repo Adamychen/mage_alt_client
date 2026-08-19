@@ -1,7 +1,7 @@
 .game {
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .game-top {
@@ -66,70 +66,17 @@
 }
 
 .game-body {
-  flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 280px;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 
 .board-wrap {
-  flex: 1;
   min-width: 0;
-  display: flex;
+  min-height: 0;
   position: relative;
   background: #0f1220;
-}
-
-.zone-box {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.opp-zone {
-  top: 0;
-  height: 49%;
-  background: linear-gradient(180deg, rgba(20, 24, 48, 0.85) 0%, rgba(15, 18, 32, 0.4) 100%);
-  border-bottom: 1px solid rgba(74, 82, 136, 0.25);
-}
-
-.my-zone {
-  bottom: 0;
-  height: 51%;
-  background: linear-gradient(0deg, rgba(20, 24, 48, 0.85) 0%, rgba(15, 18, 32, 0.4) 100%);
-  border-top: 1px solid rgba(74, 82, 136, 0.25);
-}
-
-.zone-divider {
-  position: absolute;
-  top: 49%;
-  left: 0;
-  right: 0;
-  height: 2%;
-  z-index: 1;
-  background: linear-gradient(180deg, rgba(15, 18, 32, 0.4) 0%, rgba(30, 36, 68, 0.3) 50%, rgba(15, 18, 32, 0.4) 100%);
-}
-
-.zone-divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 3%;
-  right: 3%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(74, 82, 136, 0.4), transparent);
-}
-
-.board-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #4a5080;
-  border: 1px dashed #1e2444;
-  border-radius: 12px;
-  margin: 12px;
 }
 
 .game-right-panel {
@@ -246,4 +193,40 @@
   align-items: center;
   gap: 12px;
   color: var(--text-dim);
+}
+
+/* ── Targeting floating bar ─────────────────────────────────────────────── */
+.targeting-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(26, 30, 51, 0.95);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+  color: var(--text);
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.targeting-source {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.targeting-hint {
+  color: var(--text-dim);
+}
+
+.targeting-bar button {
+  padding: 4px 10px;
+  font-size: 12px;
 }

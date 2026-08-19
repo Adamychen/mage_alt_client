@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import BoardView from '../board/BoardView'
+import GameBoard from '../board/GameBoard'
 import * as cmds from '../net/commands'
 import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import FeedbackDialog from './FeedbackDialog'
 import Sidebar from './Sidebar'
 import CardPreview from './CardPreview'
 import GameChat from './GameChat'
-import PlayerStatusCard from './PlayerStatusCard'
-import PlayerResourcePanel from './PlayerResourcePanel'
-import { resolveTargetSourceId } from '../board/gameToScene'
+import PhaseBar from './PhaseBar'
+import { resolveTargetSourceId } from './resolveTargetSourceId'
 import type { CardView } from '../net/types'
 import './GameScreen.css'
 
@@ -26,28 +25,7 @@ export default function GameScreen() {
     if (game) maybeAutoPass(game)
   }, [game])
 
-  useEffect(() => {
-    const check = setInterval(() => {
-      const scene = (globalThis as any).__mageScene
-      if (scene?.hoveredCardId && game) {
-        const id = scene.hoveredCardId
-        const handCard = game.myHand?.[id]
-        if (handCard) { setPreviewCard(handCard); return }
-        for (const p of game.players ?? []) {
-          const perm = p.battlefield?.[id]
-          if (perm) { setPreviewCard(perm); return }
-        }
-        const stackCard = game.stack?.[id]
-        if (stackCard) { setPreviewCard(stackCard); return }
-      } else if (!scene?.hoveredCardId) {
-        setPreviewCard(null)
-      }
-    }, 100)
-    return () => clearInterval(check)
-  }, [game])
-
   const me = game?.players?.find((p) => p.controlled)
-  const opps = game?.players?.filter((p) => !p.controlled) ?? []
   const targetIds = feedback?.method === 'GAME_TARGET' ? feedback.options.map((option) => option.id) : []
   const chosenTargetIds = feedback?.method === 'GAME_TARGET' ? (feedback.chosenTargets ?? []) : []
   const targetSourceId = game && feedback?.method === 'GAME_TARGET' ? resolveTargetSourceId(game, feedback.sourceName) : undefined
@@ -70,9 +48,11 @@ export default function GameScreen() {
     if (!result.ok) setStoreError(result.error ?? 'No se pudo declarar la criatura en combate')
   }
 
-  const isSpectator = !me
-  const opp0 = opps[0]
-  const opp1 = opps[1]
+  const onResolveClick = async () => {
+    if (!gameId) return
+    const result = await cmds.sendPlayerBoolean(false, gameId)
+    if (!result.ok) setStoreError(result.error ?? 'No se pudo pasar prioridad')
+  }
 
   return (
     <div className="game">
@@ -81,7 +61,7 @@ export default function GameScreen() {
           {game && (
             <div className="game-state" data-testid="game-status">
               <span className="game-turn">Turn {game.turn}</span>
-              <span className="game-phase">{game.phase} · {game.step}</span>
+              <PhaseBar step={game.step} />
             </div>
           )}
         </div>
@@ -111,45 +91,19 @@ export default function GameScreen() {
       <div className="game-body">
         <Sidebar />
         <div className="board-wrap">
-          {game && (
-            <>
-              <div className="zone-box opp-zone">
-                {opp0 && (
-                  <>
-                    <PlayerStatusCard player={opp0} side="opp" />
-                    <PlayerResourcePanel player={opp0} side="opp" />
-                  </>
-                )}
-              </div>
-              <div className="zone-divider" />
-              <div className="zone-box my-zone">
-                {isSpectator && opp1 && (
-                  <>
-                    <PlayerStatusCard player={opp1} side="my" />
-                    <PlayerResourcePanel player={opp1} side="my" />
-                  </>
-                )}
-                {me && (
-                  <>
-                    <PlayerStatusCard player={me} side="my" />
-                    <PlayerResourcePanel player={me} side="my" />
-                  </>
-                )}
-              </div>
-            </>
-          )}
-          <BoardView
-            game={game!}
+          <GameBoard
+            game={game}
             targetIds={targetIds}
             chosenTargetIds={chosenTargetIds}
             onTargetClick={onTargetClick}
             targetSourceId={targetSourceId}
             playableIds={playableIds}
             onPlayableClick={onPlayableClick}
+            onCardHover={setPreviewCard}
             combatSelectable={combat?.selectable ?? []}
-            combatChosen={combat?.chosen ?? []}
             combatMode={combat?.mode ?? null}
             onCombatClick={onCombatClick}
+            onResolveClick={onResolveClick}
           />
         </div>
         <div className="game-right-panel">

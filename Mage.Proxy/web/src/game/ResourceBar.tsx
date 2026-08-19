@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
-import type { PlayerView, CardView } from '../net/types'
-import { awaitImageUrl } from '../cards/cardImages'
+import { useState } from 'react'
+import type { PlayerView } from '../net/types'
+import PileOverlay from '../board/PileOverlay'
 import './ResourceBar.css'
 
 const MANA_COLORS: Array<{ key: keyof PlayerView['manaPool']; symbol: string; className: string }> = [
@@ -14,12 +14,6 @@ const MANA_COLORS: Array<{ key: keyof PlayerView['manaPool']; symbol: string; cl
 
 const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
 
-function lastCardImage(cards: Record<string, CardView> | undefined): CardView | null {
-  if (!cards) return null
-  const vals = Object.values(cards)
-  return vals.length > 0 ? vals[vals.length - 1] : null
-}
-
 interface ResourceBarProps {
   player: PlayerView
   side: 'opp' | 'my'
@@ -28,32 +22,11 @@ interface ResourceBarProps {
 
 export default function ResourceBar({ player, side, compact = false }: ResourceBarProps) {
   const [manaOpen, setManaOpen] = useState(false)
-  const [graveyardImg, setGraveyardImg] = useState<string | null>(null)
-  const [exileImg, setExileImg] = useState<string | null>(null)
+  const [openPile, setOpenPile] = useState<'graveyard' | 'exile' | null>(null)
   const pool = player.manaPool
   const manaTotal = MANA_COLORS.reduce((sum, c) => sum + (pool[c.key] ?? 0), 0)
   const graveyardCount = Object.keys(player.graveyard ?? {}).length
   const exileCount = Object.keys(player.exile ?? {}).length
-
-  useEffect(() => {
-    const last = lastCardImage(player.graveyard)
-    if (last) {
-      let cancelled = false
-      awaitImageUrl(last).then((url) => { if (!cancelled) setGraveyardImg(url) })
-      return () => { cancelled = true }
-    }
-    setGraveyardImg(null)
-  }, [player.graveyard])
-
-  useEffect(() => {
-    const last = lastCardImage(player.exile)
-    if (last) {
-      let cancelled = false
-      awaitImageUrl(last).then((url) => { if (!cancelled) setExileImg(url) })
-      return () => { cancelled = true }
-    }
-    setExileImg(null)
-  }, [player.exile])
 
   return (
     <div className={`resource-bar ${side} ${compact ? 'compact' : ''}`}>
@@ -84,27 +57,44 @@ export default function ResourceBar({ player, side, compact = false }: ResourceB
           <img className="stack-back-img" src={CARD_BACK_URL} alt="" draggable={false} />
           <span className="stack-count">{player.libraryCount}</span>
         </div>
-        <div className="resource-stack graveyard-stack" title={`Cementerio: ${graveyardCount}`}>
-          {graveyardImg ? (
-            <img className="stack-card-img shaded" src={graveyardImg} alt="" draggable={false} />
-          ) : (
-            <div className="stack-card-back graveyard-back">
-              <span className="stack-mark">&#9760;</span>
-            </div>
-          )}
+        <button
+          type="button"
+          className="resource-stack graveyard-stack clickable-pile"
+          title={`Cementerio: ${graveyardCount}`}
+          onClick={() => setOpenPile('graveyard')}
+        >
+          <div className="stack-card-back graveyard-back">
+            <span className="stack-mark">&#9760;</span>
+          </div>
           <span className="stack-count">{graveyardCount}</span>
-        </div>
-        <div className="resource-stack exile-stack" title={`Exilio: ${exileCount}`}>
-          {exileImg ? (
-            <img className="stack-card-img shaded" src={exileImg} alt="" draggable={false} />
-          ) : (
-            <div className="stack-card-back exile-back">
-              <span className="stack-mark">&#9784;</span>
-            </div>
-          )}
+        </button>
+        <button
+          type="button"
+          className="resource-stack exile-stack clickable-pile"
+          title={`Exilio: ${exileCount}`}
+          onClick={() => setOpenPile('exile')}
+        >
+          <div className="stack-card-back exile-back">
+            <span className="stack-mark">&#9784;</span>
+          </div>
           <span className="stack-count">{exileCount}</span>
-        </div>
+        </button>
       </div>
+
+      {openPile === 'graveyard' && (
+        <PileOverlay
+          title="Cementerio"
+          cards={player.graveyard ?? {}}
+          onClose={() => setOpenPile(null)}
+        />
+      )}
+      {openPile === 'exile' && (
+        <PileOverlay
+          title="Exilio"
+          cards={player.exile ?? {}}
+          onClose={() => setOpenPile(null)}
+        />
+      )}
     </div>
   )
 }

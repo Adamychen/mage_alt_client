@@ -1,11 +1,31 @@
 /**
  * Estado del escenario en vivo publicado por la app en window.__mageScene
- * (BoardScene). Sustituye a los byte-diffs del canvas: los tests asertan sobre
- * este estado (determinista) y el DOM, NO sobre píxeles.
+ * (sceneBridge). Sustituye a los byte-diffs del canvas: los tests asertan
+ * sobre este estado (determinista) y el DOM, NO sobre píxeles.
  */
 
 import type { Page } from '@playwright/test'
 import { framesOf, lastGameView, myHandEntries, parseFrames, playableInView } from './frames'
+
+export interface MageSceneState {
+  cards: Record<string, { x: number; y: number }>
+  playable: string[]
+  click: (id: string) => boolean
+  hoveredCardId: string | null
+  targeting: {
+    active: boolean
+    source: string | null
+    ids: string[]
+    chosen: string[]
+  }
+  combat: {
+    active: boolean
+    mode: 'attack' | 'block' | null
+    selectable: string[]
+    chosen: string[]
+  }
+  game: { turn: number; phase: string; step: string; priority: boolean } | null
+}
 
 export interface SceneCardPosition {
   x: number
@@ -32,6 +52,12 @@ export interface SceneCombat {
   chosen: string[]
 }
 
+/** Escena cruda tipada (contrato React ↔ sceneBridge). */
+export async function rawScene(page: Page): Promise<MageSceneState | null> {
+  const s = await page.evaluate(() => (globalThis as Window & { __mageScene?: MageSceneState }).__mageScene ?? null)
+  return s ?? null
+}
+
 /** Estado del escenario expuesto por la app (posiciones + playables en vivo). */
 export async function sceneState(page: Page): Promise<SceneState | null> {
   const scene = await page.evaluate(() => (globalThis as unknown as { __mageScene?: SceneState }).__mageScene ?? null)
@@ -43,8 +69,8 @@ export async function sceneHookAvailable(page: Page): Promise<boolean> {
   return (await page.evaluate(() => (globalThis as unknown as { __mageScene?: unknown }).__mageScene !== undefined)) === true
 }
 
-/** Clic lógico por UUID en el escenario (el hook de la app despacha el click real,
- *  mucho más fiable que clicar coordenadas del canvas con partidas rápidas). */
+/** Clic lógico por UUID en el escenario (el hook de la app despacha el click
+ *  real en el DOM, mucho más fiable que clicar coordenadas del canvas). */
 export async function sceneClick(page: Page, id: string): Promise<boolean> {
   for (let attempt = 0; attempt < 10; attempt++) {
     const ok =
@@ -58,7 +84,7 @@ export async function sceneClick(page: Page, id: string): Promise<boolean> {
   return false
 }
 
-/** Posición real en el canvas de la carta con `id`, o null si aún no está en el escenario. */
+/** Posición real en el escenario de la carta con `id`, o null si aún no está. */
 export async function liveSceneCard(page: Page, id: string): Promise<SceneCardPosition | null> {
   const scene = await sceneState(page)
   if (!scene) return null

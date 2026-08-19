@@ -1,0 +1,73 @@
+.opponent-zone {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 8px;
+  gap: 4px;
+}
+
+.opponent-zone.empty {
+  flex: 1;
+}
+
+.oz-row {
+  display: flex;
+  gap: 6px;
+  min-height: 0;
+}
+
+/* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */
+.oz-top-row {
+  flex: 0 0 auto;
+  --bar-h: clamp(50px, 6vh, 80px);
+  height: var(--bar-h);
+  align-items: center;
+  gap: 6px;
+}
+
+/* Row 2: Lands + Others */
+.oz-permanents-row {
+  flex: 1;
+}
+
+/* Row 3: Creatures */
+.oz-creatures-row {
+  flex: 1;
+}
+
+/* Commander zone (1 card width) */
+.oz-commander {
+  width: var(--card-w, 90px);
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: none;
+}
+
+/* Band containers */
+.oz-band {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px;
+  overflow: visible;
+  border-radius: 8px;
+  border: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.oz-band.creatures-band {
+  background: transparent;
+}
+
+.oz-band.other-band {
+  background: transparent;
+}
+
+.oz-band.lands-band {
+  background: transparent;
+}

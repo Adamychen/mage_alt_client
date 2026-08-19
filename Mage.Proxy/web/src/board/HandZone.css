@@ -2,38 +2,30 @@
   display: flex;
   justify-content: center;
   gap: 0;
-  padding: 6px 12px;
-  min-height: calc(var(--card-w, 130px) * 1.4 + 12px);
+  padding: 4px 8px;
+  min-height: calc(var(--card-w, 100px) * 1.4 + 8px);
   position: relative;
   z-index: 5;
   flex: 1;
+  align-items: flex-end;
 }
 
-/* Compact mode — short row, cards overflow downward */
+/* Compact mode — short row for bottom bar */
 .hand-zone.compact {
-  min-height: auto;
-  height: calc(var(--card-w, 130px) * 0.85);
+  min-height: 0;
+  height: 100%;
   padding: 0 4px;
   align-items: flex-end;
   overflow: visible;
-  transition: transform 0.2s ease-out;
-}
-
-.hand-zone.compact:hover {
-  transform: translateY(-30px);
-}
-
-.hand-zone {
-  align-items: flex-end;
 }
 
 .hand-zone .hand-card {
-  margin: 0 -18px;
-  transition: transform 0.15s ease-out, margin 0.15s ease-out;
+  margin: 0 -6px;
+  transition: transform 0.12s ease-out, margin 0.12s ease-out;
 }
 
 .hand-zone .hand-card:hover {
-  margin: 0 -4px;
+  margin: 0 -2px;
 }
 
 .hand-zone.face-down .hand-card {
@@ -41,16 +33,16 @@
   height: 70px;
 }
 
-/* Compact mode cards — use dynamic --card-w from JS */
+/* Compact mode cards — use dynamic --card-w from JS, capped by --bar-h */
 .hand-zone.compact .hand-card {
-  width: var(--card-w, 130px);
-  height: calc(var(--card-w, 130px) * 1.4);
+  width: var(--card-w, 100px);
+  height: calc(var(--card-w, 100px) * 1.4);
+  max-height: calc(var(--bar-h, 70px) * 0.85);
 }
 
 .hand-zone.compact.face-down .hand-card {
-  height: 100%;
-  width: auto;
-  aspect-ratio: 0.714;
+  height: calc(var(--bar-h, 70px) * 0.85);
+  width: calc(var(--bar-h, 70px) * 0.85 * 0.714);
 }
 
 /* Hover preview — large card above the hand */

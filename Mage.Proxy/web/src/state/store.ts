@@ -3,7 +3,7 @@ import { Gateway } from '../net/Gateway'
 import * as cmds from '../net/commands'
 import type { ChatMessageEvent, DeckCardEntry, DeckJson, GameEndInfo, GameView, LobbyEnvelope, ProxyMessage } from '../net/types'
 import { parseFeedback, type FeedbackPrompt } from '../game/feedback'
-import { playableObjectIds } from '../board/gameToScene'
+import { playableObjectIds } from '../board/playableUtils'
 export interface ConnectionInfo {
   /** Host del proxy WebSocket (ws://wsHost:8787). */
   wsHost: string

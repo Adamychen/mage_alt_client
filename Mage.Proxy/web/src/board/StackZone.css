@@ -1,0 +1,69 @@
+.stack-zone {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.stack-zone.empty {
+  display: none;
+}
+
+.stack-unit {
+  position: relative;
+  width: 210px;
+  pointer-events: auto;
+  filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.7));
+}
+
+/* Cartas extra del stack, asomando ligeramente detrás de la de arriba */
+.stack-peek {
+  position: absolute;
+  top: calc(var(--i) * -6px);
+  left: calc(var(--i) * 6px);
+  right: calc(var(--i) * -6px);
+  height: calc(210px * 1.4);
+  background: #16181f;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(220, 220, 225, 0.4);
+  border-radius: 9px 9px 0 0;
+  z-index: 0;
+}
+
+/* Carta principal del stack — misma proporción que el resto de cartas,
+   pero sin redondeo abajo, para que el botón Resolve encaje pegado. */
+.stack-zone .stack-top-card {
+  position: relative;
+  width: 210px;
+  height: calc(210px * 1.4);
+  border-radius: 9px 9px 0 0;
+  z-index: 1;
+}
+
+.stack-zone .stack-top-card:hover {
+  transform: none !important;
+  box-shadow: inset 0 0 0 1px rgba(220, 220, 225, 0.55) !important;
+}
+
+.stack-resolve-btn {
+  display: block;
+  width: 210px;
+  padding: 9px 0;
+  background: #23262f;
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  border-top: none;
+  border-radius: 0 0 9px 9px;
+  color: #e8eaf6;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.stack-resolve-btn:hover {
+  background: #2d3038;
+}

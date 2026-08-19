@@ -130,7 +130,7 @@ export async function startMatch(page: Page, tableName: string): Promise<void> {
   const row = page.locator('.table-row', { hasText: tableName }).first()
   const startButton = row.getByRole('button', { name: 'Empezar' })
   await startButton.click()
-  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByTestId('game-status')).toBeVisible({ timeout: 20_000 })
 }
 
 export interface GameSession {

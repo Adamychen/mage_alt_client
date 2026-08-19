@@ -59,8 +59,8 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   // (e) crear mesa IA vs IA y entrar como espectador
   await page.getByRole('button', { name: /Demo IA vs IA/ }).click()
 
-  // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
-  await expect(page.locator('.game-top').getByText(/Partida/).first()).toBeVisible({ timeout: 20_000 })
+   // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
+  await expect(page.getByTestId('game-status')).toBeVisible({ timeout: 20_000 })
   const canvas = page.locator('.board-wrap canvas')
   await expect(canvas).toBeVisible({ timeout: 20_000 })
   const gameStatus = page.getByTestId('game-status')

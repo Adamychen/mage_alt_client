@@ -36,13 +36,14 @@ export default function HandZone({
 
     const measure = () => {
       const availW = el.getBoundingClientRect().width
+      const availH = el.getBoundingClientRect().height
       const count = entries.length
       if (count === 0 || availW <= 0) return
 
       const overlap = 0.4
-      const w = Math.min(MAX_CARD_W, Math.max(MIN_CARD_W,
-        availW / (count * (1 - overlap) + overlap)
-      ))
+      const wByWidth = availW / (count * (1 - overlap) + overlap)
+      const wByHeight = availH > 0 ? (availH - 4) / 1.4 : MAX_CARD_W
+      const w = Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, Math.min(wByWidth, wByHeight)))
       setCardW(w)
     }
 
@@ -76,22 +77,17 @@ export default function HandZone({
       onMouseMove={compact ? handleMouseMove : undefined}
       style={compact ? { '--card-w': `${cardW}px` } as React.CSSProperties : undefined}
     >
-      {entries.map(([id, card], i) => {
-        const n = entries.length
-        const mid = (n - 1) / 2
-        const offset = i - mid
-        const rotate = compact ? offset * 4 : offset * 3.2
-        const lift = compact ? 0 : -Math.pow(Math.abs(offset), 1.15) * 6
-        return (
+      {entries.map(([id, card], i) => (
           <CardSlot
             key={id}
+            cardId={id}
             card={card}
             onClick={onCardClick ? () => onCardClick(id) : undefined}
             isPlayable={playableIds.has(id)}
             isTarget={targetIds.has(id)}
             faceDown={faceDown}
             className="hand-card"
-            style={{ '--fan-rot': `${rotate}deg`, '--fan-lift': `${lift}px`, zIndex: i } as React.CSSProperties}
+            style={{ zIndex: i } as React.CSSProperties}
             onHover={
               compact && !faceDown
                 ? (c) => {
@@ -101,8 +97,7 @@ export default function HandZone({
                 : undefined
             }
           />
-        )
-      })}
+        ))}
       {compact && hoveredCard && (
         <div
           className="hand-preview"

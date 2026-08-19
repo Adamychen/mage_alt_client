@@ -1,0 +1,135 @@
+.player-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(20, 24, 48, 0.85);
+  border: 1px solid #2e3560;
+  border-radius: 10px;
+  min-width: 160px;
+  pointer-events: auto;
+}
+
+/* Compact mode (half-card height) */
+.player-info-bar.compact {
+  min-width: auto;
+  height: 100%;
+  padding: 4px 8px;
+  gap: 6px;
+}
+
+.player-info-bar.opp {
+  align-self: flex-start;
+}
+
+.player-info-bar.my {
+  align-self: flex-start;
+}
+
+.player-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-frame {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #252b4a 0%, #1a1e35 100%);
+  border: 1.5px solid #3a4270;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #c8cae6;
+  font-family: var(--font-display);
+}
+
+.compact .avatar-frame {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.player-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.player-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c8cae6;
+  white-space: nowrap;
+}
+
+.compact .player-name {
+  font-size: 11px;
+}
+
+.player-name[data-priority] {
+  color: #ffb03a;
+}
+
+.player-counters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 16px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.compact .counter {
+  font-size: 13px;
+  gap: 2px;
+}
+
+.life-counter {
+  color: #ffb03a;
+}
+
+.counter-icon {
+  font-size: 12px;
+}
+
+.compact .counter-icon {
+  font-size: 10px;
+}
+
+.secondary-counter {
+  color: #4cd07d;
+  font-size: 13px;
+}
+
+.player-badges {
+  display: flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(255, 176, 58, 0.15);
+  border: 1px solid #ffb03a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #ffb03a;
+}
+
+.compact .badge {
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+}

@@ -17,22 +17,23 @@
   min-height: 0;
 }
 
-/* Row 1: Commander + Creatures (equal with Row 2) */
+/* Row 1: Creatures */
 .pz-creatures-row {
   flex: 1;
 }
 
-/* Row 2: Lands + Others (equal with Row 1) */
+/* Row 2: Lands + Others */
 .pz-permanents-row {
   flex: 1;
 }
 
-/* Row 3: Info + Hand + Resources */
+/* Row 3: Unified row [life | hand | mana | deck | G | X] */
 .pz-bottom-row {
   flex: 0 0 auto;
-  height: calc(var(--card-w, 130px) * 0.85);
+  --bar-h: clamp(60px, 8vh, 100px);
+  height: var(--bar-h);
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Commander zone (1 card width) */

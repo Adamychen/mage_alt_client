@@ -43,6 +43,33 @@ export default function FeedbackDialog() {
     }
   }
 
+  const cancel = () => {
+    void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo cancelar la decisión')
+  }
+
+  const finishOptionalTarget = () => {
+    void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo finalizar la selección')
+  }
+
+  // ── GAME_TARGET: barra flotante (el tablero maneja los clicks) ──────────
+  if (prompt.method === 'GAME_TARGET') {
+    const chosenCount = prompt.chosenTargets?.length ?? 0
+    return (
+      <div className="targeting-bar">
+        <span className="targeting-source">{prompt.sourceName ?? 'Objetivo'}</span>
+        <span className="targeting-hint">
+          {chosenCount > 0
+            ? `${chosenCount} seleccionado(s)`
+            : 'Haz clic en el tablero'}
+        </span>
+        {prompt.required === false && (
+          <button disabled={busy} onClick={finishOptionalTarget}>Terminar</button>
+        )}
+        <button disabled={busy} onClick={cancel}>Cancelar</button>
+      </div>
+    )
+  }
+
   const selectOption = (option: FeedbackOption) => {
     if (prompt.mode === 'uuid' && prompt.max > 1) {
       setSelected((current) => current.includes(option.value)
@@ -69,10 +96,6 @@ export default function FeedbackDialog() {
     void send(() => cmds.sendPlayerInteger(value, prompt.gameId), 'No se pudo enviar la cantidad')
   }
 
-  const finishOptionalTarget = () => {
-    void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo finalizar la selección')
-  }
-
   const confirmMultiAmount = () => {
     const values = (prompt.items ?? []).map((item) => {
       const value = Math.max(item.min, Math.min(item.max, multiAmounts[item.id] ?? item.min))
@@ -86,12 +109,8 @@ export default function FeedbackDialog() {
     void send(() => cmds.sendPlayerString(values.join(' '), prompt.gameId), 'No se pudieron enviar las cantidades')
   }
 
-  const cancel = () => {
-    void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo cancelar la decisión')
-  }
-
   return (
-    <div className={`feedback-backdrop ${prompt.method === 'GAME_TARGET' ? 'targeting' : prompt.method === 'GAME_PLAY_MANA' ? 'mana' : ''}`} role="presentation">
+    <div className={`feedback-backdrop ${prompt.method === 'GAME_PLAY_MANA' ? 'mana' : ''}`} role="presentation">
       <section className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className="feedback-kicker">{prompt.method}</div>
         <h2 id="feedback-title">{prompt.title}</h2>
@@ -122,7 +141,7 @@ export default function FeedbackDialog() {
                   type="number"
                   min={item.min}
                   max={item.max}
-                  value={multiAmounts[item.id] ?? item.min}
+                  value={multiAmounts[item.id] ?? item.defaultValue}
                   onChange={(event) => setMultiAmounts((current) => ({ ...current, [item.id]: Number(event.target.value) }))}
                 />
               </label>
@@ -134,10 +153,6 @@ export default function FeedbackDialog() {
 
         {prompt.mode === 'mana' && (
           <p className="feedback-hint">Haz clic en tus fuentes de maná del tablero para pagar el coste.</p>
-        )}
-
-        {prompt.method === 'GAME_TARGET' && (prompt.chosenTargets?.length ?? 0) > 0 && (
-          <p className="feedback-hint">Objetivos ya elegidos: {prompt.chosenTargets?.length} (clic de nuevo para deseleccionar)</p>
         )}
 
         {prompt.mode === 'mana' && (
@@ -195,7 +210,7 @@ export default function FeedbackDialog() {
                 Confirmar ({selected.length})
               </button>
             )}
-            {prompt.method === 'GAME_TARGET' && prompt.required === false && (
+            {prompt.required === false && (
               <button disabled={busy} onClick={finishOptionalTarget}>Terminar selección</button>
             )}
           </div>

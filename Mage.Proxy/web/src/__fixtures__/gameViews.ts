@@ -7,7 +7,7 @@ export function makeCard(partial: Partial<CardView> & { name: string }): CardVie
 
 export function makePermanent(partial: Partial<PermanentView> & { name: string }): PermanentView {
   const { name, ...rest } = partial
-  return { name, manaValue: 0, expansionSetCode: 'TEST', cardNumber: '0', ...rest }
+  return { name, cardTypes: ['Creature'], manaValue: 0, expansionSetCode: 'TEST', cardNumber: '0', ...rest }
 }
 
 export function makePlayer(partial: Partial<PlayerView> & { playerId: string; name: string }): PlayerView {
