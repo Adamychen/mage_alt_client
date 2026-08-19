@@ -117,8 +117,8 @@
 /* Card-sized stacks */
 .resource-stack {
   position: relative;
-  width: calc(var(--card-w, 130px) * 0.45);
-  height: calc(var(--card-w, 130px) * 0.45 * 1.4);
+  width: var(--card-w, 130px);
+  height: calc(var(--card-w, 130px) * 0.7);
   border-radius: 5px;
   overflow: hidden;
   flex-shrink: 0;
