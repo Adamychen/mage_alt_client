@@ -1,0 +1,204 @@
+.resource-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 4px 8px;
+  pointer-events: auto;
+}
+
+/* Compact mode — card-sized stacks that overflow downward */
+.resource-bar.compact {
+  height: 100%;
+  padding: 0 4px;
+  gap: 4px;
+  align-items: flex-end;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+.resource-mana-wrap {
+  position: relative;
+}
+
+.resource-mana {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #2e3560;
+  border-radius: 8px;
+  background: rgba(20, 24, 48, 0.85);
+  color: #e8eaf6;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  cursor: pointer;
+}
+
+.compact .resource-mana {
+  height: auto;
+  padding: 0 8px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.resource-mana:hover {
+  background: #1d2140;
+}
+
+.mana-total {
+  color: #e8eaf6;
+}
+
+.mana-breakdown {
+  position: absolute;
+  bottom: 40px;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #171b30;
+  border: 1px solid #2e3560;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.mana-pip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.mana-symbol {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.mana-count {
+  font-weight: 700;
+  color: #c8cae6;
+  min-width: 16px;
+  text-align: right;
+}
+
+.mana-w { color: #e8eaf6; }
+.mana-w .mana-symbol { background: #e8eaf6; color: #10131f; }
+.mana-u { color: #5c70ff; }
+.mana-u .mana-symbol { background: #5c70ff; color: #fff; }
+.mana-b { color: #9945cc; }
+.mana-b .mana-symbol { background: #9945cc; color: #fff; }
+.mana-r { color: #ff5c6c; }
+.mana-r .mana-symbol { background: #ff5c6c; color: #fff; }
+.mana-g { color: #4cd07d; }
+.mana-g .mana-symbol { background: #4cd07d; }
+.mana-c { color: #8a93b8; }
+.mana-c .mana-symbol { background: #8a93b8; }
+
+/* Piles container */
+.resource-piles {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+/* Card-sized stacks */
+.resource-stack {
+  position: relative;
+  width: calc(var(--card-w, 130px) * 0.45);
+  height: calc(var(--card-w, 130px) * 0.45 * 1.4);
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Graveyard & exile — full card width × half height with Scryfall card back */
+.graveyard-stack,
+.exile-stack {
+  width: var(--card-w, 130px);
+  height: calc(var(--card-w, 130px) * 0.5);
+  border-radius: 6px;
+}
+
+/* Full card size in non-compact */
+.resource-bar:not(.compact) .resource-stack {
+  width: 48px;
+  height: 67px;
+}
+
+.resource-bar:not(.compact) .graveyard-stack,
+.resource-bar:not(.compact) .exile-stack {
+  width: 48px;
+  height: 67px;
+}
+
+.stack-card-back {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: radial-gradient(circle at 50% 40%, #2a2f52, #12152a 75%);
+  border: 1.5px solid #5a6399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scryfall card back — show top half (Magic logo + oval) */
+.graveyard-back {
+  background: url('https://cards.scryfall.io/back.png') center top / cover no-repeat;
+  border-color: #7c5cff;
+}
+
+.exile-back {
+  background: url('https://cards.scryfall.io/back.png') center top / cover no-repeat;
+  border-color: #4cd07d;
+}
+
+.stack-mark {
+  font-size: 14px;
+  color: #ffb03a;
+  opacity: 0.7;
+}
+
+.graveyard-stack .stack-mark {
+  color: #7c5cff;
+}
+
+.exile-stack .stack-mark {
+  color: #4cd07d;
+}
+
+.stack-count {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  font-family: var(--font-display);
+}
+
+.compact .stack-count {
+  font-size: 14px;
+}
+
+/* Bigger count for graveyard/exile (full card width) */
+.graveyard-stack .stack-count,
+.exile-stack .stack-count {
+  font-size: 18px;
+}
