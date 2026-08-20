@@ -10,13 +10,15 @@ const EMOJI_PICKS = ['😊', '😂', '😮', '👀', '🙏', '😅', '🤔', '�
 
 export default function GameChat() {
   const gameId = useStore((s) => s.gameId)
+  const roomChatId = useStore((s) => s.roomChatId)
   const log = useStore((s) => s.log)
   const [input, setInput] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const gameLog = log.filter((e) => e.gameId === gameId)
+  const chatId = roomChatId
+  const gameLog = log.filter((e) => e.gameId === chatId || e.gameId === gameId)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -25,8 +27,8 @@ export default function GameChat() {
   const send = async (e: React.FormEvent) => {
     e.preventDefault()
     const text = input.trim()
-    if (!text || !gameId) return
-    await cmds.sendChatMessage(gameId, text)
+    if (!text || !chatId) return
+    await cmds.sendChatMessage(chatId, text)
     setInput('')
   }
 
@@ -76,7 +78,7 @@ export default function GameChat() {
           placeholder="Chat..."
           maxLength={500}
         />
-        <button type="submit" className="game-chat-send" disabled={!input.trim() || !gameId}>▸</button>
+        <button type="submit" className="game-chat-send" disabled={!input.trim() || !chatId}>▸</button>
       </form>
 
       <QuickReactions />

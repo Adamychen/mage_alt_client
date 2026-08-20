@@ -12,6 +12,7 @@ vi.mock('../net/commands', () => ({
   getPlayerTypes: vi.fn(),
   getDeckTypes: vi.fn(),
   getRoomChatId: vi.fn(),
+  getGameChatId: vi.fn().mockResolvedValue(undefined),
   sendChatMessage: vi.fn(),
   createTable: vi.fn(),
   joinTable: vi.fn(),

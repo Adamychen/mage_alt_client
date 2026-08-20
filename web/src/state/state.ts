@@ -28,6 +28,7 @@ export interface AppState {
   chatMessages: ChatMessageEvent[]
   game: GameView | null
   gameId: string | null
+  gameChatId: string | null
   playableIds: string[]
   playableWindow: { turn: number; phase: string } | null
   combat: CombatState | null
@@ -55,6 +56,7 @@ export const initialState: AppState = {
   chatMessages: [],
   game: null,
   gameId: null,
+  gameChatId: null,
   playableIds: [],
   playableWindow: null,
   combat: null,

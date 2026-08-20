@@ -13,7 +13,7 @@ export function handleMessage(msg: ProxyMessage) {
       setState({ phase: 'lobby', connecting: false, error: null })
       break
     case 'disconnected':
-      setState({ phase: 'idle', connecting: false, game: null, gameId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
+      setState({ phase: 'idle', connecting: false, game: null, gameId: null, gameChatId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
       break
     case 'info':
       addLog('servidor', msg.message)
@@ -70,9 +70,12 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'START_GAME': {
       const d = data as { gameId?: string; tableName?: string } | null
       const isNewGame = !!d?.gameId && d.gameId !== s.gameId
-      setState({ phase: 'game', gameId: d?.gameId ?? null, gameEnd: null })
+      setState({ phase: 'game', gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null })
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
-      if (isNewGame) void cmds.joinGame(d!.gameId!)
+      if (isNewGame) {
+        void cmds.joinGame(d!.gameId!)
+        void cmds.getGameChatId(d!.gameId!).then((cid) => setState({ gameChatId: cid ?? null }))
+      }
       break
     }
     case 'GAME_INIT':
@@ -86,7 +89,12 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
           embeddedGame, method, fresh.feedback, fresh.playableIds, fresh.playableWindow,
         )
         const patch: Partial<typeof s> = { playableIds: ids, playableWindow }
-        if (method === 'GAME_INIT') patch.gameEnd = null
+        if (method === 'GAME_INIT') {
+          patch.gameEnd = null
+          if (objectId && !fresh.gameChatId) {
+            void cmds.getGameChatId(objectId).then((cid) => setState({ gameChatId: cid ?? null }))
+          }
+        }
         if (method === 'GAME_SELECT' && s.feedback?.method === 'GAME_TARGET') {
           patch.feedback = null
         }
@@ -116,6 +124,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         setState({
           game: null,
           gameId: null,
+          gameChatId: null,
           playableIds: [],
           playableWindow: null,
           combat: null,

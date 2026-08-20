@@ -45,6 +45,11 @@ export async function getRoomChatId(): Promise<string | undefined> {
   return res.ok ? res.data : undefined
 }
 
+export async function getGameChatId(gameId: string): Promise<string | undefined> {
+  const res = await getGateway().send<string>('getGameChatId', { gameId })
+  return res.ok ? res.data : undefined
+}
+
 export async function sendChatMessage(chatId: string, text: string) {
   return getGateway().send('sendChatMessage', { chatId, text })
 }
