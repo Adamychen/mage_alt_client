@@ -2,6 +2,8 @@ import * as cmds from '../net/commands'
 import type { ChatMessageEvent, GameEndInfo, ProxyMessage } from '../net/types'
 import { parseFeedback } from '../game/feedback'
 import { getState, setState, addLog } from './state'
+import type { SideboardCard, SideboardScreenState } from './state'
+import { awaitCardMeta } from '../cards/cardImages'
 import {
   gameViewFrom, isOlderThanCurrentGame, consolidatePlayables, combatFromSelect,
   isCombatStep, combatChosenFrom, emptyCombat, targetFirstId,
@@ -13,7 +15,7 @@ export function handleMessage(msg: ProxyMessage) {
       setState({ phase: 'lobby', connecting: false, error: null })
       break
     case 'disconnected':
-      setState({ phase: 'idle', connecting: false, game: null, gameId: null, gameChatId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null })
+      setState({ phase: 'idle', connecting: false, game: null, gameId: null, gameChatId: null, playableIds: [], playableWindow: null, combat: null, feedback: null, lobby: null, roomChatId: null, sideboardScreen: null })
       break
     case 'info':
       addLog('servidor', msg.message)
@@ -70,7 +72,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'START_GAME': {
       const d = data as { gameId?: string; tableName?: string } | null
       const isNewGame = !!d?.gameId && d.gameId !== s.gameId
-      setState({ phase: 'game', gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null })
+      setState({ phase: 'game', gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null, sideboardScreen: null })
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
       if (isNewGame) {
         void cmds.joinGame(d!.gameId!)
@@ -138,19 +140,47 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       break
     }
     case 'SIDEBOARD': {
-      const d = (data ?? {}) as { currentTableId?: string } | null
+      const d = (data ?? {}) as {
+        deck?: { name?: string; cards?: Record<string, Record<string, unknown>>; sideboard?: Record<string, Record<string, unknown>> }
+        currentTableId?: string
+        parentTableId?: string
+        time?: number
+        flag?: boolean
+      } | null
       const tableId = d?.currentTableId
-      if (tableId && s.myDeck) {
-        const deck = { ...s.myDeck }
-        const testSide = (typeof window !== 'undefined' && Array.isArray(window.__mageSideboard))
-          ? (window.__mageSideboard as typeof s.sideboard)
-          : [...s.sideboard]
-        const swap = testSide.splice(0, Math.min(15, testSide.length))
-        deck.sideboard = testSide
-        deck.cards = [...deck.cards, ...swap]
-        addLog('partida', `Sideboard: intercambiando ${swap.length} carta(s) para la siguiente partida…`)
-        void cmds.submitDeck(tableId, deck)
+      if (!tableId) break
+      const deckName = d?.deck?.name ?? 'Mazo'
+      const time = d?.time ?? 180
+      const limited = d?.flag === true
+      const rawCards = d?.deck?.cards ?? {}
+      const rawSide = d?.deck?.sideboard ?? {}
+      const resolve = (cards: Record<string, Record<string, unknown>>): Promise<SideboardCard[]> => {
+        const entries = Object.entries(cards)
+        return Promise.all(entries.map(async ([id, sc]) => {
+          const setCode = String(sc.expansionSetCode ?? '')
+          const cardNumber = String(sc.cardNumber ?? '')
+          const meta = await awaitCardMeta(setCode, cardNumber)
+          return {
+            instanceId: id,
+            setCode,
+            cardNumber,
+            name: meta?.name ?? `${setCode || '?'}/${cardNumber || '?'}`,
+          }
+        }))
       }
+      void Promise.all([resolve(rawCards), resolve(rawSide)]).then(([maindeck, sideboard]) => {
+        const screen: SideboardScreenState = {
+          deckName,
+          maindeck,
+          sideboard,
+          tableId,
+          parentTableId: d?.parentTableId ?? null,
+          timeLeft: time,
+          limited,
+        }
+        setState({ sideboardScreen: screen })
+        addLog('partida', `Sideboard: ${maindeck.length} main / ${sideboard.length} side — tienes ${time}s para ajustar`)
+      })
       break
     }
     case 'GAME_TARGET': {

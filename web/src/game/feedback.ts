@@ -1,4 +1,4 @@
-export type FeedbackMode = 'boolean' | 'string' | 'uuid' | 'integer' | 'multiString' | 'mana' | 'combat'
+export type FeedbackMode = 'boolean' | 'string' | 'uuid' | 'integer' | 'multiString' | 'mana' | 'combat' | 'order'
 
 export interface FeedbackOption {
   id: string
@@ -12,6 +12,22 @@ export interface FeedbackItem {
   min: number
   max: number
   defaultValue?: number
+}
+
+/** Card data from the server for visual card grid rendering. */
+export interface FeedbackCard {
+  id: string
+  name: string
+  displayName?: string
+  expansionSetCode?: string
+  cardNumber?: string
+  manaCost?: string[]
+  cardTypes?: string[]
+  power?: string
+  toughness?: string
+  color?: { white?: boolean; blue?: boolean; black?: boolean; red?: boolean; green?: boolean } | null
+  rules?: string[]
+  faceDown?: boolean
 }
 
 export interface FeedbackPrompt {
@@ -33,6 +49,8 @@ export interface FeedbackPrompt {
   /** Botón "Atacar con todos" disponible en la declaración de atacantes
    *  (options.specialButton del servidor). */
   special?: boolean
+  /** Raw card data for visual card grid (when cardsView1 has many cards). */
+  cards?: FeedbackCard[]
 }
 
 type JsonRecord = Record<string, unknown>
@@ -95,12 +113,16 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
           : []
       return prompt(method, gameId, isMulligan ? 'Mulligan' : 'Confirmación', message, isBooleanAsk ? 'boolean' : 'string', choices, bounds)
     }
-    case 'GAME_TARGET':
-      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data), chosenTargetsOf(data))
+    case 'GAME_TARGET': {
+      const cards = feedbackCards(data)
+      return prompt(method, gameId, 'Elige objetivo', message, 'uuid', targetOptions(data), bounds, undefined, undefined, data.flag !== false && data.flag !== 'false', secondMessageOf(data), chosenTargetsOf(data), undefined, cards)
+    }
     case 'GAME_SELECT':
     case 'GAME_SELECT_CARDS':
-    case 'GAME_SELECT_TARGETS':
-      return prompt(method, gameId, 'Selecciona cartas', message, 'uuid', cardOptions(data.cardsView1 ?? data.options), bounds)
+    case 'GAME_SELECT_TARGETS': {
+      const cards = feedbackCards(data)
+      return prompt(method, gameId, 'Selecciona cartas', message, 'uuid', cardOptions(data.cardsView1 ?? data.options), bounds, undefined, undefined, true, undefined, undefined, undefined, cards)
+    }
     case 'GAME_CHOOSE_ABILITY': {
       const abilities = asRecord(raw)
       return prompt(method, gameId, 'Elige habilidad', stringValue(abilities.message) ?? message, 'uuid', optionEntries(abilities.choices), bounds)
@@ -133,6 +155,42 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
       return prompt(method, gameId, 'Elige cantidad', message, 'integer', [], bounds)
     case 'GAME_GET_MULTI_AMOUNT':
       return prompt(method, gameId, 'Elige cantidades', message, 'multiString', [], bounds, multiAmountItems(data.messages))
+    case 'GAME_CHOOSE_MODE': {
+      const abilities = asRecord(raw)
+      return prompt(method, gameId, 'Elige modo', stringValue(abilities.message) ?? message, 'uuid', optionEntries(abilities.choices ?? abilities.options), bounds)
+    }
+    case 'GAME_CHOOSE_ONE': {
+      const choices = optionEntries(data.options ?? data.choices)
+      return prompt(method, gameId, 'Elige una opción', message, 'string', choices, bounds)
+    }
+    case 'GAME_CHOOSE_COLOR': {
+      const colors = optionEntries(data.options ?? { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' })
+      return prompt(method, gameId, 'Elige un color', message, 'string', colors, bounds)
+    }
+    case 'GAME_CHOOSE_NUMBER': {
+      return prompt(method, gameId, 'Elige un número', message, 'integer', [], bounds)
+    }
+    case 'GAME_CHOOSE_STRING': {
+      const choices = Array.isArray(data.options)
+        ? data.options.map((v: unknown, i: number) => ({ id: String(i), label: String(v), value: String(v) }))
+        : optionEntries(data.options)
+      return prompt(method, gameId, 'Elige un nombre', message, 'string', choices, bounds)
+    }
+    case 'GAME_CHOOSE_BETWEEN': {
+      const choices = optionEntries(data.options ?? data.choices)
+      return prompt(method, gameId, 'Elige entre opciones', message, 'string', choices, bounds)
+    }
+    case 'GAME_CHOOSE_CARDS_ORDER': {
+      const cards = cardOptions(data.cardsView1 ?? data.options)
+      return prompt(method, gameId, 'Ordena las cartas', message, 'order', cards, bounds)
+    }
+    case 'GAME_TARGET_AMOUNT': {
+      return prompt(method, gameId, 'Elige cantidad para objetivo', message, 'integer', [], bounds)
+    }
+    case 'GAME_SELECT_PLAYER': {
+      const players = targetOptions(data)
+      return prompt(method, gameId, 'Elige jugador', message, 'uuid', players, bounds)
+    }
     default:
       return null
   }
@@ -152,8 +210,9 @@ function prompt(
   sourceName?: string,
   chosenTargets?: string[],
   special?: boolean,
+  cards?: FeedbackCard[],
 ): FeedbackPrompt {
-  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName, chosenTargets, special }
+  return { method, gameId, title, message, mode, options, min: bounds.min, max: bounds.max, items, playerId, required, sourceName, chosenTargets, special, cards }
 }
 
 function asRecord(value: unknown): JsonRecord {
@@ -287,6 +346,33 @@ function multiAmountItems(value: unknown): FeedbackItem[] {
 function cardSummary(value: unknown, fallback: string): string {
   const cards = cardOptions(value)
   return cards.length ? `${fallback}: ${cards.length} cartas` : fallback
+}
+
+function feedbackCards(data: JsonRecord): FeedbackCard[] | undefined {
+  const raw = data.cardsView1
+  if (!raw || typeof raw !== 'object') return undefined
+  const entries = Object.entries(asRecord(raw))
+  if (entries.length === 0) return undefined
+  return entries.map(([id, item]) => {
+    const c = asRecord(item)
+    const color = asRecord(c.color)
+    return {
+      id: stringValue(c.id) ?? id,
+      name: stringValue(c.name) ?? id,
+      displayName: stringValue(c.displayName),
+      expansionSetCode: stringValue(c.expansionSetCode),
+      cardNumber: stringValue(c.cardNumber),
+      manaCost: stringList(c.manaCostLeftStr),
+      cardTypes: stringList(c.cardTypes),
+      power: stringValue(c.power),
+      toughness: stringValue(c.toughness),
+      color: (color.white || color.blue || color.black || color.red || color.green)
+        ? { white: !!color.white, blue: !!color.blue, black: !!color.black, red: !!color.red, green: !!color.green }
+        : null,
+      rules: Array.isArray(c.rules) ? c.rules.map((r) => String(r)) : undefined,
+      faceDown: c.faceDown === true,
+    }
+  })
 }
 
 function booleanValue(label: string, index: number): string {

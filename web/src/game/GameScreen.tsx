@@ -3,6 +3,8 @@ import GameBoard from '../board/GameBoard'
 import * as cmds from '../net/commands'
 import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import FeedbackDialog from './FeedbackDialog'
+import SideboardScreen from './SideboardScreen'
+import PhaseStopSelector from './PhaseStopSelector'
 import Sidebar from './Sidebar'
 import CardPreview from './CardPreview'
 import GameChat from './GameChat'
@@ -65,6 +67,7 @@ export default function GameScreen() {
             <div className="game-state" data-testid="game-status">
               <span className="game-turn">Turn {game.turn}</span>
               <PhaseBar step={game.step} />
+              <PhaseStopSelector />
             </div>
           )}
         </div>
@@ -129,6 +132,7 @@ export default function GameScreen() {
         </div>
       </div>
       <FeedbackDialog />
+      <SideboardScreen />
     </div>
   )
 }

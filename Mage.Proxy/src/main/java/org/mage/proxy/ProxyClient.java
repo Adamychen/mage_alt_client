@@ -14,7 +14,9 @@ import mage.interfaces.callback.ClientCallback;
 import mage.interfaces.callback.ClientCallbackMethod;
 import mage.interfaces.callback.ClientCallbackType;
 import mage.players.PlayerType;
+import mage.players.net.SkipPrioritySteps;
 import mage.players.net.UserData;
+import mage.players.net.UserSkipPrioritySteps;
 import mage.remote.Connection;
 import mage.remote.SessionImpl;
 import mage.utils.MageVersion;
@@ -550,6 +552,38 @@ public class ProxyClient implements MageClient {
                     UUID tableId = uuid(args, "tableId", null);
                     DeckCardLists deck = DeckJson.parse(args.getAsJsonObject("deck"));
                     gateway.send(conn, resultJson(action, requestId, session.updateDeck(tableId, deck), null, null));
+                    break;
+                }
+                case "updatePreferences": {
+                    UserData userData = UserData.getDefaultUserDataView();
+                    JsonObject phases = args.getAsJsonObject("phases");
+                    if (phases != null) {
+                        UserSkipPrioritySteps skips = new UserSkipPrioritySteps();
+                        JsonObject yourTurn = phases.getAsJsonObject("yourTurn");
+                        JsonObject opponentTurn = phases.getAsJsonObject("opponentTurn");
+                        if (yourTurn != null) {
+                            SkipPrioritySteps yt = skips.getYourTurn();
+                            yt.setUpkeep(getBool(yourTurn, "upkeep", false));
+                            yt.setDraw(getBool(yourTurn, "draw", false));
+                            yt.setMain1(getBool(yourTurn, "main1", true));
+                            yt.setBeforeCombat(getBool(yourTurn, "beginCombat", false));
+                            yt.setEndOfCombat(getBool(yourTurn, "endCombat", false));
+                            yt.setMain2(getBool(yourTurn, "main2", true));
+                            yt.setEndOfTurn(getBool(yourTurn, "endStep", false));
+                        }
+                        if (opponentTurn != null) {
+                            SkipPrioritySteps ot = skips.getOpponentTurn();
+                            ot.setUpkeep(getBool(opponentTurn, "upkeep", false));
+                            ot.setDraw(getBool(opponentTurn, "draw", false));
+                            ot.setMain1(getBool(opponentTurn, "main1", true));
+                            ot.setBeforeCombat(getBool(opponentTurn, "beginCombat", false));
+                            ot.setEndOfCombat(getBool(opponentTurn, "endCombat", false));
+                            ot.setMain2(getBool(opponentTurn, "main2", true));
+                            ot.setEndOfTurn(getBool(opponentTurn, "endStep", false));
+                        }
+                        userData.setUserSkipPrioritySteps(skips);
+                    }
+                    gateway.send(conn, resultJson(action, requestId, session.updatePreferencesForServer(userData), null, null));
                     break;
                 }
                 case "sendPlayerAction": {

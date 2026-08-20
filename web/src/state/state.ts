@@ -1,5 +1,6 @@
 import type { ChatMessageEvent, DeckCardEntry, DeckJson, GameEndInfo, GameView, LobbyEnvelope } from '../net/types'
 import type { FeedbackPrompt } from '../game/feedback'
+import type { PhaseStops } from '../net/commands'
 import { loadConn, type ConnectionInfo } from './persistence'
 
 export interface LogEntry {
@@ -15,6 +16,25 @@ export interface CombatState {
   selectable: string[]
   special: boolean
   chosen: string[]
+}
+
+/** A card in the sideboard screen (instance ID + resolved Scryfall data). */
+export interface SideboardCard {
+  instanceId: string
+  setCode: string
+  cardNumber: string
+  name: string
+}
+
+/** State for the sideboard screen (between games in Bo3). */
+export interface SideboardScreenState {
+  deckName: string
+  maindeck: SideboardCard[]
+  sideboard: SideboardCard[]
+  tableId: string
+  parentTableId: string | null
+  timeLeft: number
+  limited: boolean
 }
 
 export interface AppState {
@@ -36,6 +56,8 @@ export interface AppState {
   myDeck: DeckJson | null
   feedback: FeedbackPrompt | null
   sideboard: DeckCardEntry[]
+  sideboardScreen: SideboardScreenState | null
+  phaseStops: PhaseStops
   log: LogEntry[]
   events: { method: string; time: number }[]
   settings: {
@@ -64,6 +86,11 @@ export const initialState: AppState = {
   myDeck: null,
   feedback: null,
   sideboard: [],
+  sideboardScreen: null,
+  phaseStops: {
+    yourTurn: { upkeep: true, draw: true, main1: false, beginCombat: true, endCombat: false, main2: false, endStep: true },
+    opponentTurn: { upkeep: true, draw: true, main1: false, beginCombat: true, endCombat: false, main2: false, endStep: true },
+  },
   log: [],
   events: [],
   settings: { autoKeepMulligan: true, autoPass: false },

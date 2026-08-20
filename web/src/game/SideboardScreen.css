@@ -1,0 +1,233 @@
+.sideboard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(4 6 16 / 80%);
+}
+
+.sideboard-screen {
+  width: min(900px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 50%);
+  overflow: hidden;
+}
+
+.sideboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sideboard-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sideboard-title h2 {
+  margin: 0;
+}
+
+.sideboard-deck-name {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.sideboard-timer {
+  position: relative;
+  width: 120px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.sideboard-timer-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0.3;
+  transition: width 1s linear;
+}
+
+.sideboard-timer.urgent .sideboard-timer-bar {
+  background: #ff5c6c;
+}
+
+.sideboard-timer-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text);
+}
+
+.sideboard-timer.urgent .sideboard-timer-text {
+  color: #ff5c6c;
+}
+
+.sideboard-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  flex: 1;
+  overflow: hidden;
+  background: var(--border);
+}
+
+.sideboard-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.sideboard-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.sideboard-col-header h3 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.sideboard-col-count {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.sideboard-col-count.valid {
+  background: rgba(99, 230, 190, 0.15);
+  color: #63e6be;
+}
+
+.sideboard-col-count.invalid {
+  background: rgba(255, 92, 108, 0.15);
+  color: #ff5c6c;
+}
+
+.sideboard-filter {
+  margin: 0 12px 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+}
+
+.sideboard-filter:focus {
+  border-color: var(--accent);
+}
+
+.sideboard-card-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+
+.sideboard-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.sideboard-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+.sideboard-card.max-copies {
+  opacity: 0.5;
+}
+
+.sideboard-card-img {
+  width: 38px;
+  height: 53px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sideboard-card-placeholder {
+  width: 38px;
+  height: 53px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #1e2348 0%, #14182e 100%);
+  flex-shrink: 0;
+}
+
+.sideboard-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.sideboard-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sideboard-card-set {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.sideboard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.sideboard-counts {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.sideboard-counts .valid {
+  color: #63e6be;
+}
+
+.sideboard-counts .invalid {
+  color: #ff5c6c;
+}

@@ -1,0 +1,62 @@
+.phase-stop-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.phase-stop-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.phase-stop-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.phase-stop-turn-label {
+  font-size: 9px;
+  color: var(--text-dim);
+  width: 22px;
+  text-align: right;
+  margin-right: 2px;
+}
+
+.phase-stop-btn {
+  width: 26px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s;
+  padding: 0;
+}
+
+.phase-stop-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.phase-stop-btn.active {
+  background: rgba(99, 230, 190, 0.15);
+  border-color: #63e6be;
+  color: #63e6be;
+}
+
+.phase-stop-btn.active:hover {
+  background: rgba(99, 230, 190, 0.25);
+}

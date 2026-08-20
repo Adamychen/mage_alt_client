@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import * as cmds from '../net/commands'
 import { clearFeedback, setStoreError, useStore } from '../state/store'
 import type { FeedbackOption, FeedbackPrompt } from './feedback'
+import CardGrid from './CardGrid'
 
 const POOL_COLORS = ['white', 'blue', 'black', 'red', 'green', 'colorless'] as const
 
@@ -21,12 +22,14 @@ export default function FeedbackDialog() {
   const [amount, setAmount] = useState(0)
   const [selected, setSelected] = useState<string[]>([])
   const [multiAmounts, setMultiAmounts] = useState<Record<string, number>>({})
+  const [orderedIds, setOrderedIds] = useState<string[]>([])
 
   useEffect(() => {
     setBusy(false)
     setAmount(prompt?.min ?? 0)
     setSelected([])
     setMultiAmounts(Object.fromEntries((prompt?.items ?? []).map((item) => [item.id, item.defaultValue ?? item.min])))
+    setOrderedIds(prompt?.options?.map((o) => o.id) ?? [])
   }, [prompt?.method, prompt?.gameId])
 
   if (!prompt) return null
@@ -51,7 +54,13 @@ export default function FeedbackDialog() {
     void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo finalizar la selección')
   }
 
-  // ── GAME_TARGET: barra flotante (el tablero maneja los clicks) ──────────
+  // ── GAME_TARGET con cardsView1: grid de cartas (tutores, scry, descarte, etc.)
+  const hasCardGrid = prompt.cards && prompt.cards.length > 0
+  if (prompt.method === 'GAME_TARGET' && hasCardGrid) {
+    return <CardGrid prompt={prompt} selected={selected} setSelected={setSelected} send={send} cancel={cancel} busy={busy} />
+  }
+
+  // ── GAME_TARGET sin cardsView1: barra flotante (el tablero maneja los clicks)
   if (prompt.method === 'GAME_TARGET') {
     const chosenCount = prompt.chosenTargets?.length ?? 0
     return (
@@ -148,6 +157,51 @@ export default function FeedbackDialog() {
             ))}
             <button className="primary" disabled={busy} onClick={confirmMultiAmount}>Enviar</button>
             <button disabled={busy} onClick={cancel}>Cancelar</button>
+          </div>
+        )}
+
+        {prompt.mode === 'order' && (
+          <div className="feedback-order">
+            <p className="feedback-hint">Arrastra o usa las flechas para reordenar. La primera carta va al fondo.</p>
+            <div className="feedback-order-list">
+              {orderedIds.map((id, index) => {
+                const option = prompt.options.find((o) => o.id === id)
+                return (
+                  <div key={id} className="feedback-order-item">
+                    <span className="feedback-order-pos">{index + 1}</span>
+                    <span className="feedback-order-label">{option?.label ?? id}</span>
+                    <div className="feedback-order-arrows">
+                      <button
+                        disabled={busy || index === 0}
+                        onClick={() => {
+                          setOrderedIds((prev) => {
+                            const next = [...prev]
+                            ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
+                            return next
+                          })
+                        }}
+                      >↑</button>
+                      <button
+                        disabled={busy || index === orderedIds.length - 1}
+                        onClick={() => {
+                          setOrderedIds((prev) => {
+                            const next = [...prev]
+                            ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
+                            return next
+                          })
+                        }}
+                      >↓</button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="feedback-options">
+              <button className="primary" disabled={busy} onClick={() => {
+                void send(() => cmds.sendPlayerString(orderedIds.join(' '), prompt.gameId), 'No se pudo enviar el orden')
+              }}>Confirmar orden</button>
+              <button disabled={busy} onClick={cancel}>Cancelar</button>
+            </div>
           </div>
         )}
 

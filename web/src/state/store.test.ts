@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { joinGame, sendPlayerBoolean, sendPlayerUUID } from '../net/commands'
 import { makeCard, makeGameView, makePermanent, makePlayer, minimalGameView } from '../__fixtures__/gameViews'
-import { getState, handleMessage, maybeAutoPass, reset, setSetting } from './store'
+import { getState, setState } from './state'
+import { handleMessage, maybeAutoPass, reset, setSetting } from './store'
 
 vi.mock('../net/commands', () => ({
   setGateway: vi.fn(),
@@ -23,6 +24,9 @@ vi.mock('../net/commands', () => ({
   stopWatching: vi.fn(),
   leaveTable: vi.fn(),
   removeTable: vi.fn(),
+  submitDeck: vi.fn().mockResolvedValue({ ok: true }),
+  updateDeck: vi.fn(),
+  updatePreferences: vi.fn().mockResolvedValue({ ok: true }),
   quitMatch: vi.fn(),
   sendPlayerAction: vi.fn(),
   sendPlayerBoolean: vi.fn(),
@@ -480,5 +484,91 @@ describe('playables consolidados', () => {
       },
     })
     expect(getState().feedback).toBeNull()
+  })
+})
+
+describe('SIDEBOARD event', () => {
+  beforeEach(() => {
+    reset()
+    vi.clearAllMocks()
+  })
+
+  it('parses SIDEBOARD data and sets sideboardScreen state', async () => {
+    // Mock awaitCardMeta to resolve immediately
+    vi.doMock('../cards/cardImages', () => ({
+      awaitCardMeta: vi.fn().mockResolvedValue({ name: 'Grizzly Bears', typeLine: 'Creature', manaCost: '{1}{G}', imageUrl: null }),
+    }))
+
+    handleMessage({
+      type: 'event',
+      method: 'SIDEBOARD',
+      messageId: 1,
+      objectId: 'table-1',
+      data: {
+        deck: {
+          name: 'Test Deck',
+          cards: {
+            'inst-1': { id: 'inst-1', expansionSetCode: 'IMA', cardNumber: '165' },
+            'inst-2': { id: 'inst-2', expansionSetCode: 'M10', cardNumber: '147' },
+          },
+          sideboard: {
+            'inst-3': { id: 'inst-3', expansionSetCode: 'M21', cardNumber: '59' },
+          },
+        },
+        currentTableId: 'table-1',
+        time: 120,
+        flag: false,
+      },
+    })
+
+    // Wait for async card resolution
+    await vi.waitFor(() => {
+      expect(getState().sideboardScreen).not.toBeNull()
+    })
+
+    const screen = getState().sideboardScreen!
+    expect(screen.deckName).toBe('Test Deck')
+    expect(screen.tableId).toBe('table-1')
+    expect(screen.timeLeft).toBe(120)
+    expect(screen.limited).toBe(false)
+    expect(screen.maindeck).toHaveLength(2)
+    expect(screen.sideboard).toHaveLength(1)
+    expect(screen.maindeck[0].instanceId).toBe('inst-1')
+    expect(screen.maindeck[0].setCode).toBe('IMA')
+  })
+
+  it('clears sideboardScreen on START_GAME', () => {
+    setState({ sideboardScreen: { deckName: 'D', maindeck: [], sideboard: [], tableId: 't', parentTableId: null, timeLeft: 60, limited: false } })
+    handleMessage({ type: 'event', method: 'START_GAME', messageId: 1, objectId: 'g-1', data: { gameId: 'g-1' } })
+    expect(getState().sideboardScreen).toBeNull()
+  })
+
+  it('clears sideboardScreen on disconnect', () => {
+    setState({ sideboardScreen: { deckName: 'D', maindeck: [], sideboard: [], tableId: 't', parentTableId: null, timeLeft: 60, limited: false } })
+    handleMessage({ type: 'disconnected', reason: 'bye' })
+    expect(getState().sideboardScreen).toBeNull()
+  })
+})
+
+describe('phaseStops', () => {
+  beforeEach(() => {
+    reset()
+    vi.clearAllMocks()
+  })
+
+  it('has default phase stops with main1 and main2 disabled', () => {
+    const stops = getState().phaseStops
+    expect(stops.yourTurn.main1).toBe(false)
+    expect(stops.yourTurn.main2).toBe(false)
+    expect(stops.yourTurn.upkeep).toBe(true)
+    expect(stops.yourTurn.draw).toBe(true)
+    expect(stops.yourTurn.beginCombat).toBe(true)
+    expect(stops.yourTurn.endStep).toBe(true)
+  })
+
+  it('default phase stops are independent for your turn and opponent turn', () => {
+    const stops = getState().phaseStops
+    expect(stops.opponentTurn.main1).toBe(false)
+    expect(stops.opponentTurn.upkeep).toBe(true)
   })
 })

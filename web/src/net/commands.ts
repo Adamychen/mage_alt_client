@@ -121,6 +121,15 @@ export async function updateDeck(tableId: string, deck: DeckJson) {
   return getGateway().send('updateDeck', { tableId, deck })
 }
 
+export interface PhaseStops {
+  yourTurn: Record<string, boolean>
+  opponentTurn: Record<string, boolean>
+}
+
+export async function updatePreferences(phases: PhaseStops) {
+  return getGateway().send('updatePreferences', { phases })
+}
+
 export async function quitMatch(gameId: string) {
   return getGateway().send('quitMatch', { gameId })
 }

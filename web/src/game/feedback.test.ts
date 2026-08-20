@@ -181,4 +181,60 @@ describe('parseFeedback', () => {
     })
     expect(choice?.options).toEqual([{ id: 'mode-a', label: 'First mode', value: 'mode-a' }])
   })
+
+  it('extracts cards from cardsView1 into the cards field', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-6', {
+      message: 'Search your library for a creature card',
+      cardsView1: {
+        'card-1': {
+          id: 'card-1', name: 'Grizzly Bears', displayName: 'Grizzly Bears',
+          expansionSetCode: 'IMA', cardNumber: '165',
+          manaCostLeftStr: ['{1}{G}'], manaValue: 2,
+          cardTypes: ['CREATURE'], power: '2', toughness: '2',
+          color: { white: false, blue: false, black: false, red: false, green: true },
+          rules: ['{G}: Gets +1/+0 until EOT'],
+        },
+        'card-2': {
+          id: 'card-2', name: 'Lightning Bolt', displayName: 'Lightning Bolt',
+          expansionSetCode: 'M10', cardNumber: '147',
+          manaCostLeftStr: ['{R}'], manaValue: 1,
+          cardTypes: ['INSTANT'],
+          color: { white: false, blue: false, black: false, red: true, green: false },
+        },
+      },
+      targets: ['card-1'],
+    })
+    expect(prompt?.cards).toHaveLength(2)
+    expect(prompt?.cards?.[0]).toMatchObject({
+      id: 'card-1',
+      name: 'Grizzly Bears',
+      expansionSetCode: 'IMA',
+      cardNumber: '165',
+      power: '2',
+      toughness: '2',
+    })
+    expect(prompt?.cards?.[1]).toMatchObject({
+      id: 'card-2',
+      name: 'Lightning Bolt',
+      expansionSetCode: 'M10',
+    })
+  })
+
+  it('does not populate cards when cardsView1 is absent', () => {
+    const prompt = parseFeedback('GAME_TARGET', 'game-6', {
+      message: 'Choose a target',
+      targets: ['perm-1'],
+      gameView: { players: [{ playerId: 'p-1', name: 'Alice', battlefield: { 'perm-1': { id: 'perm-1', name: 'Bear' } } }] },
+    })
+    expect(prompt?.cards).toBeUndefined()
+  })
+
+  it('returns prompts for GAME_CHOOSE_MODE and friends', () => {
+    expect(parseFeedback('GAME_CHOOSE_MODE', 'game-7', { message: 'Choose a mode' }))?.toMatchObject({ mode: 'uuid', title: 'Elige modo' })
+    expect(parseFeedback('GAME_CHOOSE_ONE', 'game-7', { message: 'Choose one', options: { a: 'Option A', b: 'Option B' } }))?.toMatchObject({ mode: 'string' })
+    expect(parseFeedback('GAME_CHOOSE_COLOR', 'game-7', { message: 'Choose a color' }))?.toMatchObject({ mode: 'string', title: 'Elige un color' })
+    expect(parseFeedback('GAME_CHOOSE_NUMBER', 'game-7', { message: 'Pick a number', min: 0, max: 5 }))?.toMatchObject({ mode: 'integer' })
+    expect(parseFeedback('GAME_CHOOSE_STRING', 'game-7', { message: 'Name a card', options: ['Bolt', 'Swords'] }))?.toMatchObject({ mode: 'string' })
+    expect(parseFeedback('GAME_CHOOSE_BETWEEN', 'game-7', { message: 'Choose', options: { a: 'A', b: 'B' } }))?.toMatchObject({ mode: 'string' })
+  })
 })

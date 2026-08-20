@@ -61,6 +61,7 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
     const chatId = await cmds.getRoomChatId()
     setState({ roomChatId: chatId ?? null })
     if (chatId) void cmds.sendChatMessage(chatId, '¡Hola desde el cliente web!')
+    void cmds.updatePreferences(getState().phaseStops)
   } else {
     setState({ phase: 'idle', connecting: false, error: res.error ?? 'login fallido' })
   }

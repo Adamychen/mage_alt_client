@@ -12,6 +12,19 @@ const loadQueue: (() => void)[] = []
 export const CARD_W = 120
 export const CARD_H = 168
 
+/** Card metadata resolved from Scryfall (name, type, mana cost, etc.). */
+export interface ScryfallCardInfo {
+  name: string
+  typeLine: string
+  manaCost: string
+  power?: string
+  toughness?: string
+  imageUrl: string | null
+}
+
+const metaMemory = new Map<string, ScryfallCardInfo>()
+const metaInflight = new Map<string, Promise<ScryfallCardInfo | null>>()
+
 export function cardKey(card: CardView): string | null {
   const set = card.expansionSetCode
   const num = card.cardNumber
@@ -36,6 +49,11 @@ export function getCardImageUrl(card: CardView): string | null {
   return null
 }
 
+function scryfallKey(setCode: string, cardNumber: string): string | null {
+  if (!setCode || !cardNumber || cardNumber === '0') return null
+  return `${setCode}/${cardNumber}`
+}
+
 async function load(key: string): Promise<string | null> {
   await acquireLoadSlot()
   try {
@@ -48,8 +66,23 @@ async function load(key: string): Promise<string | null> {
         const data = (await res.json()) as {
           image_uris?: { normal?: string }
           card_faces?: { image_uris?: { normal?: string } }[]
+          name?: string
+          type_line?: string
+          mana_cost?: string
+          power?: string
+          toughness?: string
         }
-        return data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal ?? null
+        const imageUrl = data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal ?? null
+        const info: ScryfallCardInfo = {
+          name: data.name ?? key,
+          typeLine: data.type_line ?? '',
+          manaCost: data.mana_cost ?? '',
+          power: data.power,
+          toughness: data.toughness,
+          imageUrl,
+        }
+        metaMemory.set(key, info)
+        return imageUrl
       } catch {
         if (attempt === RETRIES) return null
         await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)))
@@ -81,6 +114,40 @@ export async function awaitImageUrl(card: CardView): Promise<string | null> {
     })
   inflight.set(key, p)
   return p
+}
+
+/**
+ * Resolve card metadata (name, type, etc.) from Scryfall by setCode+cardNumber.
+ * Triggers an async fetch if not cached. Returns null if not yet loaded.
+ */
+export function getCardMeta(setCode: string, cardNumber: string): ScryfallCardInfo | null {
+  const key = scryfallKey(setCode, cardNumber)
+  if (!key) return null
+  if (metaMemory.has(key)) return metaMemory.get(key) ?? null
+  if (!metaInflight.has(key)) {
+    const p = load(key)
+      .catch(() => null)
+      .then((info) => {
+        if (metaInflight.get(key) === p) metaInflight.delete(key)
+        return info ? metaMemory.get(key) ?? null : null
+      })
+    metaInflight.set(key, p as Promise<ScryfallCardInfo | null>)
+  }
+  return null
+}
+
+/**
+ * Async version: waits for the metadata to be resolved.
+ */
+export async function awaitCardMeta(setCode: string, cardNumber: string): Promise<ScryfallCardInfo | null> {
+  const key = scryfallKey(setCode, cardNumber)
+  if (!key) return null
+  const cached = metaMemory.get(key)
+  if (cached) return cached
+  if (metaInflight.has(key)) return metaInflight.get(key)!
+  // Trigger the load
+  await load(key)
+  return metaMemory.get(key) ?? null
 }
 
 function remember(key: string, url: string | null) {
@@ -115,6 +182,8 @@ function releaseLoadSlot() {
 export function resetCardImageCache() {
   memory.clear()
   inflight.clear()
+  metaMemory.clear()
+  metaInflight.clear()
   loadQueue.length = 0
   activeLoads = 0
 }
