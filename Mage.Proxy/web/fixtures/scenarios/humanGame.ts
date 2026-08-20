@@ -10,65 +10,13 @@
 import type { FakeConn, Scenario } from '../fake'
 import { makeCard, makeGameView, makePlayer, makePermanent } from '../../src/__fixtures__/gameViews'
 import type { CardView, GameView, PermanentView, SeatView, TableView } from '../../src/net/types'
+import {
+  GAME_ID, TABLE_ID, SIM_NAME, HUMAN_NAME, HUMAN_PLAYER_ID, SIM_PLAYER_ID,
+  BASIC_LANDS, type CastStep, type HumanGameOptions, type CastRuntime,
+} from './humanGameConstants'
 
-export const GAME_ID = 'game-human-1'
-export const TABLE_ID = 'table-human-1'
-export const SIM_NAME = 'sim-000001-244'
-export const HUMAN_NAME = 'Mage Web'
-export const HUMAN_PLAYER_ID = 'human-1'
-export const SIM_PLAYER_ID = 'opp-1'
-
-const BASIC_LANDS = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'])
-
-export type CastStep =
-  | { type: 'amount'; message: string; min?: number; max?: number }
-  | { type: 'ability'; message: string; choices: Array<{ id: string; label: string }> }
-  | { type: 'target'; message: string; targets?: string[] }
-  | { type: 'mana'; message: string; sources: number }
-
-export interface LandConfig {
-  name: string
-  count: number
-}
-
-export interface ResolveEffect {
-  addToMyBattle?: Array<{ name: string; counters?: { name: string; count: number }[] }>
-}
-
-export interface HumanGameOptions {
-  tableName?: string
-  lands?: LandConfig[]
-  hand: string[]
-  playable?: string[]
-  cast?: CastStep[]
-  damageToSim?: number
-  resolveEffect?: ResolveEffect
-  simBattle?: string[]
-  simAttack?: boolean
-  simCombatDamage?: number
-  /** Criaturas propias ya en el campo al arrancar (ids `my-<nombre>`). */
-  myBattle?: string[]
-  /** El humano declara atacantes al pasar su main phase (ventana de combate). */
-  humanAttack?: boolean
-  /** El humano bloquea el ataque del Sim (ventana de bloqueo). */
-  humanBlock?: boolean
-  /** Daño de combate del humano al Sim al resolver el ataque. */
-  humanCombatDamage?: number
-  /** Match best-of-N: al llegar el daño a 0 de vidas del Sim, el game termina,
-   *  llega el SIDEBOARD y arranca la siguiente partida del match. */
-  match?: { winsNeeded: number }
-  /** Números de partida (matchGame, 1-indexed) que el Sim gana en lugar del
-   *  humano, p. ej. [1, 2] para sweep 0-2 del Sim, o [2] para 1-1 y game 3.
-   *  Cuando el Sim gana una partida, el match termina inmediatamente si el
-   *  humano ya no puede alcanzar winsNeeded, o se pide SIDEBOARD si puede
-   *  seguir (escenario de game 3). */
-  simWinsGame?: number[]
-}
-
-interface CastRuntime {
-  index: number
-  manaLeft: number
-}
+export { GAME_ID, TABLE_ID, SIM_NAME, HUMAN_NAME, HUMAN_PLAYER_ID, SIM_PLAYER_ID } from './humanGameConstants'
+export type { CastStep, LandConfig, ResolveEffect, CrossZoneConfig, HumanGameOptions } from './humanGameConstants'
 
 export class HumanGame {
   readonly tableName: string
@@ -80,6 +28,7 @@ export class HumanGame {
   private hand: Array<{ id: string; name: string }> = []
   private myBattle: PermanentView[] = []
   private simBattle: PermanentView[] = []
+  private crossZone: Array<{ id: string; name: string; zone: 'graveyard' | 'exile' }> = []
   private humanLife = 20
   private simLife = 20
   private turn = 1
@@ -93,16 +42,11 @@ export class HumanGame {
   private cast: CastRuntime | null = null
   private playedLandTurn = -1
   private started = false
-  /** El turno del Sim está en pausa esperando el bloqueo del humano. */
   private simPaused = false
   private blockingId: string | null = null
-  /** El humano debe descartar (mano > 7). */
   private discarding = false
-  /** GameIds acumulados en el match actual. */
   private gameIds: string[] = []
-  /** Número de partida DENTRO del match (1 = primer game del match). */
   private matchGame = 0
-  /** Match best-of-N: victorias del humano, esperando el submitDeck del SIDEBOARD. */
   private wins = 0
   private waitingSideboard = false
   private gameIndex = 1
@@ -118,6 +62,9 @@ export class HumanGame {
     this.simBattle = (options.simBattle ?? []).map((name) => makePermanent({ name, parentId: `sim-${name}` }))
     for (const name of options.myBattle ?? []) {
       this.myBattle.push(makePermanent({ name, parentId: `my-${name}`, controlled: true }))
+    }
+    for (const cz of options.crossZone ?? []) {
+      this.crossZone.push({ id: `cz-${cz.name.replace(/\s+/g, '-')}`, name: cz.name, zone: cz.zone ?? 'graveyard' })
     }
   }
 
@@ -187,6 +134,11 @@ export class HumanGame {
     }
   }
 
+  // ── Envelope helpers ──────────────────────────────────────────────
+  private emitUpdate(): void { this.emit('GAME_UPDATE', { gameView: this.view() }) }
+  private emitSelect(): void { this.emit('GAME_SELECT', { gameView: this.view() }) }
+  private emitUpdateAndSelect(): void { this.emitUpdate(); this.emitSelect() }
+
   private table(): TableView {
     const seats: SeatView[] = [
       { playerName: HUMAN_NAME, seatIndex: 0, playerType: 'HUMAN' },
@@ -215,21 +167,6 @@ export class HumanGame {
       passworded: false,
       spectatorsAllowed: true,
     }
-  }
-
-  private start(): void {
-    if (this.started) return
-    this.started = true
-    this.gameIds = [this.gameId]
-    this.matchGame = 1
-    this.stage = 'main'
-    this.phase = 'PRECOMBAT_MAIN'
-    this.step = 'PRECOMBAT_MAIN'
-    this.active = 'human'
-    this.priority = 'human'
-    this.emit('START_GAME', { gameId: this.gameId, tableName: this.tableName })
-    this.emit('GAME_INIT', { gameView: this.view() })
-    this.emit('GAME_SELECT', { gameView: this.view() })
   }
 
   private emit(method: string, data: unknown): void {
@@ -265,7 +202,22 @@ export class HumanGame {
     })
     const myHand: Record<string, CardView> = {}
     for (const card of this.hand) myHand[card.id] = makeCard({ name: card.name, parentId: card.id })
+
+    const graveyard: Record<string, CardView> = {}
+    const exile: Record<string, CardView> = {}
+    for (const cz of this.crossZone) {
+      const card = makeCard({ name: cz.name, parentId: cz.id })
+      if (cz.zone === 'exile') exile[cz.id] = card
+      else graveyard[cz.id] = card
+    }
+    human.graveyard = graveyard
+    human.exile = exile
+
     const playableIds = this.playableIds()
+    const crossZoneIds = this.crossZoneIds()
+    const objects: Record<string, { basicCastAbilities?: { id: string; value: string }[]; other?: { id: string; value: string }[] }> = {}
+    for (const id of playableIds) objects[id] = { basicCastAbilities: [{ id, value: 'cast' }] }
+    for (const id of crossZoneIds) objects[id] = { other: [{ id, value: 'other' }] }
     return makeGameView({
       players: [human, sim],
       myPlayerId: HUMAN_PLAYER_ID,
@@ -278,7 +230,7 @@ export class HumanGame {
       turn: this.turn,
       stack: this.stack,
       combat: this.combat,
-      canPlayObjects: playableIds.length ? { objects: Object.fromEntries(playableIds.map((id) => [id, {}])) } : undefined,
+      canPlayObjects: Object.keys(objects).length > 0 ? { objects } : undefined,
     })
   }
 
@@ -288,32 +240,23 @@ export class HumanGame {
     return this.hand.filter((c) => names.includes(c.name)).map((c) => c.id)
   }
 
+  private crossZoneIds(): string[] {
+    if (this.stage !== 'main') return []
+    return this.crossZone.map((cz) => cz.id)
+  }
+
   // ============================ acciones del humano ============================
 
   private onUUID(conn: FakeConn, requestId: string | number, action: string, value: string): void {
     conn.ok(requestId, action, {})
-    if (this.discarding) {
-      this.onDiscard(value)
-      return
-    }
-    if (this.stage === 'attack') {
-      this.onAttackUUID(value)
-      return
-    }
-    if (this.stage === 'block') {
-      this.onBlockUUID(value)
-      return
-    }
+    if (this.discarding) { this.onDiscard(value); return }
+    if (this.stage === 'attack') { this.onAttackUUID(value); return }
+    if (this.stage === 'block') { this.onBlockUUID(value); return }
     if (this.stage === 'main') {
       const card = this.hand.find((c) => c.id === value)
-      if (card && BASIC_LANDS.has(card.name)) {
-        this.playLand(card)
-        return
-      }
-      if (card && this.playableIds().includes(value)) {
-        this.startCast()
-        return
-      }
+      if (card && BASIC_LANDS.has(card.name)) { this.playLand(card); return }
+      if (card && this.playableIds().includes(value)) { this.startCast(); return }
+      if (this.crossZone.find((cz) => cz.id === value)) { this.startCast(); return }
       return
     }
     if (this.stage === 'cast' && this.cast) this.onCastUUID(value)
@@ -321,28 +264,12 @@ export class HumanGame {
 
   private onBoolean(conn: FakeConn, requestId: string | number, action: string, _value: boolean): void {
     conn.ok(requestId, action, {})
-    if (this.stage === 'discard') {
-      const land = this.hand.find((c) => BASIC_LANDS.has(c.name))
-      const card = land ?? this.hand[0]
-      if (card) this.onDiscard(card.id)
-      return
-    }
-    if (this.stage === 'attack') {
-      this.finishHumanAttack()
-      return
-    }
-    if (this.stage === 'block') {
-      this.finishHumanBlock()
-      return
-    }
+    if (this.stage === 'discard') { const land = this.hand.find((c) => BASIC_LANDS.has(c.name)); const card = land ?? this.hand[0]; if (card) this.onDiscard(card.id); return }
+    if (this.stage === 'attack') { this.finishHumanAttack(); return }
+    if (this.stage === 'block') { this.finishHumanBlock(); return }
     if (this.stage !== 'main') return
-    // el humano pasa su ventana main: si hay hechizo jugable, mantenerla (el test
-    // va a lanzar; el pass del fallback del helper no debe romper la ventana)
-    if (this.playableIds().length > 0) return
-    if (this.options.humanAttack && this.myBattle.length > 0) {
-      this.startHumanAttack()
-      return
-    }
+    if (this.playableIds().length > 0 || this.crossZoneIds().length > 0) return
+    if (this.options.humanAttack && this.myBattle.length > 0) { this.startHumanAttack(); return }
     this.startSimTurn()
   }
 
@@ -359,8 +286,7 @@ export class HumanGame {
   private playLand(card: { id: string; name: string }): void {
     this.hand = this.hand.filter((c) => c.id !== card.id)
     this.myBattle.push(makePermanent({ name: card.name, parentId: card.id, controlled: true }))
-    this.emit('GAME_UPDATE', { gameView: this.view() })
-    this.emit('GAME_SELECT', { gameView: this.view() })
+    this.emitUpdateAndSelect()
   }
 
   // ============================ cast del humano ============================
@@ -430,7 +356,7 @@ export class HumanGame {
       if (!source) return
       source.tapped = true
       rt.manaLeft--
-      this.emit('GAME_UPDATE', { gameView: this.view() })
+      this.emitUpdate()
       if (rt.manaLeft > 0) {
         this.emit('GAME_PLAY_MANA', { message: step.message, options: { queryType: 'PLAY_MANA' }, gameView: this.viewWithManaSource() })
       } else {
@@ -445,7 +371,7 @@ export class HumanGame {
     this.cast = null
     this.stage = 'main'
     this.stack = { 's-1': makeCard({ name: 'hechizo', parentId: 's-1' }) }
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     if (this.options.damageToSim && !this.simWinsCurrentGame()) {
       this.simLife = Math.max(0, this.simLife - this.options.damageToSim)
     }
@@ -454,36 +380,24 @@ export class HumanGame {
     }
     this.stack = {}
     this.combat = []
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     if (this.options.match) {
       if (this.simWinsCurrentGame()) {
         if (this.turn >= 4) this.endGame()
-        else {
-          this.turn++
-          this.emit('GAME_SELECT', { gameView: this.view() })
-        }
+        else { this.turn++; this.emitSelect() }
         return
       }
-      if (this.simLife <= 0) {
-        this.endGame()
-        return
-      }
+      if (this.simLife <= 0) { this.endGame(); return }
     }
-    if (this.hand.length > 7) {
-      this.requestDiscard()
-      return
-    }
+    if (this.hand.length > 7) { this.requestDiscard(); return }
     if (this.waitingSideboard) {
       this.turn++
-      if (this.simWinsCurrentGame() && this.turn >= 4) {
-        this.endGame()
-      } else {
-        this.emit('GAME_SELECT', { gameView: this.view() })
-      }
+      if (this.simWinsCurrentGame() && this.turn >= 4) { this.endGame() }
+      else { this.emitSelect() }
       return
     }
     this.turn++
-    this.emit('GAME_SELECT', { gameView: this.view() })
+    this.emitSelect()
   }
 
   private simWinsCurrentGame(): boolean {
@@ -511,13 +425,12 @@ export class HumanGame {
     this.discarding = false
     this.stage = 'main'
     this.turn++
-    this.emit('GAME_UPDATE', { gameView: this.view() })
-    this.emit('GAME_SELECT', { gameView: this.view() })
+    this.emitUpdateAndSelect()
   }
 
   // ============================ match best-of-N ============================
 
-private endGame(): void {
+  private endGame(): void {
     this.stage = 'end'
     const simWins = this.simWinsCurrentGame()
     if (!simWins) this.wins++
@@ -572,7 +485,7 @@ private endGame(): void {
     this.playedLandTurn = -1
     this.emit('START_GAME', { gameId: this.gameId, tableName: this.tableName })
     this.emit('GAME_INIT', { gameView: this.view() })
-    this.emit('GAME_SELECT', { gameView: this.view() })
+    this.emitSelect()
   }
 
   private lastPlayedName(): string | null {
@@ -612,23 +525,18 @@ private endGame(): void {
     const alreadyAttacking = groups.some((g) => g.attackers && id in g.attackers)
     if (alreadyAttacking) {
       this.combat = groups
-        .map((g) => {
-          const attackers = { ...g.attackers }
-          delete attackers[id]
-          return { ...g, attackers }
-        })
+        .map((g) => { const attackers = { ...g.attackers }; delete attackers[id]; return { ...g, attackers } })
         .filter((g) => Object.keys(g.attackers).length > 0)
     } else {
       this.combat = [{ attackers: { [id]: {} } }]
     }
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     this.emitAttackSelect()
   }
 
   private onAttackSpecial(): void {
-    // "Atacar con todos": todas las criaturas propias atacan
     this.combat = [{ attackers: Object.fromEntries(this.myBattle.map((p) => [p.parentId ?? p.name, {}])) }]
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     this.finishHumanAttack()
   }
 
@@ -638,7 +546,7 @@ private endGame(): void {
     this.step = 'PRECOMBAT_MAIN'
     this.phase = 'PRECOMBAT_MAIN'
     this.stage = 'main'
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     this.startSimTurn()
   }
 
@@ -664,11 +572,7 @@ private endGame(): void {
     if (!perm) return
     this.blockingId = perm.parentId ?? perm.name
     const attackerIds = Object.keys((this.combat[0] as Record<string, Record<string, unknown>> | undefined)?.attackers ?? {})
-    if (attackerIds.length === 1) {
-      // un solo atacante: asignación automática (igual que el servidor real)
-      this.assignBlocker(attackerIds[0])
-      return
-    }
+    if (attackerIds.length === 1) { this.assignBlocker(attackerIds[0]); return }
     this.emit('GAME_TARGET', {
       message: 'Select attacker to block',
       targets: attackerIds,
@@ -686,12 +590,11 @@ private endGame(): void {
     const group = this.combat[0] as Record<string, Record<string, unknown>>
     if (group) group.blockers = { [this.blockingId]: {} }
     this.blockingId = null
-    this.emit('GAME_UPDATE', { gameView: this.view() })
+    this.emitUpdate()
     this.emitBlockSelect()
   }
 
   private finishHumanBlock(): void {
-    // bloqueado: el Sim no hace daño de combate al humano
     this.combat = []
     this.step = 'PRECOMBAT_MAIN'
     this.phase = 'PRECOMBAT_MAIN'
@@ -700,8 +603,7 @@ private endGame(): void {
     this.active = 'human'
     this.priority = 'human'
     this.turn++
-    this.emit('GAME_UPDATE', { gameView: this.view() })
-    this.emit('GAME_SELECT', { gameView: this.view() })
+    this.emitUpdateAndSelect()
   }
 
   // ============================ turno del Sim (combat) ============================
@@ -716,24 +618,21 @@ private endGame(): void {
       if (this.simPaused) return
       switch (simStep++) {
         case 0:
-          this.emit('GAME_UPDATE', { gameView: this.view() })
+          this.emitUpdate()
           break
         case 1:
           if (this.options.simAttack) {
             const simAttackerId = this.simAttackerId()
             this.combat = [{ attackers: { [simAttackerId]: {} } }]
-            this.emit('GAME_UPDATE', { gameView: this.view() })
-            if (this.options.humanBlock && this.myBattle.length > 0) {
-              this.startHumanBlock()
-              return
-            }
+            this.emitUpdate()
+            if (this.options.humanBlock && this.myBattle.length > 0) { this.startHumanBlock(); return }
           }
           break
         case 2:
           if (this.options.simCombatDamage) {
             this.combat = []
             this.humanLife = Math.max(0, this.humanLife - (this.options.simCombatDamage ?? 0))
-            this.emit('GAME_UPDATE', { gameView: this.view() })
+            this.emitUpdate()
           }
           break
         case 3:
@@ -741,7 +640,7 @@ private endGame(): void {
           this.active = 'human'
           this.priority = 'human'
           this.turn++
-          this.emit('GAME_SELECT', { gameView: this.view() })
+          this.emitSelect()
           return
         default:
           return

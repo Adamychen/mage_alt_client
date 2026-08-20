@@ -2,9 +2,9 @@
  * Arranque explícito del FixtureServer para los specs de partida humana
  * (spells/targeting/combat): cada test crea SU PROPIO servidor con el escenario
  * del guion y lo para al terminar (partida independiente). En modo real es no-op
- * (usa el stack). El escenario se construye UNA vez por test, así que la página
- * y el HumanHelper WS comparten el mismo estado (el FakeServer crea el escenario
- * por servidor, no por conexión).
+ * (usa el stack). Usa puerto 8788 (dedicado). El escenario se construye UNA vez
+ * por test, así que la página y el HumanHelper WS comparten el mismo estado
+ * (el FakeServer crea el escenario por servidor, no por conexión).
  */
 
 import { FakeServer, type Scenario } from '../../fixtures/fake'

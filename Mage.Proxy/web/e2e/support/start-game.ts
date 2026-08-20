@@ -9,6 +9,7 @@ import { expect, type Page } from '@playwright/test'
 import { cleanupUser, registerHelper } from '../cleanup'
 import { HumanHelper } from '../wshelper'
 import { parsedLen } from './frames'
+import { BACKEND_PORT } from '../dual'
 
 export const MAX_FRAMES = 500
 
@@ -55,7 +56,7 @@ export interface LoginOptions {
 }
 
 export async function login(page: Page, username: string, opts: LoginOptions = {}): Promise<void> {
-  await page.goto('/')
+  await page.goto(`/?proxyPort=${BACKEND_PORT}`)
   await expect(page.locator('form.login-card')).toBeVisible({ timeout: 20_000 })
   await page.getByLabel('Servidor del proxy (host)').fill('localhost')
   await page.getByLabel('Host del servidor XMage').fill('localhost')

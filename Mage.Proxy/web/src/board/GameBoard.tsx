@@ -5,6 +5,7 @@ import PlayerZone from './PlayerZone'
 import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
 import { useSceneBridge } from './sceneBridge'
+import type { CrossZonePlayable } from './crossZone'
 import './GameBoard.css'
 
 interface GameBoardProps {
@@ -21,6 +22,8 @@ interface GameBoardProps {
   combatChosen?: string[]
   onCombatClick?: (id: string) => void
   onResolveClick?: () => void
+  crossZonePlayables?: CrossZonePlayable[]
+  onPlayCrossZone?: (id: string) => void
 }
 
 /** Convierte una SimpleCardsView (mano de espectador) a CardsView para PlayerZone. */
@@ -47,6 +50,8 @@ export default function GameBoard({
   combatChosen = [],
   onCombatClick,
   onResolveClick,
+  crossZonePlayables = [],
+  onPlayCrossZone,
 }: GameBoardProps) {
   const me = game?.players?.find((p) => p.controlled)
   const opps = game?.players?.filter((p) => !p.controlled) ?? []
@@ -65,7 +70,8 @@ export default function GameBoard({
     combatSelectable,
     combatMode,
     combatChosen,
-  })
+    crossZonePlayables,
+   })
 
   const onHandCardClick = onPlayableClick
 
@@ -99,19 +105,21 @@ export default function GameBoard({
         targetIds={targetIdSet}
       />
       <div className="board-divider" />
-      <PlayerZone
-        player={isSpectator ? oppBottom : me}
-        hand={isSpectator ? spectatorBottomHand : (game?.myHand ?? {})}
-        onCardClick={(id) => {
-          if (combatSelectable.includes(id)) onCombatClick?.(id)
-          else if (targetIds.includes(id)) onTargetClick?.(id)
-          else if (playableIds.includes(id)) onPlayableClick?.(id)
-        }}
-        onHandCardClick={onHandCardClick}
-        onCardHover={onCardHover}
-        targetIds={targetIdSet}
-        playableIds={playableIdSet}
-      />
+        <PlayerZone
+         player={isSpectator ? oppBottom : me}
+         hand={isSpectator ? spectatorBottomHand : (game?.myHand ?? {})}
+         onCardClick={(id) => {
+           if (combatSelectable.includes(id)) onCombatClick?.(id)
+           else if (targetIds.includes(id)) onTargetClick?.(id)
+           else if (playableIds.includes(id)) onPlayableClick?.(id)
+          }}
+         onHandCardClick={onHandCardClick}
+         onCardHover={onCardHover}
+         targetIds={targetIdSet}
+         playableIds={playableIdSet}
+         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
+         onPlayCrossZone={onPlayCrossZone}
+        />
       <StackZone
         stack={game?.stack ?? null}
         onCardClick={onTargetClick}

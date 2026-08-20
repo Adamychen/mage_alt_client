@@ -2,9 +2,8 @@
  * Fixtures de Playwright con el backend dual.
  * - fake: el FixtureServer se arranca con `{ fakeServer }` (full-flow usa el
  *   fixture; los specs de partida humana lo arrancan explícitamente con su
- *   escenario, `FakeServer.start(port, escenario())`). El proxy real debe
- *   estar detenido (puerto 8787).
- * - real: fakeServer es null (usa el stack: server + proxy + vite).
+ *   escenario, `FakeServer.start(port, escenario())`). Usa puerto 8788 (dedicado).
+ * - real: fakeServer es null (usa el stack: server + proxy + vite, puerto 8787).
  */
 
 import { test as base, expect as baseExpect } from '@playwright/test'
@@ -25,7 +24,7 @@ export const test = base.extend<{ fakeServer: FakeServer | null }>({
       } catch (err) {
         throw new Error(
           `FixtureServer no pudo arrancar en el puerto ${BACKEND_PORT}: ${(err as Error).message}. ` +
-            'En modo fake el proxy real no debe estar corriendo: node scripts/ctl.mjs stop proxy',
+            `Asegúrate de que el puerto ${BACKEND_PORT} no esté en uso.`,
         )
       }
       await use(server)

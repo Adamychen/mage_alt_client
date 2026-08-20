@@ -19,6 +19,7 @@ import { playableInSceneByName, waitSceneTargeting } from './support/scene'
 import { startGame } from './support/start-game'
 import { targetingScenario } from '../fixtures/scenarios/targeting'
 import { withFakeServer } from './support/fake-backend'
+import { feedbackDialog } from './support/game-screen'
 
 const SHOTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'shots')
 
@@ -75,7 +76,7 @@ test('targeting visual: humano lanza Lightning Bolt y el tablero resalta objetiv
     (f) => f.method === 'GAME_TARGET' && !/bottom of your library/i.test(String(f.data?.message ?? '')),
     'GAME_TARGET del Lightning Bolt',
   )
-  await expect(page.locator('.feedback-dialog'), `pageerrors: ${pageErrors.map(String).join(' | ')}`).toContainText(/Elige objetivo/, { timeout: 15_000 })
+  await expect(feedbackDialog(page), `pageerrors: ${pageErrors.map(String).join(' | ')}`).toContainText(/Lightning Bolt/, { timeout: 15_000 })
 
   // (f) evidencias visuales del targeting en el CANVAS por estado de escena
   //     (determinista): el targeting está activo, con fuente y objetivos reales.
@@ -95,7 +96,7 @@ test('targeting visual: humano lanza Lightning Bolt y el tablero resalta objetiv
   if (opponent?.playerId) {
     expect(await helper.playCard(opponent.playerId), 'objetivo del Bolt').toBeTruthy()
   } else {
-    const dialog = page.locator('.feedback-dialog')
+    const dialog = feedbackDialog(page)
     const oppName = opponent?.name
     const button = oppName
       ? dialog.getByRole('button', { name: new RegExp(oppName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) }).first()
@@ -166,7 +167,7 @@ test('targeting visual: humano lanza Lightning Bolt y el tablero resalta objetiv
   // evidencia visual (no es aserción): captura del tablero post-resolución
   fs.mkdirSync(SHOTS_DIR, { recursive: true })
   const resolved = path.join(SHOTS_DIR, 'targeting-resolved.png')
-  await page.locator('.board-wrap canvas').screenshot({ path: resolved })
+  await page.locator('.game-board').screenshot({ path: resolved })
 
   // (k) cero pageerrors
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])

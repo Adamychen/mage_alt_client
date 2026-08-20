@@ -61,15 +61,15 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
 
    // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
   await expect(page.getByTestId('game-status')).toBeVisible({ timeout: 20_000 })
-  const canvas = page.locator('.board-wrap canvas')
-  await expect(canvas).toBeVisible({ timeout: 20_000 })
+  const board = page.locator('.game-board')
+  await expect(board).toBeVisible({ timeout: 20_000 })
   const gameStatus = page.getByTestId('game-status')
   await expect(gameStatus).toBeVisible()
   const initialGameStatus = await gameStatus.textContent()
   await page.waitForTimeout(1000)
 
-  // (g) entrada del espectador en el GameLog (markup real: .gamelog-list > .gamelog-entry)
-  await expect(page.locator('.gamelog-list')).toContainText(/Espectador: mirando la partida/, {
+  // (g) entrada del espectador en el GameLog (markup real: .game-log-entries > .game-log-entry)
+  await expect(page.locator('.game-log-entries')).toContainText(/Espectador: mirando la partida/, {
     timeout: 15_000,
   })
 
@@ -82,7 +82,7 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   let lastGame: SceneState['game'] | null = null
   const deadline = Date.now() + 20_000
   while (Date.now() < deadline) {
-    if ((await canvas.count()) === 0) {
+    if ((await board.count()) === 0) {
       // la partida terminó y el tablero desapareció -> la partida avanzó de hecho
       redrew = true
       sceneAdvanced = true
@@ -101,7 +101,7 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
     }
     let shot: Buffer | null = null
     try {
-      shot = await canvas.screenshot()
+      shot = await board.screenshot()
     } catch {
       // el canvas puede estar desmontándose a mitad de captura; reintenta
     }

@@ -2,23 +2,33 @@ import { useEffect, useState } from 'react'
 import { clearError, doConnect, useStore, loadConn } from '../state/store'
 import './LoginScreen.css'
 
+function urlProxyPort(): number | null {
+  const n = Number(new URLSearchParams(window.location.search).get('proxyPort'))
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 export default function LoginScreen() {
   const phase = useStore((s) => s.phase)
   const error = useStore((s) => s.error)
   const [proxyHost, setProxyHost] = useState('localhost')
+  const [proxyPort, setProxyPort] = useState(8787)
   const [serverHost, setServerHost] = useState('localhost')
   const [port, setPort] = useState('17171')
   const [username, setUsername] = useState('player1')
   const [password, setPassword] = useState('password')
 
   useEffect(() => {
+    const urlPort = urlProxyPort()
     const saved = loadConn()
     if (saved) {
       setProxyHost(saved.wsHost)
+      setProxyPort(urlPort ?? saved.proxyPort)
       setServerHost(saved.serverHost)
       setPort(String(saved.port))
       setUsername(saved.username)
       setPassword(saved.password)
+    } else if (urlPort !== null) {
+      setProxyPort(urlPort)
     }
   }, [])
 
@@ -27,7 +37,7 @@ export default function LoginScreen() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (busy) return
-    void doConnect(proxyHost.trim(), serverHost.trim() || proxyHost.trim(), parseInt(port, 10) || 17171, username.trim(), password)
+    void doConnect(proxyHost.trim(), proxyPort, serverHost.trim() || proxyHost.trim(), parseInt(port, 10) || 17171, username.trim(), password)
   }
 
   return (
@@ -66,7 +76,7 @@ export default function LoginScreen() {
         <button className="primary" disabled={busy} type="submit">
           {busy ? 'Conectando…' : 'Conectar'}
         </button>
-        <p className="hint">Requiere el proxy corriendo en ws://{proxyHost}:8787 y el servidor XMage en {serverHost}:{port}</p>
+        <p className="hint">Requiere el proxy corriendo en ws://{proxyHost}:{proxyPort} y el servidor XMage en {serverHost}:{port}</p>
       </form>
     </div>
   )

@@ -9,6 +9,7 @@ import * as fs from 'node:fs'
 import type { HumanHelper } from '../wshelper'
 import {
   countUntappedLands,
+  crossZoneIdInView,
   escapeRegExp,
   framesOf,
   gameEndReason,
@@ -29,7 +30,7 @@ import {
 import { parsedLen } from './frames'
 
 export function feedbackDialog(page: Page) {
-  return page.locator('.feedback-dialog')
+  return page.locator('.feedback-dialog, .targeting-bar')
 }
 
 export async function expectFeedbackDialog(page: Page, title: string, timeoutMs = 15_000): Promise<void> {
@@ -190,4 +191,36 @@ export async function waitPlayable(
 function controlledPlayerOf(view: Record<string, unknown> | null) {
   const players = (view?.players ?? []) as { playerId?: string; isActive?: boolean; controlled?: boolean }[]
   return players.find((p) => p.controlled)
+}
+
+/** Espera a que una carta sea jugable DESDE OTRA ZONA (el "ray": cementerio/
+ *  exilio) en MI main phase. La jugabilidad se lee de canPlayObjects del frame
+ *  (autoritativo), igual que waitPlayable. minUntapped puede ser 0: el pago del
+ *  coste llega DESPUÉS del cast, así que el helper desarrolla las tierras mientras
+ *  el cast en curso; lo que evita es que el fallback del helper pase la ventana
+ *  antes de que el test actúe. */
+export async function waitCrossZonePlayable(
+  page: Page,
+  name: string,
+  opts: WaitPlayableOptions = {},
+): Promise<string | null> {
+  const timeoutMs = opts.timeoutMs ?? 30_000
+  const minUntapped = opts.minUntapped ?? 0
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (gameEnded(framesOf(page))) return null
+    const view = lastGameView(parseFrames(framesOf(page)))
+    const me = controlledPlayerOf(view)
+    const myMain = !!view && me?.isActive === true && view.phase === 'PRECOMBAT_MAIN'
+    if (myMain) {
+      const lands = countUntappedLands(view)
+      if (lands.count >= minUntapped) {
+        const id = crossZoneIdInView(view, name)
+        if (id) return id
+         }
+       }
+    await page.waitForTimeout(250)
+     }
+  console.log(`[dbg] waitCrossZonePlayable(${name}) agotado — ${gameEndReason(page)}`)
+  return null
 }

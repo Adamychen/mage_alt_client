@@ -17,7 +17,8 @@
     "test:e2e:spells": "playwright test --grep \"@spells\"",
     "test:e2e:targeting": "playwright test --grep \"@targeting\"",
     "test:e2e:combat": "playwright test --grep \"@combat\"",
-    "test:e2e:fullflow": "playwright test --grep \"@fullflow\""
+    "test:e2e:fullflow": "playwright test --grep \"@fullflow\"",
+    "gen-types": "node ../../scripts/gen-types.mjs"
   },
   "dependencies": {
     "pixi.js": "^8.19.0",

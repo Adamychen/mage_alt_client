@@ -1,7 +1,7 @@
 /**
  * FixtureServer: implementación determinista del contrato WS del proxy
- * (Mage.Proxy) para los E2E de navegador. Escucha en el MISMO puerto que el
- * proxy (8787) y responde a las acciones de commands.ts con envelopes
+ * (Mage.Proxy) para los E2E de navegador. Escucha en el puerto dedicado
+ * (8788) y responde a las acciones de commands.ts con envelopes
  * {type:'result'} y emite callbacks {type:'event'} según un escenario
  * declarativo. Nada de Java, nada de timing real: los tests de UI corren en
  * segundos y son reproducibles al 100%.

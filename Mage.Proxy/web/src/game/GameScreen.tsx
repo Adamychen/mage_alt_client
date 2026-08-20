@@ -8,6 +8,7 @@ import CardPreview from './CardPreview'
 import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
+import { crossZonePlayables } from '../board/crossZone'
 import type { CardView } from '../net/types'
 import './GameScreen.css'
 
@@ -40,7 +41,9 @@ export default function GameScreen() {
     if (!gameId) return
     const result = await cmds.sendPlayerUUID(id, gameId)
     if (!result.ok) setStoreError(result.error ?? 'No se pudo jugar la carta')
-  }
+   }
+
+  const crossZone = crossZonePlayables(game, feedback ?? undefined)
 
   const onCombatClick = async (id: string) => {
     if (!gameId) return
@@ -91,20 +94,23 @@ export default function GameScreen() {
       <div className="game-body">
         <Sidebar />
         <div className="board-wrap">
-          <GameBoard
-            game={game}
-            targetIds={targetIds}
-            chosenTargetIds={chosenTargetIds}
-            onTargetClick={onTargetClick}
-            targetSourceId={targetSourceId}
-            playableIds={playableIds}
-            onPlayableClick={onPlayableClick}
-            onCardHover={setPreviewCard}
-            combatSelectable={combat?.selectable ?? []}
-            combatMode={combat?.mode ?? null}
-            onCombatClick={onCombatClick}
-            onResolveClick={onResolveClick}
-          />
+            <GameBoard
+             game={game}
+             targetIds={targetIds}
+             chosenTargetIds={chosenTargetIds}
+             onTargetClick={onTargetClick}
+             targetSourceId={targetSourceId}
+             playableIds={playableIds}
+             onPlayableClick={onPlayableClick}
+             onCardHover={setPreviewCard}
+             combatSelectable={combat?.selectable ?? []}
+             combatMode={combat?.mode ?? null}
+             combatChosen={combat?.chosen ?? []}
+             onCombatClick={onCombatClick}
+             onResolveClick={onResolveClick}
+             crossZonePlayables={crossZone}
+             onPlayCrossZone={onPlayableClick}
+            />
         </div>
         <div className="game-right-panel">
           <CardPreview card={previewCard} />

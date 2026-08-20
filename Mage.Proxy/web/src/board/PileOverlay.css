@@ -88,3 +88,36 @@
   padding: 24px;
   text-align: center;
 }
+
+.cross-zone-overlay {
+  width: min(760px, 86vw);
+}
+
+.cross-zone-entry {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cross-zone-source {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ffb03a;
+  font-family: var(--font-display);
+}
+
+/* Highlight playable cards in pile overlays */
+.pile-card.playable {
+  outline: 2px solid #ffb03a;
+  outline-offset: 2px;
+  cursor: pointer;
+  transition: outline-color 0.15s ease;
+}
+
+.pile-card.playable:hover {
+  outline-color: #ffd080;
+}

@@ -1,0 +1,455 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "XMage View Protocol (JsonUtil wire format)",
+  "description": "Generated from Java mage.view.* classes serialized by JsonUtil. Fields use camelCase names (Java reflection). UUID and enums are strings, dates are epoch millis, Optional is unwrapped.",
+  "definitions": {
+    "GameView": {
+      "type": "object",
+      "properties": {
+        "priorityTime": { "type": "number" },
+        "bufferTime": { "type": "number" },
+        "players": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/PlayerView" }
+        },
+        "myPlayerId": { "type": ["string", "null"] },
+        "myHand": { "$ref": "#/definitions/CardsView" },
+        "myHelperEmblems": { "$ref": "#/definitions/CardsView" },
+        "canPlayObjects": { "$ref": "#/definitions/PlayableObjectsList" },
+        "opponentHands": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/SimpleCardsView" }
+        },
+        "watchedHands": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/SimpleCardsView" }
+        },
+        "stack": { "$ref": "#/definitions/CardsView" },
+        "exiles": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/ExileView" }
+        },
+        "revealed": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RevealedView" }
+        },
+        "lookedAt": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RevealedView" }
+        },
+        "companion": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RevealedView" }
+        },
+        "combat": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CombatGroupView" }
+        },
+        "phase": { "type": "string" },
+        "step": { "type": "string" },
+        "activePlayerId": { "type": "string" },
+        "activePlayerName": { "type": "string" },
+        "priorityPlayerName": { "type": "string" },
+        "turn": { "type": "number" },
+        "special": { "type": "boolean" },
+        "rollbackTurnsAllowed": { "type": "boolean" },
+        "totalErrorsCount": { "type": "number" },
+        "totalEffectsCount": { "type": "number" },
+        "gameCycle": { "type": "number" }
+      },
+      "required": [
+        "priorityTime", "bufferTime", "myHand", "myHelperEmblems",
+        "opponentHands", "watchedHands", "stack", "exiles", "revealed",
+        "lookedAt", "companion", "combat", "phase", "step",
+        "activePlayerId", "activePlayerName", "priorityPlayerName", "turn",
+        "special", "rollbackTurnsAllowed", "totalErrorsCount", "totalEffectsCount", "gameCycle"
+      ]
+    },
+    "PlayerView": {
+      "type": "object",
+      "properties": {
+        "playerId": { "type": "string" },
+        "name": { "type": "string" },
+        "controlled": { "type": "boolean" },
+        "isHuman": { "type": "boolean" },
+        "life": { "type": "number" },
+        "counters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CounterView" }
+        },
+        "wins": { "type": "number" },
+        "winsNeeded": { "type": "number" },
+        "libraryCount": { "type": "number" },
+        "handCount": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "hasPriority": { "type": "boolean" },
+        "timerActive": { "type": "boolean" },
+        "hasLeft": { "type": "boolean" },
+        "manaPool": { "$ref": "#/definitions/ManaPoolView" },
+        "graveyard": { "$ref": "#/definitions/CardsView" },
+        "exile": { "$ref": "#/definitions/CardsView" },
+        "sideboard": { "$ref": "#/definitions/CardsView" },
+        "helperCards": { "$ref": "#/definitions/CardsView" },
+        "battlefield": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/PermanentView" }
+        },
+        "topCard": {
+          "anyOf": [
+            { "$ref": "#/definitions/CardView" },
+            { "type": "null" }
+          ]
+        },
+        "userData": {},
+        "commandList": { "type": "array", "items": {} },
+        "attachments": { "type": "array", "items": { "type": "string" } },
+        "statesSavedSize": { "type": "number" },
+        "priorityTimeSavedTimeMs": { "type": "number" },
+        "priorityTimeLeftSecs": { "type": "number" },
+        "bufferTimeLeft": { "type": "number" },
+        "passedTurn": { "type": "boolean" },
+        "passedUntilEndOfTurn": { "type": "boolean" },
+        "passedUntilNextMain": { "type": "boolean" },
+        "passedUntilStackResolved": { "type": "boolean" },
+        "passedAllTurns": { "type": "boolean" },
+        "passedUntilEndStepBeforeMyTurn": { "type": "boolean" },
+        "monarch": { "type": "boolean" },
+        "initiative": { "type": "boolean" },
+        "designationNames": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": [
+        "playerId", "name", "controlled", "isHuman", "life", "counters",
+        "wins", "winsNeeded", "libraryCount", "handCount", "isActive",
+        "hasPriority", "timerActive", "hasLeft", "manaPool", "graveyard",
+        "exile", "sideboard", "helperCards", "battlefield", "topCard",
+        "commandList", "attachments", "statesSavedSize", "priorityTimeSavedTimeMs",
+        "priorityTimeLeftSecs", "bufferTimeLeft", "passedTurn", "passedUntilEndOfTurn",
+        "passedUntilNextMain", "passedUntilStackResolved", "passedAllTurns",
+        "passedUntilEndStepBeforeMyTurn", "monarch", "initiative", "designationNames"
+      ]
+    },
+    "CardView": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": "string" },
+        "name": { "type": "string" },
+        "displayName": { "type": "string" },
+        "displayFullName": { "type": "string" },
+        "rules": { "type": "array", "items": { "type": "string" } },
+        "power": { "type": "string" },
+        "toughness": { "type": "string" },
+        "loyalty": { "type": "string" },
+        "defense": { "type": "string" },
+        "startingLoyalty": { "type": "string" },
+        "startingDefense": { "type": "string" },
+        "cardTypes": { "type": "array", "items": { "type": "string" } },
+        "subTypes": {},
+        "superTypes": { "type": "array", "items": { "type": "string" } },
+        "color": {
+          "type": ["object", "null"],
+          "properties": {
+            "white": { "type": "boolean" },
+            "blue": { "type": "boolean" },
+            "black": { "type": "boolean" },
+            "red": { "type": "boolean" },
+            "green": { "type": "boolean" }
+          }
+        },
+        "frameColor": {},
+        "frameStyle": { "type": "string" },
+        "manaCostLeftStr": { "type": "array", "items": { "type": "string" } },
+        "manaCostRightStr": { "type": "array", "items": { "type": "string" } },
+        "manaValue": { "type": "number" },
+        "rarity": { "type": "string" },
+        "mageObjectType": { "type": "string" },
+        "isAbility": { "type": "boolean" },
+        "abilityType": { "type": "string" },
+        "isToken": { "type": "boolean" },
+        "ability": { "$ref": "#/definitions/CardView" },
+        "imageFileName": { "type": "string" },
+        "imageNumber": { "type": "number" },
+        "expansionSetCode": { "type": "string" },
+        "cardNumber": { "type": "string" },
+        "extraDeckCard": { "type": "boolean" },
+        "transformable": { "type": "boolean" },
+        "secondCardFace": { "$ref": "#/definitions/CardView" },
+        "transformed": { "type": "boolean" },
+        "flipCard": { "type": "boolean" },
+        "faceDown": { "type": "boolean" },
+        "alternateName": { "type": "string" },
+        "isSplitCard": { "type": "boolean" },
+        "targets": { "type": "array", "items": { "type": "string" } },
+        "pairedCard": { "type": "string" },
+        "bandedCards": { "type": "array", "items": { "type": "string" } },
+        "paid": { "type": "boolean" },
+        "counters": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/CounterView" }
+        },
+        "controlledByOwner": { "type": "boolean" },
+        "zone": { "type": "string" },
+        "rotate": { "type": "boolean" },
+        "hideInfo": { "type": "boolean" },
+        "canAttack": { "type": "boolean" },
+        "canBlock": { "type": "boolean" },
+        "inViewerOnly": { "type": "boolean" },
+        "cardIcons": { "type": "array", "items": {} },
+        "originalPower": { "type": ["string", "null"] },
+        "originalToughness": { "type": ["string", "null"] },
+        "originalColorIdentity": { "type": ["string", "null"] },
+        "originalIsCopy": { "type": "boolean" }
+      },
+      "required": ["name", "manaValue"]
+    },
+    "PermanentView": {
+      "allOf": [{ "$ref": "#/definitions/CardView" }],
+      "type": "object",
+      "properties": {
+        "tapped": { "type": "boolean" },
+        "flipped": { "type": "boolean" },
+        "phasedIn": { "type": "boolean" },
+        "summoningSickness": { "type": "boolean" },
+        "damage": { "type": "number" },
+        "attachments": { "type": "array", "items": { "type": "string" } },
+        "copy": { "type": "boolean" },
+        "nameOwner": { "type": "string" },
+        "nameController": { "type": "string" },
+        "controlled": { "type": "boolean" },
+        "attachedTo": { "type": "string" },
+        "morphed": { "type": "boolean" },
+        "disguised": { "type": "boolean" },
+        "manifested": { "type": "boolean" },
+        "cloaked": { "type": "boolean" },
+        "attachedToPermanent": { "type": "boolean" },
+        "attachedControllerDiffers": { "type": "boolean" },
+        "mutated": { "type": "boolean" }
+      }
+    },
+    "CardsView": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/CardView" }
+    },
+    "SimpleCardView": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "mageObjectType": { "type": "string" }
+      },
+      "required": ["id"]
+    },
+    "SimpleCardsView": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/SimpleCardView" }
+    },
+    "CounterView": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "count": { "type": "number" }
+      },
+      "required": ["name", "count"]
+    },
+    "ManaPoolView": {
+      "type": "object",
+      "properties": {
+        "red": { "type": "number" },
+        "green": { "type": "number" },
+        "blue": { "type": "number" },
+        "white": { "type": "number" },
+        "black": { "type": "number" },
+        "colorless": { "type": "number" }
+      },
+      "required": ["red", "green", "blue", "white", "black", "colorless"]
+    },
+    "CombatGroupView": {
+      "type": "object",
+      "properties": {
+        "attackers": { "type": "array", "items": {} },
+        "blockers": { "type": "array", "items": {} },
+        "defenders": { "type": "array", "items": {} },
+        "attacker": {},
+        "isAttackedByDefender": { "type": "boolean" }
+      }
+    },
+    "ExileView": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "cards": { "$ref": "#/definitions/CardsView" },
+        "zoneId": { "type": "string" }
+      },
+      "required": ["name", "cards"]
+    },
+    "RevealedView": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "cards": { "$ref": "#/definitions/CardsView" }
+      },
+      "required": ["name", "cards"]
+    },
+    "TableView": {
+      "type": "object",
+      "properties": {
+        "tableId": { "type": "string" },
+        "gameType": { "type": "string" },
+        "deckType": { "type": "string" },
+        "tableName": { "type": "string" },
+        "controllerName": { "type": "string" },
+        "additionalInfoShort": { "type": "string" },
+        "additionalInfoFull": { "type": "string" },
+        "createTime": { "type": "number" },
+        "tableState": { "type": "string" },
+        "skillLevel": { "type": "string" },
+        "tableStateText": { "type": "string" },
+        "seatsInfo": { "type": "string" },
+        "isTournament": { "type": "boolean" },
+        "seats": { "type": "array", "items": { "$ref": "#/definitions/SeatView" } },
+        "games": { "type": "array", "items": { "type": "string" } },
+        "quitRatio": { "type": "string" },
+        "minimumRating": { "type": "string" },
+        "limited": { "type": "boolean" },
+        "rated": { "type": "boolean" },
+        "passworded": { "type": "boolean" },
+        "spectatorsAllowed": { "type": "boolean" }
+      },
+      "required": [
+        "tableId", "gameType", "deckType", "tableName", "controllerName",
+        "additionalInfoShort", "additionalInfoFull", "createTime", "tableState",
+        "skillLevel", "tableStateText", "seatsInfo", "isTournament", "seats",
+        "games", "quitRatio", "minimumRating", "limited", "rated",
+        "passworded", "spectatorsAllowed"
+      ]
+    },
+    "SeatView": {
+      "type": "object",
+      "properties": {
+        "playerName": { "type": "string" },
+        "playerId": { "type": "string" },
+        "seatIndex": { "type": "number" },
+        "playerType": { "type": "string" },
+        "flagName": { "type": "string" },
+        "history": { "type": "string" },
+        "joinedInRound": { "type": "string" },
+        "bowingOut": { "type": "boolean" },
+        "isExtraSeat": { "type": "boolean" }
+      },
+      "required": ["playerName", "seatIndex"]
+    },
+    "RoomUsersView": {
+      "type": "object",
+      "properties": {
+        "numberActiveGames": { "type": "number" },
+        "numberGameThreads": { "type": "number" },
+        "numberMaxGames": { "type": "number" },
+        "usersView": { "type": "array", "items": { "$ref": "#/definitions/UsersView" } }
+      },
+      "required": ["numberActiveGames", "numberGameThreads", "numberMaxGames", "usersView"]
+    },
+    "UsersView": {
+      "type": "object",
+      "properties": {
+        "flagName": { "type": "string" },
+        "userName": { "type": "string" },
+        "matchHistory": { "type": "string" },
+        "matchQuitRatio": { "type": "number" },
+        "tourneyHistory": { "type": "string" },
+        "tourneyQuitRatio": { "type": "number" },
+        "infoGames": { "type": "string" },
+        "infoPing": { "type": "string" },
+        "generalRating": { "type": "number" },
+        "constructedRating": { "type": "number" },
+        "limitedRating": { "type": "number" }
+      },
+      "required": [
+        "flagName", "userName", "matchHistory", "matchQuitRatio",
+        "tourneyHistory", "tourneyQuitRatio", "infoGames", "infoPing",
+        "generalRating", "constructedRating", "limitedRating"
+      ]
+    },
+    "UserView": {
+      "type": "object",
+      "properties": {
+        "userName": { "type": "string" },
+        "host": { "type": "string" },
+        "sessionId": { "type": "string" },
+        "timeConnected": { "type": "number" },
+        "lastActivity": { "type": "number" },
+        "gameInfo": { "type": "string" },
+        "userState": { "type": "string" },
+        "muteChatUntil": { "type": "number" },
+        "clientVersion": { "type": "string" },
+        "email": { "type": "string" },
+        "userIdStr": { "type": "string" }
+      },
+      "required": ["userName"]
+    },
+    "ChatMessage": {
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "time": { "type": "number" },
+        "turnInfo": { "type": "string" },
+        "message": { "type": "string" },
+        "color": { "type": "string" },
+        "soundToPlay": { "type": "string" },
+        "messageType": { "type": "string" }
+      },
+      "required": ["username", "message"]
+    },
+    "GameEndInfo": {
+      "type": "object",
+      "properties": {
+        "gameInfo": { "type": "string" },
+        "matchInfo": { "type": "string" },
+        "additionalInfo": { "type": "string" },
+        "won": { "type": "boolean" },
+        "wins": { "type": "number" },
+        "loses": { "type": "number" },
+        "winsNeeded": { "type": "number" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "matchView": {
+          "type": "object",
+          "properties": {
+            "matchId": { "type": "string" },
+            "result": { "type": "string" },
+            "players": { "type": "string" },
+            "games": { "type": "array", "items": { "type": "string" } },
+            "startTime": { "type": "string" },
+            "endTime": { "type": ["string", "null"] }
+          }
+        },
+        "players": { "type": "array", "items": { "$ref": "#/definitions/PlayerView" } }
+      }
+    },
+    "PlayableObjectsList": {
+      "type": "object",
+      "properties": {
+        "objects": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/PlayableObjectStats" }
+        }
+      }
+    },
+    "PlayableObjectStats": {
+      "type": "object",
+      "properties": {
+        "basicManaAbilities": { "type": "array", "items": { "$ref": "#/definitions/PlayableObjectRecord" } },
+        "basicPlayAbilities": { "type": "array", "items": { "$ref": "#/definitions/PlayableObjectRecord" } },
+        "basicCastAbilities": { "type": "array", "items": { "$ref": "#/definitions/PlayableObjectRecord" } },
+        "other": { "type": "array", "items": { "$ref": "#/definitions/PlayableObjectRecord" } }
+      }
+    },
+    "PlayableObjectRecord": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "required": ["id", "value"]
+    }
+  }
+}

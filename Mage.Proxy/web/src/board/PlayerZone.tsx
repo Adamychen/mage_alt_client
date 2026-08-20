@@ -3,6 +3,7 @@ import PlayerInfoBar from '../game/PlayerInfoBar'
 import ResourceBar from '../game/ResourceBar'
 import CardSlot from './CardSlot'
 import HandZone from './HandZone'
+import type { CrossZonePlayable } from './crossZone'
 import './PlayerZone.css'
 
 interface PlayerZoneProps {
@@ -13,6 +14,8 @@ interface PlayerZoneProps {
   onCardHover?: (card: CardView | null) => void
   targetIds?: Set<string>
   playableIds?: Set<string>
+  crossZonePlayables?: CrossZonePlayable[]
+  onPlayCrossZone?: (id: string) => void
 }
 
 function permanentKind(perm: PermanentView): 'creatures' | 'other' | 'lands' {
@@ -30,6 +33,8 @@ export default function PlayerZone({
   onCardHover,
   targetIds = new Set(),
   playableIds = new Set(),
+  crossZonePlayables,
+  onPlayCrossZone,
 }: PlayerZoneProps) {
   if (!player) return <div className="player-zone empty" />
 
@@ -111,7 +116,13 @@ export default function PlayerZone({
           targetIds={targetIds}
           compact
         />
-        <ResourceBar player={player} side="my" compact />
+          <ResourceBar
+           player={player}
+           side="my"
+           compact
+           crossZonePlayables={crossZonePlayables}
+           onPlayCrossZone={onPlayCrossZone}
+          />
       </div>
     </div>
   )

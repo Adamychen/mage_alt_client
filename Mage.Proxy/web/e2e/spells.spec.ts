@@ -4,7 +4,7 @@ import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { clickPlayerHeader } from './support/canvas'
 import { targetIdsOf, lastGameView, myBattlefield, opponentPlayer, parseFrames, waitFrame, waitFrameAt, parsedLen, gameViewOf, waitOppLife } from './support/frames'
-import { expectFeedbackDialog, payMana, resolveInteger, targetOpponent, waitPlayable } from './support/game-screen'
+import { expectFeedbackDialog, feedbackDialog, payMana, resolveInteger, targetOpponent, waitPlayable } from './support/game-screen'
 import { startGame } from './support/start-game'
 import { spellsScenario } from '../fixtures/scenarios/spells'
 import { withFakeServer } from './support/fake-backend'
@@ -21,10 +21,10 @@ test.describe('Blaze', { tag: '@spells' }, () => {
   test('Blaze {X}{R}: diálogo integer X=2, targeting visual y pago de maná', async ({ page }) => {
   await withFakeServer(() => spellsScenario('blaze'), async () => {
   const { frames, pageErrors, helper } = await startGame(page, { prefix: 'sp', tableName: 'blaze-test', deck: 'Mage Web advanced' })
-  const canvas = page.locator('.board-wrap canvas')
+  const board = page.locator('.game-board')
   const blazeId = await waitPlayable(page, 'Blaze', { timeoutMs: 30_000, minUntapped: 3 })
   if (!blazeId) throw new Error('Blaze no fue jugable en 30s (robo adverso)')
-  const beforeShot = await canvas.screenshot()
+  const beforeShot = await board.screenshot()
   const cursor = parsedLen(page)
   // el lanzamiento va por WS (determinista); los diálogos se verifican por UI
   expect(await helper.playCard(blazeId), 'el Blaze debería lanzarse por WS').toBeTruthy()
@@ -37,17 +37,17 @@ test.describe('Blaze', { tag: '@spells' }, () => {
     15_000,
     cursor,
   )
-  await expectFeedbackDialog(page, 'Elige objetivo')
+  await expectFeedbackDialog(page, 'Blaze')
   // dar tiempo al render del targeting (el pulso/la línea) antes de capturar;
   // el pulso es periódico: reintentar capturas hasta cogerlo en fase visible
   await page.waitForTimeout(700)
-  await page.locator('.feedback-backdrop').evaluate((el) => {
+  await page.locator('.targeting-bar, .feedback-backdrop').evaluate((el) => {
     el.style.background = 'transparent'
   })
-  let shotA = await canvas.screenshot()
+  let shotA = await board.screenshot()
   for (let attempt = 0; attempt < 4 && Buffer.compare(beforeShot, shotA) === 0; attempt++) {
     await page.waitForTimeout(300)
-    shotA = await canvas.screenshot()
+    shotA = await board.screenshot()
   }
   expect(Buffer.compare(beforeShot, shotA) !== 0, 'el canvas debe cambiar al entrar en targeting').toBeTruthy()
   fs.mkdirSync(SHOTS_DIR, { recursive: true })
@@ -80,7 +80,7 @@ test.describe('Arc Trail', { tag: '@spells' }, () => {
     15_000,
     cursor,
   )
-  await expectFeedbackDialog(page, 'Elige objetivo')
+  await expectFeedbackDialog(page, 'Arc Trail')
   await targetOpponent(page, arc1, 'primer objetivo de Arc Trail', helper)
   // El 2º objetivo es "any other target": solo se re-dispara si hay otro objetivo
   // legal (p. ej. una criatura en juego); si no, el servidor lo auto-elige y va
@@ -100,7 +100,7 @@ test.describe('Arc Trail', { tag: '@spells' }, () => {
       const clicked = await clickPlayerHeader(page, me.playerId)
       expect(clicked, 'segundo objetivo de Arc Trail en mi header').toBeTruthy()
     } else {
-      const dialog = page.locator('.feedback-dialog')
+      const dialog = feedbackDialog(page)
       const button = dialog.getByRole('button').first()
       await expect(button, 'segundo objetivo de Arc Trail').toBeVisible({ timeout: 15_000 })
       await button.click()

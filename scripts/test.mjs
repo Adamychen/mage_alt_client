@@ -99,12 +99,13 @@ async function main() {
   let fails = 0
   let skips = 0
 
-  // warm-up del stack antes de las capas E2E: la PRIMERA partida tras un arranque
-  // en frío del servidor puede perder el socket de callbacks (SESSION CALLBACK
-  // EXCEPTION) y tumbarse un WATCHGAME/GAME_INIT; una partida descartable la
-  // "tripa" fuera de los tests (no afecta al conteo de la suite).
-  const e2eLayers = selected.filter((l) => l === 'self-test' || l === 'human-test' || l === 'e2e')
-  if (e2eLayers.length > 0) {
+  // warm-up del stack antes de las capas E2E que requieren proxy (self-test/human-test):
+  // la PRIMERA partida tras un arranque en frío del servidor puede perder el socket de
+  // callbacks (SESSION CALLBACK EXCEPTION) y tumbarse un WATCHGAME/GAME_INIT; una partida
+  // descartable la "tripa" fuera de los tests (no afecta al conteo de la suite).
+  // En modo fake (e2e) no se necesita el stack, así que se omite el warmup.
+  const stackE2eLayers = selected.filter((l) => l === 'self-test' || l === 'human-test')
+  if (stackE2eLayers.length > 0) {
     const upServer = await stackUp(PORTS.server, 'servidor')
     if (upServer) {
       const warmStart = Date.now()
@@ -161,25 +162,19 @@ async function main() {
         break
       }
       case 'e2e': {
-        const upVite = await stackUp(PORTS.vite, 'vite')
-        if (!upVite) {
-          res = { code: 1, stdout: '', stderr: STACK_HINT }
-        } else {
-          // el e2e por defecto corre en FAKE (FixtureServer) en el puerto del
-          // proxy (8787): si el proxy está arriba se para para esta capa y se
-          // restaura al terminar (lo deja como estaba).
-          const proxyWasUp = await stackUp(PORTS.proxy, 'proxy')
-          if (proxyWasUp) {
-            log('e2e (fake) usa el puerto del proxy (8787): parando el proxy para esta capa')
-            run('node', ['scripts/ctl.mjs', 'stop', 'proxy'], { quiet: true })
-            await waitForPortDown(PORTS.proxy, 15_000)
-          }
-          try {
-            res = run(binName('npx'), ['playwright', 'test'], { cwd: WEB_DIR })
-          } finally {
-            if (proxyWasUp) run('node', ['scripts/ctl.mjs', 'start', 'proxy'], { quiet: true })
+        // en modo fake (default) playwright arranca vite solo (webServer en
+        // playwright.config.ts). Solo se requiere vite pre-existente en modo real.
+        const isReal = process.env.E2E_BACKEND === 'real'
+        if (isReal) {
+          const upVite = await stackUp(PORTS.vite, 'vite')
+          if (!upVite) {
+            res = { code: 1, stdout: '', stderr: STACK_HINT }
+            break
           }
         }
+        // el e2e por defecto corre en FAKE (FixtureServer) en puerto 8788.
+        // No se toca el proxy (puerto 8787) — ambos pueden correr simultáneamente.
+        res = run(binName('npx'), ['playwright', 'test'], { cwd: WEB_DIR })
         break
       }
     }

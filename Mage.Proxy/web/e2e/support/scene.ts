@@ -10,6 +10,7 @@ import { framesOf, lastGameView, myHandEntries, parseFrames, playableInView } fr
 export interface MageSceneState {
   cards: Record<string, { x: number; y: number }>
   playable: string[]
+  crossZone: string[]
   click: (id: string) => boolean
   hoveredCardId: string | null
   targeting: {
@@ -17,13 +18,13 @@ export interface MageSceneState {
     source: string | null
     ids: string[]
     chosen: string[]
-  }
+   }
   combat: {
     active: boolean
     mode: 'attack' | 'block' | null
     selectable: string[]
     chosen: string[]
-  }
+   }
   game: { turn: number; phase: string; step: string; priority: boolean } | null
 }
 
@@ -35,6 +36,7 @@ export interface SceneCardPosition {
 export interface SceneState {
   cards?: Record<string, SceneCardPosition>
   playable?: string[]
+  crossZone?: string[]
   game?: { turn?: number; phase?: string; step?: string; priority?: boolean }
 }
 
@@ -97,6 +99,13 @@ export async function playableInScene(page: Page, id: string | null): Promise<bo
   if (!id) return false
   const scene = await sceneState(page)
   return Array.isArray(scene?.playable) && scene.playable.includes(id)
+}
+
+/** ¿La carta (por UUID) es jugable desde otra zona (ray) según el estado REAL de la app? */
+export async function crossZoneInScene(page: Page, id: string | null): Promise<boolean> {
+  if (!id) return false
+  const scene = await sceneState(page)
+  return Array.isArray(scene?.crossZone) && scene.crossZone.includes(id)
 }
 
 /** Id de la carta por nombre si está en la lista de jugables EN VIVO de la app. */

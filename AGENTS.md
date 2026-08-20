@@ -8,6 +8,10 @@ client (`Mage.Proxy/web`, TypeScript + Vite).
 lessons. Update it when finishing a task (phases, lessons, quality table,
 dated log) and record the date in the header.
 
+**Contributor docs:**
+- `Mage.Proxy/README.md` — proxy architecture, full protocol reference (all events/actions), serialization rules, type system
+- `CONTRIBUTING.md` — developer workflow, file map, how to add events/types/features, testing guide
+
 ## Development stack
 
 - Control: `node scripts/ctl.mjs start|stop|restart|status [server|proxy|vite|all]`
@@ -47,14 +51,14 @@ Success criteria and details in the `mage-test-suite` skill.
 Browser E2E (Playwright) runs in **two modes with the SAME specs**:
 
 - **fake (default, `npm run test:e2e` / `test:e2e:fake`)**: against the
-  `FixtureServer` (`Mage.Proxy/web/fixtures/fake.ts`, contract from
-  `src/net/types.ts` + declarative scenarios in `fixtures/scenarios/`). No
-  Java, no proxy, no flakes — the daily iteration loop. **The real proxy must
-  not be running** (the fake uses port 8787); if it is, the fixture fails with
-  a clear message. `playwright.config.ts` starts vite only in fake mode.
+   `FixtureServer` (`Mage.Proxy/web/fixtures/fake.ts`, contract from
+   `src/net/types.ts` + declarative scenarios in `fixtures/scenarios/`). No
+   Java, no proxy, no flakes — the daily iteration loop. Uses dedicated port
+   **8788** (independent of proxy port 8787). `playwright.config.ts` starts
+   vite only in fake mode.
 - **real (`E2E_BACKEND=real npm run test:e2e:real`)**: against the stack
-  (server+proxy+vite). This is the anti-drift net: if the real protocol moves,
-  this mode detects it. Runs in CI/nightly and on demand.
+   (server+proxy+vite). This is the anti-drift net: if the real protocol moves,
+   this mode detects it. Runs in CI/nightly and on demand.
 
 The FakeServer is typed against `types.ts` (typecheck guards consistency) and
 the frames it emits are validated with `fixtures/schema.ts` (zod) — if the real
@@ -75,13 +79,16 @@ the source of flakes).
    signature `(turn, step, hand, untapped lands)` as defense. Verified in real
    ×6+ (the demo casts and resolves Bolts).
 2. **`spells.spec.ts` and `targeting.spec.ts` in real mode: GREEN** (2026-08-16).
-   The cause of their failures ("Sim win after the mana ask") was the
-   **degraded server state caused by orphan sessions** — restarting
-   server+proxy TOGETHER fixes it (`ctl.mjs restart all`); restarting ONLY the
-  proxy leaves the first login hanging. Combined with test fixes (`nextManaSource`
-   retry, strict cursor in the mana loop).
+    The cause of their failures ("Sim win after the mana ask") was the
+    **degraded server state caused by orphan sessions** — restarting
+    server+proxy TOGETHER fixes it (`ctl.mjs restart all`); restarting ONLY the
+   proxy leaves the first login hanging. Combined with test fixes (`nextManaSource`
+    retry, strict cursor in the mana loop).
 3. **The fake-mode demo (`fixtures/scenarios/fullFlow.ts`) suffers neither the
-   freeze nor the flood**: the timeline is deterministic.
+    freeze nor the flood**: the timeline is deterministic.
+4. **Port conflict resolved (2026-08-20)**: fake mode now uses port **8788** (dedicated),
+   real proxy stays on **8787**. No more stop/start race conditions — both modes
+   can run simultaneously.
 
 ## E2E with simulated opponents (Sim) and WS helper
 
@@ -118,5 +125,5 @@ test window).
   repeatedly, it's a real bug, not a flake.
 - **Do not touch** generated files: `dist/`, `.run/`, `local-server/`,
   `node_modules/`, `target/`.
-- No comments in code unless requested. Replies in Spanish.
+- No comments in code unless requested.
 - Do not commit unless explicitly requested.

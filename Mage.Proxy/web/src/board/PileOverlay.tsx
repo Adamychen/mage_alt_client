@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import type { CardView } from '../net/types'
 import CardSlot from './CardSlot'
 import './PileOverlay.css'
@@ -7,10 +7,13 @@ interface PileOverlayProps {
   title: string
   cards: Record<string, CardView>
   onClose: () => void
+  playableIds?: Set<string>
+  onPlayCard?: (id: string) => void
 }
 
-export default function PileOverlay({ title, cards, onClose }: PileOverlayProps) {
+export default function PileOverlay({ title, cards, onClose, playableIds, onPlayCard }: PileOverlayProps) {
   const entries = Object.entries(cards)
+  const playableSet = useMemo(() => playableIds ?? new Set<string>(), [playableIds])
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
@@ -34,8 +37,11 @@ export default function PileOverlay({ title, cards, onClose }: PileOverlayProps)
           {entries.map(([id, card]) => (
             <CardSlot
               key={id}
+              cardId={id}
               card={card}
               className="pile-card"
+              isPlayable={playableSet.has(id)}
+              onClick={playableSet.has(id) && onPlayCard ? () => onPlayCard(id) : undefined}
             />
           ))}
           {entries.length === 0 && (

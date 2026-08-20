@@ -117,7 +117,30 @@ export function playableInView(view: Record<string, unknown> | null, name: strin
   if (!objects) return null
   for (const [id, card] of myHandEntries(view)) {
     if (objects[id] && (card.name === name || card.displayName === name)) return id
-  }
+   }
+  return null
+}
+
+/** Id de una carta jugable desde OTRA zona (cementerio/exilio/...) según
+ *  canPlayObjects del frame: un id que NO está en la mano y sí en objects.
+ *  La metadata se resuelve del graveyard/exile del jugador controlado. */
+export function crossZoneIdInView(view: Record<string, unknown> | null, name: string): string | null {
+  if (!view) return null
+  const objects = (view.canPlayObjects as Record<string, unknown> | undefined)?.objects as Record<string, unknown> | undefined
+  if (!objects) return null
+  const myHand = (view.myHand ?? {}) as Record<string, { name?: string; displayName?: string }>
+  const me = (view.players ?? []).find((p) => (p as { controlled?: boolean }).controlled) as
+   | { graveyard?: Record<string, { name?: string; displayName?: string }>; exile?: Record<string, { name?: string; displayName?: string }> }
+   | undefined
+  if (!me) return null
+  const inZone = (zone: Record<string, { name?: string; displayName?: string }> | undefined, id: string): boolean => {
+    const card = zone?.[id]
+    return !!card && (card.name === name || card.displayName === name)
+    }
+  for (const id of Object.keys(objects)) {
+    if (id in myHand) continue
+    if (inZone(me.graveyard, id) || inZone(me.exile, id)) return id
+    }
   return null
 }
 

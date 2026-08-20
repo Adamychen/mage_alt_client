@@ -167,6 +167,15 @@
   border-color: #4cd07d;
 }
 
+.ray-back {
+  background: radial-gradient(circle at 50% 40%, #3a2a12, #1a1508 75%);
+  border-color: #ffb03a;
+}
+
+.ray-icon {
+  color: #ffb03a;
+}
+
 .stack-mark {
   font-size: 14px;
   color: #ffb03a;
@@ -210,4 +219,34 @@
 .clickable-pile:hover {
   transform: scale(1.08);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Playable badge on exile/graveyard icons */
+.playable-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #ffb03a;
+  color: #1a1508;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}
+
+.has-playable {
+  animation: pulse-playable 2s ease-in-out infinite;
+}
+
+@keyframes pulse-playable {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 176, 58, 0); }
+  50% { box-shadow: 0 0 8px 2px rgba(255, 176, 58, 0.4); }
 }

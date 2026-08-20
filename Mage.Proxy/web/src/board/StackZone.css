@@ -1,7 +1,8 @@
 .stack-zone {
   position: absolute;
-  top: 24px;
+  top: 50%;
   right: 24px;
+  transform: translateY(-50%);
   z-index: 15;
   pointer-events: none;
 }
