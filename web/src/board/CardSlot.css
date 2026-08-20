@@ -19,11 +19,10 @@
 }
 
 /* Hover */
-.card-slot.clickable:hover {
-  transform: scale(1.12);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65), inset 0 0 0 1px rgba(220, 220, 225, 0.7);
-  z-index: 30;
-  border-color: rgba(0, 0, 0, 0.6);
+.card-slot:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
+  z-index: 40;
+  border-color: rgba(255, 208, 112, 0.8);
 }
 
 /* Tapped */
@@ -32,8 +31,10 @@
   transform-origin: center center;
   margin: 12px 0;
 }
-.card-slot.tapped.clickable:hover {
-  transform: rotate(90deg) scale(0.92);
+.card-slot.tapped:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
+  z-index: 40;
+  border-color: rgba(255, 208, 112, 0.8);
 }
 
 /* Playable glow */

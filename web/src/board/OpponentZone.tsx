@@ -8,7 +8,7 @@ import './OpponentZone.css'
 interface OpponentZoneProps {
   player: PlayerView | undefined
   onCardClick?: (id: string) => void
-  onCardHover?: (card: CardView | null) => void
+  onCardHover?: (card: CardView | PermanentView | null, rect?: DOMRect) => void
   targetIds?: Set<string>
 }
 

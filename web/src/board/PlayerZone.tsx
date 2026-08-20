@@ -11,7 +11,7 @@ interface PlayerZoneProps {
   hand: Record<string, CardView>
   onCardClick?: (id: string) => void
   onHandCardClick?: (id: string) => void
-  onCardHover?: (card: CardView | null) => void
+  onCardHover?: (card: CardView | PermanentView | null, rect?: DOMRect) => void
   targetIds?: Set<string>
   playableIds?: Set<string>
   crossZonePlayables?: CrossZonePlayable[]
@@ -112,6 +112,7 @@ export default function PlayerZone({
         <HandZone
           cards={hand}
           onCardClick={onHandCardClick}
+          onHover={onCardHover}
           playableIds={playableIds}
           targetIds={targetIds}
           compact

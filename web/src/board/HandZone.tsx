@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CardView } from '../net/types'
-import { awaitImageUrl } from '../cards/cardImages'
 import CardSlot from './CardSlot'
 import './HandZone.css'
 
@@ -10,6 +9,7 @@ const MAX_CARD_W = 160
 interface HandZoneProps {
   cards: Record<string, CardView>
   onCardClick?: (id: string) => void
+  onHover?: (card: CardView | null, rect?: DOMRect) => void
   playableIds?: Set<string>
   targetIds?: Set<string>
   faceDown?: boolean
@@ -19,14 +19,13 @@ interface HandZoneProps {
 export default function HandZone({
   cards,
   onCardClick,
+  onHover,
   playableIds = new Set(),
   targetIds = new Set(),
   faceDown = false,
   compact = false,
 }: HandZoneProps) {
   const entries = Object.entries(cards)
-  const [hoveredCard, setHoveredCard] = useState<{ id: string; url: string } | null>(null)
-  const [hoverX, setHoverX] = useState(0)
   const zoneRef = useRef<HTMLDivElement>(null)
   const [cardW, setCardW] = useState(MAX_CARD_W)
 
@@ -53,33 +52,21 @@ export default function HandZone({
     return () => ro.disconnect()
   }, [entries.length, compact])
 
-  const handleCardEnter = useCallback((id: string, card: CardView) => {
-    if (faceDown) return
-    awaitImageUrl(card).then((url) => {
-      if (url) setHoveredCard({ id, url })
-    })
-  }, [faceDown])
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!zoneRef.current || !compact) return
-    const rect = zoneRef.current.getBoundingClientRect()
-    setHoverX(e.clientX - rect.left)
-  }, [compact])
-
-  const handleCardLeave = useCallback(() => {
-    setHoveredCard(null)
-  }, [])
-
   return (
     <div
       ref={zoneRef}
       className={`hand-zone ${faceDown ? 'face-down' : ''} ${compact ? 'compact' : ''}`}
-      onMouseMove={compact ? handleMouseMove : undefined}
       style={compact ? { '--card-w': `${cardW}px` } as React.CSSProperties : undefined}
     >
       {entries.map(([id, card], i) => (
+        <div
+          key={id}
+          className="hand-card-slot"
+          style={{ zIndex: i } as React.CSSProperties}
+          onMouseEnter={!faceDown && onHover ? (e) => onHover(card, e.currentTarget.getBoundingClientRect()) : undefined}
+          onMouseLeave={!faceDown && onHover ? () => onHover(null) : undefined}
+        >
           <CardSlot
-            key={id}
             cardId={id}
             card={card}
             onClick={onCardClick ? () => onCardClick(id) : undefined}
@@ -87,25 +74,9 @@ export default function HandZone({
             isTarget={targetIds.has(id)}
             faceDown={faceDown}
             className="hand-card"
-            style={{ zIndex: i } as React.CSSProperties}
-            onHover={
-              compact && !faceDown
-                ? (c) => {
-                    if (c) handleCardEnter(id, card)
-                    else handleCardLeave()
-                  }
-                : undefined
-            }
           />
-        ))}
-      {compact && hoveredCard && (
-        <div
-          className="hand-preview"
-          style={{ '--preview-x': `${hoverX}px` } as React.CSSProperties}
-        >
-          <img src={hoveredCard.url} alt="" className="hand-preview-img" draggable={false} />
         </div>
-      )}
+      ))}
     </div>
   )
 }

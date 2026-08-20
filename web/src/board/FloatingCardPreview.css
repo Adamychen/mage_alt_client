@@ -1,0 +1,133 @@
+.floating-card-preview,
+.floating-card-preview * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.floating-card-preview {
+  z-index: 9999;
+  filter: drop-shadow(0 20px 48px rgba(0, 0, 0, 0.92)) drop-shadow(0 0 12px rgba(255, 208, 112, 0.35));
+  animation: floatingCardIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes floatingCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.floating-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #101426;
+  border: 2px solid rgba(255, 208, 112, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.8);
+}
+
+.floating-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.floating-card-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  box-sizing: border-box;
+  gap: 8px;
+  background: linear-gradient(145deg, #181d36 0%, #0d1020 100%);
+  color: #e4e8f8;
+}
+
+.floating-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 6px;
+}
+
+.floating-card-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: #ffffff;
+}
+
+.floating-card-mana {
+  font-size: 13px;
+  color: #ffca58;
+  font-weight: 700;
+}
+
+.floating-card-type {
+  font-size: 12px;
+  color: #9aa2c8;
+}
+
+.floating-card-rules {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #d8ddf0;
+  flex: 1;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.floating-card-pt {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(14, 18, 34, 0.95);
+  border: 1.5px solid #ffca58;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+.floating-card-counters {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(30, 90, 200, 0.92);
+  border: 1.5px solid #8cb4ff;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+.floating-card-token-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #d4af37 0%, #aa8010 100%);
+  color: #000000;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}

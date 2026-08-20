@@ -106,7 +106,7 @@ describe('StackZone', () => {
     expect(onCardClick).toHaveBeenCalledWith('spell-1')
 
     fireEvent.mouseEnter(underlying)
-    expect(onHover).toHaveBeenCalledWith(stack['spell-1'])
+    expect(onHover).toHaveBeenCalledWith(stack['spell-1'], expect.anything())
   })
 
   it('renders ability capsules with resolved source name', () => {

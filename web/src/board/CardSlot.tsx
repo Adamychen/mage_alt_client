@@ -9,7 +9,7 @@ interface CardSlotProps {
   cardId?: string
   card: CardView | PermanentView
   onClick?: () => void
-  onHover?: (card: CardView | PermanentView | null) => void
+  onHover?: (card: CardView | PermanentView | null, rect?: DOMRect) => void
   isTarget?: boolean
   isPlayable?: boolean
   isChosen?: boolean
@@ -67,7 +67,7 @@ export default function CardSlot({
         className,
       ].filter(Boolean).join(' ')}
       onClick={onClick}
-      onMouseEnter={onHover ? () => onHover(card) : undefined}
+      onMouseEnter={onHover ? (e) => onHover(card, e.currentTarget.getBoundingClientRect()) : undefined}
       onMouseLeave={onHover ? () => onHover(null) : undefined}
       style={style}
     >

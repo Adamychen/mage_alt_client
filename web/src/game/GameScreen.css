@@ -67,7 +67,7 @@
 
 .game-body {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) 280px;
+  grid-template-columns: 64px minmax(0, 1fr) 300px;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
@@ -82,8 +82,8 @@
 }
 
 .game-right-panel {
-  width: 280px;
-  min-width: 280px;
+  width: 300px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   background: #0d1020;

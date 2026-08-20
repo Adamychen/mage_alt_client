@@ -6,7 +6,7 @@ import './StackZone.css'
 interface StackZoneProps {
   stack: Record<string, CardView> | null | undefined
   onCardClick?: (id: string) => void
-  onHover?: (card: CardView | null) => void
+  onHover?: (card: CardView | null, rect?: DOMRect) => void
   targetIds?: Set<string>
   onResolveClick?: () => void
   canResolve?: boolean
@@ -95,7 +95,7 @@ export default function StackZone({
                 onCardClick ? 'clickable' : '',
               ].filter(Boolean).join(' ')}
               onClick={onCardClick ? () => onCardClick(topId) : undefined}
-              onMouseEnter={() => onHover?.(topCard)}
+              onMouseEnter={(e) => onHover?.(topCard, e.currentTarget.getBoundingClientRect())}
               onMouseLeave={() => onHover?.(null)}
             >
               <div className="ability-card-header">
@@ -145,7 +145,7 @@ export default function StackZone({
                 onCardClick ? 'clickable' : '',
               ].filter(Boolean).join(' ')}
               onClick={onCardClick ? () => onCardClick(id) : undefined}
-              onMouseEnter={() => onHover?.(card)}
+              onMouseEnter={(e) => onHover?.(card, e.currentTarget.getBoundingClientRect())}
               onMouseLeave={() => onHover?.(null)}
               style={{ zIndex: underlyingItems.length - idx }}
             >

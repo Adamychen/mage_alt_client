@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
-import type { CardView, GameView } from '../net/types'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { CardView, GameView, PermanentView } from '../net/types'
 import OpponentZone from './OpponentZone'
 import PlayerZone from './PlayerZone'
 import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
+import FloatingCardPreview from './FloatingCardPreview'
 import { useSceneBridge } from './sceneBridge'
 import type { CrossZonePlayable } from './crossZone'
 import './GameBoard.css'
@@ -62,6 +63,33 @@ export default function GameBoard({
   const targetIdSet = useMemo(() => new Set(targetIds), [targetIds])
   const playableIdSet = useMemo(() => new Set(playableIds), [playableIds])
 
+  const boardRef = useRef<HTMLDivElement>(null)
+  const [floatingCard, setFloatingCard] = useState<CardView | PermanentView | null>(null)
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null)
+  const hoverTimeoutRef = useRef<number | null>(null)
+
+  const handleCardHover = useCallback(
+    (card: CardView | PermanentView | null, rect?: DOMRect) => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+
+      if (card && rect) {
+        setFloatingCard(card)
+        setAnchorRect(rect)
+        onCardHover?.(card as CardView | null)
+      } else {
+        hoverTimeoutRef.current = window.setTimeout(() => {
+          setFloatingCard(null)
+          setAnchorRect(null)
+          onCardHover?.(null)
+        }, 50)
+      }
+    },
+    [onCardHover]
+  )
+
   useSceneBridge({
     game,
     playableIds,
@@ -71,7 +99,7 @@ export default function GameBoard({
     combatMode,
     combatChosen,
     crossZonePlayables,
-   })
+  })
 
   const onHandCardClick = onPlayableClick
 
@@ -97,33 +125,33 @@ export default function GameBoard({
   }, [game])
 
   return (
-    <div className="game-board">
+    <div className="game-board" ref={boardRef}>
       <OpponentZone
         player={opp0}
         onCardClick={onTargetClick}
-        onCardHover={onCardHover}
+        onCardHover={handleCardHover}
         targetIds={targetIdSet}
       />
       <div className="board-divider" />
-        <PlayerZone
-         player={isSpectator ? oppBottom : me}
-         hand={isSpectator ? spectatorBottomHand : (game?.myHand ?? {})}
-         onCardClick={(id) => {
-           if (combatSelectable.includes(id)) onCombatClick?.(id)
-           else if (targetIds.includes(id)) onTargetClick?.(id)
-           else if (playableIds.includes(id)) onPlayableClick?.(id)
-          }}
-         onHandCardClick={onHandCardClick}
-         onCardHover={onCardHover}
-         targetIds={targetIdSet}
-         playableIds={playableIdSet}
-         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
-         onPlayCrossZone={onPlayCrossZone}
-        />
+      <PlayerZone
+        player={isSpectator ? oppBottom : me}
+        hand={isSpectator ? spectatorBottomHand : (game?.myHand ?? {})}
+        onCardClick={(id) => {
+          if (combatSelectable.includes(id)) onCombatClick?.(id)
+          else if (targetIds.includes(id)) onTargetClick?.(id)
+          else if (playableIds.includes(id)) onPlayableClick?.(id)
+        }}
+        onHandCardClick={onHandCardClick}
+        onCardHover={handleCardHover}
+        targetIds={targetIdSet}
+        playableIds={playableIdSet}
+        crossZonePlayables={isSpectator ? [] : crossZonePlayables}
+        onPlayCrossZone={onPlayCrossZone}
+      />
       <StackZone
         stack={game?.stack ?? null}
         onCardClick={onTargetClick}
-        onHover={onCardHover}
+        onHover={handleCardHover}
         targetIds={targetIdSet}
         onResolveClick={onResolveClick}
         canResolve={!!me?.hasPriority}
@@ -133,6 +161,11 @@ export default function GameBoard({
         targetIds={targetIds}
         chosenIds={chosenTargetIds}
         cards={allTargetCards}
+      />
+      <FloatingCardPreview
+        card={floatingCard}
+        anchorRect={anchorRect}
+        boardRect={boardRef.current?.getBoundingClientRect() ?? null}
       />
     </div>
   )
