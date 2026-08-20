@@ -29,12 +29,15 @@ export function cardKey(card: CardView): string | null {
   const set = card.expansionSetCode
   const num = card.cardNumber
   const isToken = card.isToken === true || card.mageObjectType === 'TOKEN'
-  // Tokens have cardNumber="0" — resolve via Scryfall token sets (t-prefixed)
   if (isToken && set) {
     const name = card.displayName || card.name || ''
     if (!name) return null
+    // Skip XMAGE set (special/helper tokens with no real art)
+    if (set === 'XMAGE') return null
     const tokenSet = 't' + set.toLowerCase()
-    const slug = name.replace(/\s+/g, '-').toLowerCase()
+    // Strip " Token" suffix for Scryfall lookup (e.g. "Goblin Token" → "goblin")
+    const stripped = name.replace(/\s+Token$/i, '')
+    const slug = stripped.replace(/\s+/g, '-').toLowerCase()
     return `${tokenSet}/${slug}`
   }
   if (!set || !num || num === '0') return null
@@ -74,13 +77,7 @@ export function tokenScryfallKey(setCode: string, name: string): string | null {
 async function load(key: string): Promise<string | null> {
   await acquireLoadSlot()
   try {
-    const url = await tryFetch(key)
-    // Tokens with " Token" suffix may not exist on Scryfall — retry without it
-    if (url === null && key.includes('-token')) {
-      const fallback = key.replace(/-token$/, '')
-      return await tryFetch(fallback)
-    }
-    return url
+    return await tryFetch(key)
   } finally {
     releaseLoadSlot()
   }

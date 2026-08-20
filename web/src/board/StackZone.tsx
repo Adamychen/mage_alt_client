@@ -10,16 +10,19 @@ interface StackZoneProps {
   canResolve?: boolean
 }
 
+function isStackAbility(card: CardView): boolean {
+  const t = card.mageObjectType ?? ''
+  return t.includes('Ability') || t.includes('ABILITY')
+}
+
 function stackTypeLabel(card: CardView): string {
-  if (card.isAbility) {
-    const abilityKind = card.abilityType === 'ACTIVATED'
-      ? 'Habilidad activada'
-      : card.abilityType === 'TRIGGERED'
-        ? 'Habilidad disparada'
-        : card.abilityType === 'LOYALTY'
-          ? 'Habilidad de lealtad'
-          : 'Habilidad'
-    return abilityKind
+  if (isStackAbility(card)) {
+    const at = card.abilityType ?? ''
+    if (at === 'Triggered' || at === 'Triggered Mana') return 'Habilidad disparada'
+    if (at === 'Activated' || at === 'Mana') return 'Habilidad activada'
+    if (at === 'Static') return 'Habilidad estática'
+    if (at === 'Loyalty') return 'Habilidad de lealtad'
+    return 'Habilidad'
   }
   const types = card.cardTypes ?? []
   const supers = card.superTypes ?? []
@@ -38,14 +41,10 @@ function stackTypeLabel(card: CardView): string {
 }
 
 function stackRulesText(card: CardView): string | null {
-  // For abilities, the ability CardView has rules text
-  if (card.isAbility && card.ability) {
-    const rules = card.ability.rules ?? []
-    return rules.length ? rules.join('\n') : null
-  }
-  // For spells, use the card's own rules
+  // Abilities on the stack have rules like "{SourceName} — trigger text"
   const rules = card.rules ?? []
-  return rules.length ? rules.join('\n') : null
+  if (rules.length) return rules.join('\n')
+  return null
 }
 
 export default function StackZone({

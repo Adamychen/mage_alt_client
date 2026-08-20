@@ -61,19 +61,24 @@ describe('token image resolution', () => {
     vi.unstubAllGlobals()
   })
 
-  it('builds token Scryfall key from setCode + name', () => {
+  it('builds token Scryfall key from setCode + name, stripping "Token" suffix', () => {
     const token = { name: 'Goblin Token', expansionSetCode: 'GRN', cardNumber: '0', isToken: true } as CardView
-    expect(cardKey(token)).toBe('tgrn/goblin-token')
+    expect(cardKey(token)).toBe('tgrn/goblin')
   })
 
   it('handles Treasure token', () => {
     const token = { name: 'Treasure Token', expansionSetCode: 'XLN', cardNumber: '0', isToken: true } as CardView
-    expect(cardKey(token)).toBe('txln/treasure-token')
+    expect(cardKey(token)).toBe('txln/treasure')
   })
 
   it('uses mageObjectType for token detection', () => {
     const token = { name: 'Soldier Token', expansionSetCode: 'M21', cardNumber: '0', mageObjectType: 'TOKEN' } as CardView
-    expect(cardKey(token)).toBe('tm21/soldier-token')
+    expect(cardKey(token)).toBe('tm21/soldier')
+  })
+
+  it('returns null for XMAGE set tokens (special/helper)', () => {
+    const token = { name: 'Face Down', expansionSetCode: 'XMAGE', cardNumber: '0', isToken: true } as CardView
+    expect(cardKey(token)).toBeNull()
   })
 
   it('returns null for token without setCode', () => {
@@ -101,24 +106,23 @@ describe('token image resolution', () => {
 
     await expect(awaitImageUrl(token)).resolves.toBe('https://img.test/goblin.jpg')
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.scryfall.com/cards/tgrn/goblin-token?format=json',
+      'https://api.scryfall.com/cards/tgrn/goblin?format=json',
       expect.anything(),
     )
   })
 
   it('falls back to name without "Token" suffix on 404', async () => {
     const token = { name: 'Goblin Token', expansionSetCode: 'GRN', cardNumber: '0', isToken: true } as CardView
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: false, status: 404 })  // tgrn/goblin-token → 404
-      .mockResolvedValueOnce({                            // tgrn/goblin → 200
-        ok: true, status: 200,
-        json: async () => ({ image_uris: { normal: 'https://img.test/goblin2.jpg' }, name: 'Goblin' }),
-      })
+    // cardKey already strips "Token", so the key is tgrn/goblin — no fallback needed
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true, status: 200,
+      json: async () => ({ image_uris: { normal: 'https://img.test/goblin.jpg' }, name: 'Goblin' }),
+    })
     vi.stubGlobal('fetch', fetchMock)
 
-    await expect(awaitImageUrl(token)).resolves.toBe('https://img.test/goblin2.jpg')
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(fetchMock).toHaveBeenLastCalledWith(
+    await expect(awaitImageUrl(token)).resolves.toBe('https://img.test/goblin.jpg')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
       'https://api.scryfall.com/cards/tgrn/goblin?format=json',
       expect.anything(),
     )
