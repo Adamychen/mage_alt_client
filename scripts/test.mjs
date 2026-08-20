@@ -7,18 +7,18 @@
 import path from 'node:path'
 import { binName, log, logError, PORTS, repoRoot, run, waitForPort, waitForPortDown } from './lib.mjs'
 
-const WEB_DIR = path.join(repoRoot, 'Mage.Proxy', 'web')
+const WEB_DIR = path.join(repoRoot, 'web')
 const STACK_HINT = 'el stack no está corriendo — ejecuta primero: node scripts/ctl.mjs start'
 
 const LAYERS = [
-  { name: 'unit', desc: 'vitest run (Mage.Proxy/web)' },
-  { name: 'coverage', desc: 'vitest run --coverage (Mage.Proxy/web)' },
-  { name: 'typecheck', desc: 'tsc -b --noEmit (Mage.Proxy/web)' },
-  { name: 'build', desc: 'tsc -b && vite build (Mage.Proxy/web)' },
+  { name: 'unit', desc: 'vitest run (web)' },
+  { name: 'coverage', desc: 'vitest run --coverage (web)' },
+  { name: 'typecheck', desc: 'tsc -b --noEmit (web)' },
+  { name: 'build', desc: 'tsc -b && vite build (web)' },
   { name: 'java', desc: 'mvn -pl Mage.Proxy -am test' },
   { name: 'self-test', desc: 'E2E headless (ws://127.0.0.1:8787)' },
   { name: 'human-test', desc: 'E2E jugador humano contra IA (ws://127.0.0.1:8787)' },
-  { name: 'e2e', desc: 'playwright test (Mage.Proxy/web)' },
+  { name: 'e2e', desc: 'playwright test (web)' },
 ]
 const NAMES = new Set(LAYERS.map((l) => l.name))
 
@@ -127,16 +127,16 @@ async function main() {
 
     switch (name) {
       case 'unit':
-        res = run(binName('npm'), ['--prefix', 'Mage.Proxy/web', 'run', 'test'])
+        res = run(binName('npm'), ['--prefix', 'web', 'run', 'test'])
         break
       case 'coverage':
-        res = run(binName('npm'), ['--prefix', 'Mage.Proxy/web', 'run', 'test:coverage'])
+        res = run(binName('npm'), ['--prefix', 'web', 'run', 'test:coverage'])
         break
       case 'typecheck':
-        res = run(binName('npm'), ['--prefix', 'Mage.Proxy/web', 'run', 'typecheck'])
+        res = run(binName('npm'), ['--prefix', 'web', 'run', 'typecheck'])
         break
       case 'build':
-        res = run(binName('npm'), ['--prefix', 'Mage.Proxy/web', 'run', 'build'])
+        res = run(binName('npm'), ['--prefix', 'web', 'run', 'build'])
         break
       case 'java':
         res = run(binName('mvn'), ['-pl', 'Mage.Proxy', '-am', 'test'])

@@ -14,18 +14,18 @@ en orden. Código de salida 0 = todo verde.
 
 | Capa | Comando efectivo | Requiere stack | Criterio |
 | --- | --- | --- | --- |
-| `unit` | `npm --prefix Mage.Proxy/web run test` (vitest) | no | todos los tests pasan |
-| `coverage` | `npm --prefix Mage.Proxy/web run test:coverage` | no | pasa + cobertura ≥ ~87% stmts (objetivo: no bajar respecto a PROJECT.md) |
-| `typecheck` | `npm --prefix Mage.Proxy/web run typecheck` (tsc -b --noEmit) | no | sin errores |
-| `build` | `npm --prefix Mage.Proxy/web run build` (tsc -b && vite build) | no | build completo |
+| `unit` | `npm --prefix web run test` (vitest) | no | todos los tests pasan |
+| `coverage` | `npm --prefix web run test:coverage` | no | pasa + cobertura ≥ ~87% stmts (objetivo: no bajar respecto a PROJECT.md) |
+| `typecheck` | `npm --prefix web run typecheck` (tsc -b --noEmit) | no | sin errores |
+| `build` | `npm --prefix web run build` (tsc -b && vite build) | no | build completo |
 | `java` | `mvn -pl Mage.Proxy -am test` | no | tests del proxy Java pasan |
 | `self-test` | `node scripts/self-test.mjs` (E2E headless WS) | server + proxy | 10+ checks PASS, 0 FAIL |
 | `human-test` | `node scripts/human-test.mjs` (E2E jugador humano vs IA) | server + proxy | 26 checks TODO PASS |
-| `e2e` | `npx playwright test` (en Mage.Proxy/web) | vite | 0 failed |
+| `e2e` | `npx playwright test` (en web) | vite | 0 failed |
 
 ## Cuándo correr cada cosa
 
-- Tocar `Mage.Proxy/web` → `unit` + `typecheck` (mínimo); `build` si cambió la
+- Tocar `web` → `unit` + `typecheck` (mínimo); `build` si cambió la
   build; `e2e` si cambió UI/flujo.
 - Tocar Java del proxy (`Mage.Proxy/src`) → `java` + `node scripts/build.mjs proxy`
   + `node scripts/ctl.mjs restart proxy` (el jar cambia: los tests del stack
@@ -50,4 +50,4 @@ en frío del servidor. El test ya reintenta (`watchTable` 2º intento). Si falla
 1. Suite completa en verde (`node scripts/test.mjs`) o capas relevantes.
 2. Si E2E headless/humano pasaron, actualizar `PROJECT.md`: tabla de calidad,
    lecciones y log con fecha (header: última actualización).
-3. No dejar cambios sin validar en `Mage.Proxy/web` ni en Java del proxy.
+3. No dejar cambios sin validar en `web` ni en Java del proxy.

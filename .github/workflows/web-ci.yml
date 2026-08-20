@@ -1,9 +1,9 @@
-name: Web client CI (Mage.Proxy/web)
+name: Web client CI (web)
 
 on:
   push:
     paths:
-      - 'Mage.Proxy/web/**'
+      - 'web/**'
       - 'Mage.Proxy/src/**'
       - 'Mage.Proxy/pom.xml'
       - 'scripts/**'
@@ -11,7 +11,7 @@ on:
       - '.github/workflows/web-ci.yml'
   pull_request:
     paths:
-      - 'Mage.Proxy/web/**'
+      - 'web/**'
       - 'Mage.Proxy/src/**'
       - 'Mage.Proxy/pom.xml'
       - 'scripts/**'
@@ -32,21 +32,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: Mage.Proxy/web/package-lock.json
+          cache-dependency-path: web/package-lock.json
       - name: npm ci
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm ci
       - name: Unit tests (vitest)
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm run test
       - name: Coverage gate (vitest)
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm run test:coverage
       - name: Typecheck
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm run typecheck
       - name: Build
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm run build
 
   proxy:
@@ -75,12 +75,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: Mage.Proxy/web/package-lock.json
+          cache-dependency-path: web/package-lock.json
       - name: npm ci
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npm ci
       - name: Install Playwright browser
-        working-directory: Mage.Proxy/web
+        working-directory: web
         run: npx playwright install --with-deps chromium
       - name: Build server, plugins and proxy
         run: node scripts/build.mjs
@@ -98,6 +98,6 @@ jobs:
           name: mage-proxy-integration-logs
           path: |
             .run/*.log
-            Mage.Proxy/web/test-results/**
-            Mage.Proxy/web/playwright-report/**
+            web/test-results/**
+            web/playwright-report/**
           if-no-files-found: ignore

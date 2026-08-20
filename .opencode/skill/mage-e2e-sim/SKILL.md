@@ -1,6 +1,6 @@
 ---
 name: mage-e2e-sim
-description: Contexto completo de los E2E del Mage.Proxy con oponentes simulados (Sim) y helper WS. Úsalo al tocar o depurar Mage.Proxy/web/e2e (spells, targeting, combat, full-flow, wshelper), al investigar flakes de e2e, o al trabajar en el bot Sim del proxy (SimPlayer.java). Keywords: e2e, playwright, Sim, HumanHelper, wshelper, spells.spec, targeting.spec, combat.spec, full-flow.
+description: Contexto completo de los E2E del Mage.Proxy con oponentes simulados (Sim) y helper WS. Úsalo al tocar o depurar web/e2e (spells, targeting, combat, full-flow, wshelper), al investigar flakes de e2e, o al trabajar en el bot Sim del proxy (SimPlayer.java). Keywords: e2e, playwright, Sim, HumanHelper, wshelper, spells.spec, targeting.spec, combat.spec, full-flow.
 ---
 
 # E2E con oponente Simulado (Sim) y helper WS
@@ -22,7 +22,7 @@ description: Contexto completo de los E2E del Mage.Proxy con oponentes simulados
    **OJO**: tras reiniciar SOLO el proxy, el primer login suele colgarse (sesiones
    huérfanas del servidor) — reiniciar servidor+proxy juntos (`ctl.mjs restart all`).
 
-2. **HumanHelper** (`Mage.Proxy/web/e2e/wshelper.ts`): conexión WS de NODE al proxy
+2. **HumanHelper** (`web/e2e/wshelper.ts`): conexión WS de NODE al proxy
    con el MISMO usuario que la página (el connect idempotente del proxy añade la
    conexión sin reiniciar la sesión). Juega el "desarrollo" del humano y mantiene la
    partida en movimiento. Reglas actuales (handleSelect):
@@ -121,7 +121,7 @@ la combinación (ver "✅ CERRADO 2026-08-16 (por la tarde)" abajo) + la flake d
 targeting resuelta el 17 (doble respuesta al mulligan, ver la regla del helper).
 
 **2026-08-17 — arquitectura modular**: los specs ahora usan librerías comunes en
-`Mage.Proxy/web/e2e/support/` (`frames.ts`, `start-game.ts` → `GameSession`,
+`web/e2e/support/` (`frames.ts`, `start-game.ts` → `GameSession`,
 `game-screen.ts`, `scene.ts`, `canvas.ts`, `fake-backend.ts` → `withFakeServer`) y
 escenarios declarativos del FixtureServer en `fixtures/scenarios/` (mini-motor
 `humanGame.ts` + `spells.ts`/`targeting.ts`/`combat.ts`). Todo el e2e corre en fake
@@ -180,7 +180,7 @@ suite real.
 
 ## Workflow de depuración
 
-- Test aislado: `npm --prefix Mage.Proxy/web run test:e2e:spells -- --grep "Blaze" --reporter=list`
+- Test aislado: `npm --prefix web run test:e2e:spells -- --grep "Blaze" --reporter=list`
   (o `test:e2e:targeting|combat|fullflow`; añade `E2E_BACKEND=real` para el contrato real).
 - Frames/sent del test: se capturan en `frames`/`sent` (page.on websocket). Para verlos
   en un fallo: dump temporal con `fs.writeFileSync('/tmp/x.jsonl', ...)` en el punto
@@ -188,9 +188,9 @@ suite real.
 - Decisiones del Sim: `.run/proxy.err.log` (formato "INFORMACIÓN:" — es stderr de JUL;
   los logs INFO del proxy van a `.run/proxy.out.log` con formato distinto).
 - Servidor: `.run/server.out.log` (gameId del match para correlacionar).
-- Error context: `Mage.Proxy/web/test-results/<test>/error-context.md` (snapshot de
+- Error context: `web/test-results/<test>/error-context.md` (snapshot de
   página + error).
-- Tras tocar web: `npm --prefix Mage.Proxy/web run unit` + `npm --prefix Mage.Proxy/web run typecheck`.
+- Tras tocar web: `npm --prefix web run unit` + `npm --prefix web run typecheck`.
 - Tras tocar Java del proxy: `mvn -q -o -pl Mage.Proxy test-compile` → `node scripts/build.mjs proxy` → `node scripts/ctl.mjs restart all` (server+proxy juntos).
 
 ## Conocimiento del servidor (para no volver a buscar)

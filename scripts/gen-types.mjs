@@ -3,7 +3,7 @@
  * gen-types.mjs — Generates TypeScript interfaces from the protocol schema.
  * Usage: node scripts/gen-types.mjs [--validate]
  *
- * The schema (Mage.Proxy/web/schema/contract.schema.json) describes the
+ * The schema (web/schema/contract.schema.json) describes the
  * wire format of Java view objects as serialized by JsonUtil. Fields are
  * named in camelCase (Java reflection), UUID/enums are strings, dates
  * are epoch millis.
@@ -18,8 +18,8 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const SCHEMA_PATH = join(ROOT, 'Mage.Proxy/web/schema/contract.schema.json')
-const OUT_PATH = join(ROOT, 'Mage.Proxy/web/src/net/types.generated.ts')
+const SCHEMA_PATH = join(ROOT, 'web/schema/contract.schema.json')
+const OUT_PATH = join(ROOT, 'web/src/net/types.generated.ts')
 
 const validate = process.argv.includes('--validate')
 

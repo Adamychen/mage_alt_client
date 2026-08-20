@@ -46,7 +46,7 @@ web client doesn't handle them, they fall through to the default case (logged bu
 
 When the XMage server introduces a new view class (e.g., `NewThingView`):
 
-**Step 1**: Add the definition to `Mage.Proxy/web/schema/contract.schema.json`:
+**Step 1**: Add the definition to `web/schema/contract.schema.json`:
 ```json
 {
   "NewThingView": {
@@ -62,7 +62,7 @@ When the XMage server introduces a new view class (e.g., `NewThingView`):
 
 **Step 2**: Regenerate TypeScript:
 ```bash
-cd Mage.Proxy/web
+cd web
 npm run gen-types
 ```
 
@@ -85,10 +85,10 @@ When XMage releases a new version with changed view classes:
 
 ```bash
 # 1. Update the schema (manually diff the Java changes)
-# Edit Mage.Proxy/web/schema/contract.schema.json
+# Edit web/schema/contract.schema.json
 
 # 2. Regenerate types
-cd Mage.Proxy/web
+cd web
 npm run gen-types
 
 # 3. Verify no type errors
@@ -126,7 +126,7 @@ npx vitest run
 
 | File | Purpose |
 |---|---|
-| `Mage.Proxy/web/schema/contract.schema.json` | Wire format definition (source of truth for types) |
+| `web/schema/contract.schema.json` | Wire format definition (source of truth for types) |
 | `scripts/gen-types.mjs` | JSON Schema → TypeScript generator |
 | `scripts/export-schema.mjs` | (Future) Java source → JSON Schema extractor |
 
@@ -143,10 +143,10 @@ npx vitest run
 
 ```bash
 # Unit tests (vitest)
-cd Mage.Proxy/web && npx vitest run
+cd web && npx vitest run
 
 # Type checking
-cd Mage.Proxy/web && npx tsc -b --noEmit
+cd web && npx tsc -b --noEmit
 
 # Full suite (all layers)
 node scripts/test.mjs
@@ -158,10 +158,10 @@ node scripts/test.mjs build
 node scripts/test.mjs java
 
 # E2E (fake mode, no Java needed)
-cd Mage.Proxy/web && npx playwright test
+cd web && npx playwright test
 
 # E2E (real mode, requires stack)
-cd Mage.Proxy/web && E2E_BACKEND=real npx playwright test
+cd web && E2E_BACKEND=real npx playwright test
 ```
 
 ## Common Pitfalls

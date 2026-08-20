@@ -457,6 +457,12 @@ public class ProxyClient implements MageClient {
                     gateway.send(conn, resultJson(action, requestId, ok, ok ? null : ERR_FAILED, null));
                     break;
                 }
+                case "getGameChatId": {
+                    UUID gameId = uuid(args, "gameId", null);
+                    UUID chatId = gameId != null ? session.getGameChatId(gameId).orElse(null) : null;
+                    gateway.send(conn, resultJson(action, requestId, true, null, chatId));
+                    break;
+                }
                 case "sendChatMessage": {
                     UUID chatId = uuid(args, "chatId", null);
                     String text = str(args, "text", "");

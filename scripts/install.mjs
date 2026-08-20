@@ -41,9 +41,9 @@ async function main() {
   log('== paso 4/5: copiar plugins a local-server/plugins/ ==')
   copyPluginJars()
 
-  log('== paso 5/5: npm install en Mage.Proxy/web ==')
-  res = run(binName('npm'), ['--prefix', 'Mage.Proxy/web', 'install'])
-  if (res.code !== 0) fail('npm install en Mage.Proxy/web', res)
+  log('== paso 5/5: npm install en web ==')
+  res = run(binName('npm'), ['--prefix', 'web', 'install'])
+  if (res.code !== 0) fail('npm install en web', res)
 
   log('')
   log('Instalación completada. Arranca todo sin bloquear la shell con: node scripts/ctl.mjs start — y testea con: node scripts/test.mjs')

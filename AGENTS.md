@@ -2,7 +2,7 @@
 
 A modern web client for XMage (Magic: The Gathering). The stack consists of:
 XMage server (Java, test mode) + WebSocket proxy (`Mage.Proxy`, Java) + web
-client (`Mage.Proxy/web`, TypeScript + Vite).
+client (`web`, TypeScript + Vite).
 
 **Master document: `PROJECT.md`** — source of truth for status, phases and
 lessons. Update it when finishing a task (phases, lessons, quality table,
@@ -34,6 +34,22 @@ dated log) and record the date in the header.
   proxy WS and the target server → to play against remote servers from the browser those
   fields must be split (pending, Phase 3).
 
+## Working model & isolation
+
+This repo has three independent concerns, each developable on its own:
+
+- **`web/`** — React/Vite/TS client. **No Java, no fork, no proxy needed.**
+  Runs against the bundled `FakeServer` for all `unit`/`typecheck`/`build`/
+  `e2e-fake`. Scoped doc: `web/AGENTS.md`.
+- **`Mage.Proxy/`** — Java WebSocket bridge. Needs the XMage fork built into
+  `~/.m2` (once per XMage release); develop standalone after that. Scoped doc:
+  `Mage.Proxy/AGENTS.md`.
+- **XMage fork (`Mage.*`)** — the rules engine. Large; only rebuilt when the
+  XMage version changes or the test-mode patches need adjusting.
+
+Real-mode E2E (against a live proxy + server) reuses a prebuilt
+`mage-proxy-*.jar` (`build.mjs proxy` once); web developers never run Maven.
+
 ## Test suite
 
 Orchestrator: `node scripts/test.mjs [layer...] [--skip=unit,e2e]` — layers:
@@ -42,7 +58,7 @@ Orchestrator: `node scripts/test.mjs [layer...] [--skip=unit,e2e]` — layers:
 `build` (tsc -b && vite build) · `java` (mvn -pl Mage.Proxy -am test) ·
 `self-test` (headless E2E against the proxy; requires stack) ·
 `human-test` (E2E human player vs AI; requires stack) ·
-`e2e` (playwright in Mage.Proxy/web; requires vite)
+`e2e` (playwright in web; requires vite)
 
 Success criteria and details in the `mage-test-suite` skill.
 
@@ -51,7 +67,7 @@ Success criteria and details in the `mage-test-suite` skill.
 Browser E2E (Playwright) runs in **two modes with the SAME specs**:
 
 - **fake (default, `npm run test:e2e` / `test:e2e:fake`)**: against the
-   `FixtureServer` (`Mage.Proxy/web/fixtures/fake.ts`, contract from
+   `FixtureServer` (`web/fixtures/fake.ts`, contract from
    `src/net/types.ts` + declarative scenarios in `fixtures/scenarios/`). No
    Java, no proxy, no flakes — the daily iteration loop. Uses dedicated port
    **8788** (independent of proxy port 8787). `playwright.config.ts` starts
@@ -93,17 +109,17 @@ the source of flakes).
 ## E2E with simulated opponents (Sim) and WS helper
 
 UI E2E uses `SIM` seats (the proxy joins a deterministic bot with its own
-session) and a `HumanHelper` over WS (`Mage.Proxy/web/e2e/wshelper.ts`) that
+session) and a `HumanHelper` over WS (`web/e2e/wshelper.ts`) that
 plays lands, passes priorities, discards and answers asks — fragile actions go
 over WS and the UI only verifies (dialogs, render, pageerrors). Tests do NOT
 enable the web's auto-pass (it competes with the launch windows). Load `mage-e2e-sim`
 before touching or debugging any E2E.
 
 **Modular architecture (2026-08-17)**: tests by functionality, independent
-game per test. Common libraries in `Mage.Proxy/web/e2e/support/`
+game per test. Common libraries in `web/e2e/support/`
 (`frames.ts`, `start-game.ts`, `game-screen.ts`, `scene.ts`, `canvas.ts`,
 `fake-backend.ts`) and declarative scenarios for the FixtureServer in
-`Mage.Proxy/web/fixtures/scenarios/` (mini-engine `humanGame.ts`). Tags by
+`web/fixtures/scenarios/` (mini-engine `humanGame.ts`). Tags by
 domain: `@spells`, `@targeting`, `@combat`, `@fullflow` (scripts
 `test:e2e:spells|targeting|combat|fullflow`). All specs run in fake
 (no stack, ~56s) and in real (contract). When touching `e2e/support/` or the
@@ -113,7 +129,7 @@ test window).
 
 ## Rules
 
-- **After touching `Mage.Proxy/web`**: run `unit` and `typecheck` (and `build` if
+- **After touching `web`**: run `unit` and `typecheck` (and `build` if
   the build changed). After touching proxy Java: `java` + rebuild jar
   (`build.mjs proxy`) + restart proxy.
 - **Before declaring a task "done"**: full suite

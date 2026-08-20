@@ -16,7 +16,7 @@ A modern web client for [XMage](https://github.com/magefree/mage) (Magic: The Ga
 
 - **XMage Server** (`Mage.Server/`): rules engine, card database and networking (Java). Existing project, not modified.
 - **WebSocket Proxy** (`Mage.Proxy/`): bridge that translates between JSON/WebSocket and the XMage protocol (Java serialization). The browser only communicates with this proxy.
-- **Web Client** (`Mage.Proxy/web/`): React + PixiJS (WebGL2) application that renders the board, animations and UI.
+- **Web Client** (`web/`): React + PixiJS (WebGL2) application that renders the board, animations and UI.
 
 ## Tech Stack
 
@@ -48,7 +48,7 @@ A modern web client for [XMage](https://github.com/magefree/mage) (Magic: The Ga
 
 3. Install web client dependencies:
    ```bash
-   cd Mage.Proxy/web && npm install
+   cd web && npm install
    ```
 
 ## Development

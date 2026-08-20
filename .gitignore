@@ -77,10 +77,10 @@ mage-bundle.zip
 # runtime state (dev scripts)
 /.run
 
-# web client (Mage.Proxy/web) build artifacts
-/Mage.Proxy/web/vite.log
-/Mage.Proxy/web/*.tsbuildinfo
-/Mage.Proxy/web/playwright-report
-/Mage.Proxy/web/test-results
-/Mage.Proxy/web/e2e/shots
-/Mage.Proxy/web/coverage
+# web client (web) build artifacts
+/web/vite.log
+/web/*.tsbuildinfo
+/web/playwright-report
+/web/test-results
+/web/e2e/shots
+/web/coverage

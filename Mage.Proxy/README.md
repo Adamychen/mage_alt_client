@@ -210,7 +210,7 @@ The type contract lives in two files:
 When XMage upstream changes view classes (new fields, renamed fields):
 
 ```bash
-cd Mage.Proxy/web
+cd web
 npm run gen-types          # regenerate types.generated.ts
 node ../../scripts/gen-types.mjs --validate   # CI drift check
 ```

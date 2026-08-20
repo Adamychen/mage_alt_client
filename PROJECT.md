@@ -39,7 +39,7 @@ la base de datos de cartas y la red social. Nosotros construimos un cliente nuev
   recibe callbacks del servidor y los reexpone por WebSocket como JSON; ejecuta las acciones
   del web client contra el servidor. Necesario porque el navegador no puede hablar
   jboss-serialization.
-- **Cliente web (`Mage.Proxy/web/`)**: app React + PixiJS. Se comunica solo con el proxy,
+- **Cliente web (`web/`)**: app React + PixiJS. Se comunica solo con el proxy,
   nunca con Mage.Common → cambiar cliente no rompe proxy ni viceversa.
 
 ## 4. Decisiones técnicas (y por qué)
@@ -159,7 +159,7 @@ App web que conecta al proxy, hace login, muestra el lobby (tablas, usuarios, ch
 permite crear/ver partidas, y **renderiza el tablero con cartas reales (Scryfall)**.
 Demo estrella: ser **espectador de una partida IA vs IA** y verla jugar sola.
 
-### Estructura de código (`Mage.Proxy/web/`)
+### Estructura de código (`web/`)
 
 ```
 web/
@@ -209,14 +209,14 @@ web/
 
 | Capa | Herramienta | Comando | Estado |
 |---|---|---|---|
-| Unitario (lógica pura) | vitest | `npm --prefix Mage.Proxy/web run test` | ✅ 60 tests |
-| Cobertura de núcleo web | vitest/v8 | `npm --prefix Mage.Proxy/web run test:coverage` | ✅ 60 tests · 88.2% statements · 91.1% lines |
-| Typecheck | tsc | `npm --prefix Mage.Proxy/web run typecheck` | ✅ |
-| Build producción | vite | `npm --prefix Mage.Proxy/web run build` | ✅ |
+| Unitario (lógica pura) | vitest | `npm --prefix web run test` | ✅ 60 tests |
+| Cobertura de núcleo web | vitest/v8 | `npm --prefix web run test:coverage` | ✅ 60 tests · 88.2% statements · 91.1% lines |
+| Typecheck | tsc | `npm --prefix web run typecheck` | ✅ |
+| Build producción | vite | `npm --prefix web run build` | ✅ |
 | Proxy Java | Maven/JUnit 5 | `mvn -pl Mage.Proxy -am test` | ✅ 14 tests del proxy |
 | E2E headless (proxy real) | `scripts/self-test.mjs` | `node scripts/self-test.mjs` | ✅ 15 checks |
 | E2E jugador humano vs IA | Node/WebSocket | `node scripts/human-test.mjs` | ✅ 26 checks (partida completa: mulligan → tierra → Bolt → objetivo → maná → resolución) |
-| E2E navegador (login→lobby→demo→tablero) | Playwright | `npm --prefix Mage.Proxy/web run test:e2e` | ✅ re-ejecutado tras F2 (2026-08-09) |
+| E2E navegador (login→lobby→demo→tablero) | Playwright | `npm --prefix web run test:e2e` | ✅ re-ejecutado tras F2 (2026-08-09) |
 
 - **Un solo comando para todo**: `node scripts/test.mjs [unit|coverage|typecheck|build|java|self-test|human-test|e2e]` (con `--skip=`).
 - **CI en GitHub** (para cuando se pushee a un fork propio): `.github/workflows/web-ci.yml`
@@ -404,7 +404,7 @@ mesas humano vs IA, E2E targeting).
   starting player, mulligan auto-keep, Mountain, Lightning Bolt, aserciones del targeting
   visual (el canvas cambia al entrar en targeting y pulsa entre capturas), resolución (vida 17)
   y cero pageerrors. Mazo humano 44 montañas + 16 bolts en `lobby/decks.ts` (`DEFAULT_DECK`).
-- Evidencia: `Mage.Proxy/web/e2e/shots/targeting-bolt.png` (canvas durante el targeting;
+- Evidencia: `web/e2e/shots/targeting-bolt.png` (canvas durante el targeting;
   análisis de píxeles: naranja del pulso/líneas presente en stack, banda central y header del
   oponente).
 
@@ -497,6 +497,8 @@ mesas humano vs IA, E2E targeting).
 | 2026-08-20 | Arq | **Refactor Track A: store.ts split** en 7 módulos (`state.ts` atom, `persistence.ts` localStorage, `gameUtils.ts` pure fns, `eventHandler.ts` protocol handler, `gateway.ts` connection lifecycle, `selectors.ts` React hooks, `actions.ts` state actions) + barrel `store.ts` (re-exports). Clave: `consolidatePlayables` y `isOlderThanCurrentGame` ahora son funciones puras (reciben state como parámetro en vez de leer la variable global). `handleEvent` lee `getState()` tras cada `setState()` cuando el estado puede haber cambiado durante la misma ejecución (fix del bug GAME_PLAY_MANA → `playableObjectIds` no veía el feedback actualizado). **0 consumers need import changes** — el barrel re-exporta todo | unit 75/75 ✅; typecheck ✅; 0 archivos consumidores modificados |
 | 2026-08-20 | Arq | **Refactor Track C: humanGame.ts** — constantes y tipos extraídos a `humanGameConstants.ts`, envelope helpers añadidos (`emitUpdate`/`emitSelect`/`emitUpdateAndSelect`) eliminando el patrón repetido de 2 líneas. Los 9 archivos escenario (spells, targeting, combat, cross-zone, bestOf3/5, etc.) no necesitan cambios gracias a re-exports | unit 75/75 ✅; typecheck ✅; 0 escenarios modificados |
 | 2026-08-20 | Arq | **Refactor Track B: Java→TS codegen pipeline** — `schema/contract.schema.json` (27 definiciones del wire format JsonUtil), `scripts/gen-types.mjs` (generador TS desde JSON Schema con soporte para $ref, allOf inheritance, anyOf nullable, Record<string,T>), `types.generated.ts` (307 líneas generado), `types.ts` reestructurado como barrel (vue types → generated, proxy-specific types = locales). `npm run gen-types` + `--validate` para CI | typecheck ✅; unit 75/75 ✅; `--validate` PASS ✅ |
+| 2026-08-20 | Fix | **Combate interactivo roto (web)**: al entrar a combate con criatura, el diálogo de declaración de atacantes/bloqueadores era un **modal** (`feedback-backdrop`) que tapaba el tablero → no se podían clicar criaturas. Y tras atacar, el juego se clavaba en **DECLARE_BLOCKERS (Bl)**: el servidor re-envía a veces un `possibleAttackers` obsoleto en ese paso, y la web lo interpretaba como ventana de declaración → mostraba el botón "Atacar con todos" (alpha) en Bl y el Pass seguía deshabilitado (`hasPriority` poco fiable). **Fixes**: (1) declaración de combate como **barra flotante NO modal** (igual que targeting/maná) → tablero clicable; (2) la ventana de combate solo se abre en el paso correcto (`possibleAttack...`→DECLARE_ATTACKERS, `possibleBlockers`→DECLARE_BLOCKERS) en `parseFeedback` y `combatFromSelect` → en Bl el atacante solo pasa prioridad, sin diálogo; (3) `CombatState.selecting` solo `true` con ventana activa, resto del combate en modo "solo visualización"; (4) `maybeAutoPass` bails solo si `combat.selecting`; (5) **Pass habilitado en nuestro turno** (`me.isActive && !feedback`) además de `hasPriority`; (6) resaltado visual de criaturas seleccionables/elegidas (`combat-selectable`/`combat-chosen`). | unit 75/75 ✅; typecheck ✅; build ✅ |
+| 2026-08-20 | Fix | **E2E de combate humano (fake) 4/4 verde + regresión `start()` del FixtureServer**: añadidos tests de unidad (`parseFeedback` step-gating, `deriveCanPass`, transiciones de `combat` en `store`, barra no-modal en `FeedbackDialog`) y specs e2e `combatHumanAttackBlockersScenario` + `combatHumanAlphaScenario` (Bl sin diálogo de atacar + Pass avanza; "Atacar con todos" → `sendPlayerString('special')`). **Bug encontrado**: el commit `7f1e4b1a69 "refactor and ui fixes"` borró el cuerpo de `HumanGame.start()` dejando la llamada `this.start()` en `startMatch` → TODAS las e2e humanGame (spells/targeting/combat/full-flow/cross-zone/best-of/defeat) morían en `game-status` porque el juego nunca arrancaba (helper conectaba, pero no llegaban START_GAME/GAME_INIT). Restaurado `start()` (emite START_GAME/GAME_INIT/GAME_SELECT) = copia exacta de `e660b190c9`. `combat-human` 4/4 en fake (~10s). **Nota**: los fallos de `best-of-3/5`, `cross-zone`, `defeat`, `spells-Walking-Ballista`, `targeting` son preexistentes (ver fila 2026-08-18: fallan en HEAD/master por estado de partidas largas, NO por el trabajo de combate ni por la restauración de `start()`). | vitest **104/104** ✅; typecheck ✅; build ✅; e2e combat-human **4/4** ✅ |
 
 ## 10. Notas de ejecución
 

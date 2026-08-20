@@ -18,7 +18,7 @@ de depuración.
 
 ## Objetivo
 
-Mantener verde `Mage.Proxy/web/e2e/spells.spec.ts` (Blaze, Arc Trail, Boros Charm,
+Mantener verde `web/e2e/spells.spec.ts` (Blaze, Arc Trail, Boros Charm,
 Walking Ballista) en fake (~56s toda la suite, sin stack) y en real (contrato),
 sin regresiones en combat/full-flow/targeting. Usa los scripts por dominio:
 `test:e2e:spells|targeting|combat|fullflow` (añade `E2E_BACKEND=real` para el
@@ -48,13 +48,13 @@ el escenario o `e2e/support/`, correr fake completo + real.
    (no tierra/pase durante el pago), timeouts cortos (15-30s), sin retries, sin
    activar el auto-pase del web.
 3. **Verificar en bucle**: Blaze aislado → los 4 tests de spells → suite e2e completa.
-4. **Cerrar**: `npm --prefix Mage.Proxy/web run unit` + `typecheck` tras tocar web
+4. **Cerrar**: `npm --prefix web run unit` + `typecheck` tras tocar web
    (si tocas Java del proxy: `mvn -q -o -pl Mage.Proxy test-compile` + `node scripts/build.mjs proxy` + `node scripts/ctl.mjs restart all`). Si algo queda pendiente,
    actualiza la sección de estado de la skill.
 
 ## Guardas
 
-- Solo toca `Mage.Proxy/web/e2e/`, `Mage.Proxy/web/src/` (si el fix es de la app) y
+- Solo toca `web/e2e/`, `web/src/` (si el fix es de la app) y
   `Mage.Proxy/src/main/java/org/mage/proxy/` (si es del proxy). No toques archivos
   generados (dist/, .run/, local-server/, node_modules/, target/).
 - No comentarios de código salvo que aporten contexto de protocolo (el repo lo

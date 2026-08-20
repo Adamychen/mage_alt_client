@@ -54,13 +54,13 @@ function startProxy() {
 function startVite() {
   // se lanza el binario de vite con node directamente (sin npm.cmd ni shells):
   // así el pidfile apunta al proceso real y la salida va a .run/
-  const viteBin = path.join(import.meta.dirname, '..', 'Mage.Proxy', 'web', 'node_modules', 'vite', 'bin', 'vite.js')
+  const viteBin = path.join(import.meta.dirname, '..', 'web', 'node_modules', 'vite', 'bin', 'vite.js')
   if (!fs.existsSync(viteBin)) {
-    logError(`falta vite en node_modules — ejecuta: npm install (en Mage.Proxy/web)`)
+    logError(`falta vite en node_modules — ejecuta: npm install (en web)`)
     return false
   }
   log('arrancando vite dev…')
-  daemon('vite', 'node', [viteBin, 'dev'], { cwd: `${import.meta.dirname}/../Mage.Proxy/web` })
+  daemon('vite', 'node', [viteBin, 'dev'], { cwd: `${import.meta.dirname}/../web` })
   return true
 }
 
