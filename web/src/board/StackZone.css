@@ -5,10 +5,50 @@
   transform: translateY(-50%);
   z-index: 15;
   pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
 }
 
 .stack-zone.empty {
   display: none;
+}
+
+/* Info panel — type badge + rules text */
+.stack-info {
+  pointer-events: auto;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stack-type-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  background: rgba(99, 230, 190, 0.15);
+  color: #63e6be;
+  border: 1px solid rgba(99, 230, 190, 0.25);
+  white-space: nowrap;
+}
+
+.stack-rules {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-dim);
+  background: rgba(20, 24, 48, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 8px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
 }
 
 .stack-unit {
