@@ -28,6 +28,15 @@ const metaInflight = new Map<string, Promise<ScryfallCardInfo | null>>()
 export function cardKey(card: CardView): string | null {
   const set = card.expansionSetCode
   const num = card.cardNumber
+  const isToken = card.isToken === true || card.mageObjectType === 'TOKEN'
+  // Tokens have cardNumber="0" — resolve via Scryfall token sets (t-prefixed)
+  if (isToken && set) {
+    const name = card.displayName || card.name || ''
+    if (!name) return null
+    const tokenSet = 't' + set.toLowerCase()
+    const slug = name.replace(/\s+/g, '-').toLowerCase()
+    return `${tokenSet}/${slug}`
+  }
   if (!set || !num || num === '0') return null
   return `${set}/${num}`
 }
@@ -54,46 +63,68 @@ function scryfallKey(setCode: string, cardNumber: string): string | null {
   return `${setCode}/${cardNumber}`
 }
 
+/** Build a Scryfall key for a token card. */
+export function tokenScryfallKey(setCode: string, name: string): string | null {
+  if (!setCode || !name) return null
+  const tokenSet = 't' + setCode.toLowerCase()
+  const slug = name.replace(/\s+/g, '-').toLowerCase()
+  return `${tokenSet}/${slug}`
+}
+
 async function load(key: string): Promise<string | null> {
   await acquireLoadSlot()
   try {
-    for (let attempt = 0; attempt <= RETRIES; attempt++) {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
-      try {
-        const res = await fetch(`https://api.scryfall.com/cards/${key}?format=json`, { signal: controller.signal })
-        if (!res.ok) throw new Error(`Scryfall HTTP ${res.status}`)
-        const data = (await res.json()) as {
-          image_uris?: { normal?: string }
-          card_faces?: { image_uris?: { normal?: string } }[]
-          name?: string
-          type_line?: string
-          mana_cost?: string
-          power?: string
-          toughness?: string
-        }
-        const imageUrl = data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal ?? null
-        const info: ScryfallCardInfo = {
-          name: data.name ?? key,
-          typeLine: data.type_line ?? '',
-          manaCost: data.mana_cost ?? '',
-          power: data.power,
-          toughness: data.toughness,
-          imageUrl,
-        }
-        metaMemory.set(key, info)
-        return imageUrl
-      } catch {
-        if (attempt === RETRIES) return null
-        await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)))
-      } finally {
-        clearTimeout(timeout)
-      }
+    const url = await tryFetch(key)
+    // Tokens with " Token" suffix may not exist on Scryfall — retry without it
+    if (url === null && key.includes('-token')) {
+      const fallback = key.replace(/-token$/, '')
+      return await tryFetch(fallback)
     }
-    return null
+    return url
   } finally {
     releaseLoadSlot()
   }
+}
+
+async function tryFetch(key: string): Promise<string | null> {
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    try {
+      const res = await fetch(`https://api.scryfall.com/cards/${key}?format=json`, { signal: controller.signal })
+      if (!res.ok) {
+        // 404 is permanent — don't retry
+        if (res.status === 404) return null
+        throw new Error(`Scryfall HTTP ${res.status}`)
+      }
+      const data = (await res.json()) as {
+        image_uris?: { normal?: string }
+        card_faces?: { image_uris?: { normal?: string } }[]
+        name?: string
+        type_line?: string
+        mana_cost?: string
+        power?: string
+        toughness?: string
+      }
+      const imageUrl = data.image_uris?.normal ?? data.card_faces?.[0]?.image_uris?.normal ?? null
+      const info: ScryfallCardInfo = {
+        name: data.name ?? key,
+        typeLine: data.type_line ?? '',
+        manaCost: data.mana_cost ?? '',
+        power: data.power,
+        toughness: data.toughness,
+        imageUrl,
+      }
+      metaMemory.set(key, info)
+      return imageUrl
+    } catch {
+      if (attempt === RETRIES) return null
+      await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)))
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+  return null
 }
 
 export async function awaitImageUrl(card: CardView): Promise<string | null> {
