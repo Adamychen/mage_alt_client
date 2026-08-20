@@ -8,6 +8,7 @@
   background: #0d1020;
   border-left: 1px solid #1e2444;
   overflow-y: auto;
+  position: relative;
 }
 
 .card-preview--empty {
@@ -19,6 +20,58 @@
   color: #4a5080;
   font-size: 13px;
   text-align: center;
+}
+
+/* Ability banner */
+.card-preview-ability-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: linear-gradient(135deg, rgba(255, 176, 58, 0.15) 0%, rgba(20, 24, 48, 0.8) 100%);
+  border: 1px solid rgba(255, 176, 58, 0.35);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.ability-banner-type {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffca58;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.ability-banner-source {
+  font-size: 12px;
+  color: #e0e4f8;
+  font-weight: 600;
+}
+
+/* Face tabs for MDFCs / Transform / Adventure */
+.card-preview-face-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.face-tab-btn {
+  flex: 1;
+  padding: 4px 6px;
+  background: #141830;
+  border: 1px solid #283060;
+  border-radius: 4px;
+  color: #8c96c0;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.face-tab-btn.active {
+  background: #252e60;
+  border-color: #5c6eb0;
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .card-preview-card {
@@ -55,11 +108,26 @@
   gap: 6px;
 }
 
+.card-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
 .card-preview-name {
   font-family: 'Cinzel', 'Merriweather', Georgia, serif;
   font-size: 15px;
   font-weight: 700;
   color: #e8eaf6;
+  flex: 1;
+}
+
+.card-preview-mana {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd070;
+  letter-spacing: 0.05em;
 }
 
 .card-preview-type {
@@ -73,6 +141,30 @@
   font-size: 13px;
   color: #b0b8d8;
   line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.card-preview-ability-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 176, 58, 0.25);
+  border-radius: 6px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ability-box-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffca58;
+  text-transform: uppercase;
+}
+
+.ability-box-rules {
+  font-size: 12px;
+  color: #ffffff;
+  line-height: 1.4;
   white-space: pre-wrap;
 }
 
@@ -110,6 +202,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
+  z-index: 10;
 }
 
 .card-preview-close:hover {

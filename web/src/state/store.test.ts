@@ -3,6 +3,7 @@ import { joinGame, sendPlayerBoolean, sendPlayerUUID } from '../net/commands'
 import { makeCard, makeGameView, makePermanent, makePlayer, minimalGameView } from '../__fixtures__/gameViews'
 import { getState, setState } from './state'
 import { handleMessage, maybeAutoPass, reset, setSetting } from './store'
+import { loadActiveGame } from './persistence'
 
 vi.mock('../net/commands', () => ({
   setGateway: vi.fn(),
@@ -572,3 +573,66 @@ describe('phaseStops', () => {
     expect(stops.opponentTurn.upkeep).toBe(true)
   })
 })
+
+describe('active game persistence in store', () => {
+  beforeEach(() => {
+    reset()
+    vi.clearAllMocks()
+  })
+
+  it('saves active game ID when START_GAME is received', () => {
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-persist-1',
+      data: { gameId: 'g-persist-1', tableName: 'Table 1' },
+    })
+    expect(loadActiveGame()?.gameId).toBe('g-persist-1')
+  })
+
+  it('saves active game ID when GAME_INIT is received with objectId', () => {
+    handleMessage({
+      type: 'event',
+      method: 'GAME_INIT',
+      messageId: 1,
+      objectId: 'g-init-99',
+      data: minimalGameView,
+    })
+    expect(loadActiveGame()?.gameId).toBe('g-init-99')
+  })
+
+  it('clears active game ID when match ends (END_GAME_INFO with matchOver)', () => {
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-over-1',
+      data: { gameId: 'g-over-1' },
+    })
+    expect(loadActiveGame()?.gameId).toBe('g-over-1')
+
+    handleMessage({
+      type: 'event',
+      method: 'END_GAME_INFO',
+      messageId: 2,
+      objectId: 'g-over-1',
+      data: { matchInfo: 'Alice won the match', matchView: { endTime: 12345 } },
+    })
+    expect(loadActiveGame()).toBeNull()
+  })
+
+  it('clears active game on store reset()', () => {
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-reset-1',
+      data: { gameId: 'g-reset-1' },
+    })
+    expect(loadActiveGame()?.gameId).toBe('g-reset-1')
+    reset()
+    expect(loadActiveGame()).toBeNull()
+  })
+})
+

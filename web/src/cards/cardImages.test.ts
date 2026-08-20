@@ -11,7 +11,7 @@ const card = {
 describe('card image cache', () => {
   beforeEach(() => {
     resetCardImageCache()
-    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   it('deduplicates concurrent requests and caches the result', async () => {
@@ -58,7 +58,7 @@ describe('card image cache', () => {
 describe('token image resolution', () => {
   beforeEach(() => {
     resetCardImageCache()
-    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
   })
 
   it('builds token Scryfall key from setCode + name, stripping "Token" suffix', () => {
@@ -79,6 +79,12 @@ describe('token image resolution', () => {
   it('returns null for XMAGE set tokens (special/helper)', () => {
     const token = { name: 'Face Down', expansionSetCode: 'XMAGE', cardNumber: '0', isToken: true } as CardView
     expect(cardKey(token)).toBeNull()
+  })
+
+  it('copy token uses original card number for standard lookup', () => {
+    // Copy token inherits the original's set + number (not "0")
+    const copy = { name: 'Lightning Bolt', expansionSetCode: 'M10', cardNumber: '147', isToken: true } as unknown as CardView
+    expect(cardKey(copy)).toBe('M10/147')
   })
 
   it('returns null for token without setCode', () => {
@@ -128,3 +134,44 @@ describe('token image resolution', () => {
     )
   })
 })
+
+describe('ability image and metadata resolution', () => {
+  beforeEach(() => {
+    resetCardImageCache()
+    vi.restoreAllMocks()
+  })
+
+  it('builds named Scryfall key for triggered ability card', () => {
+    const ability = {
+      name: 'Goblin Guide',
+      mageObjectType: 'TRIGGERED_ABILITY',
+      rules: ['Whenever Goblin Guide attacks, defending player reveals the top card of library.'],
+    } as CardView
+    expect(cardKey(ability)).toBe('named:Goblin Guide')
+  })
+
+  it('extracts source card name from rules when card name is "Ability"', () => {
+    const ability = {
+      name: 'Ability',
+      mageObjectType: 'TRIGGERED_ABILITY',
+      rules: ['When Cloud, Midgar Mercenary enters, search your library for an Equipment card, reveal it, put it into your hand, then shuffle.'],
+    } as CardView
+    expect(cardKey(ability)).toBe('named:Cloud, Midgar Mercenary')
+  })
+
+  it('uses sourceCard object when present on StackAbilityView', () => {
+    const ability = {
+      name: 'Ability',
+      mageObjectType: 'TRIGGERED_ABILITY',
+      sourceCard: {
+        name: 'Dark Confidant',
+        expansionSetCode: 'RAV',
+        cardNumber: '81',
+      },
+      rules: ['At the beginning of your upkeep, reveal the top card of your library...'],
+    } as unknown as CardView
+    expect(cardKey(ability)).toBe('RAV/81')
+  })
+})
+
+

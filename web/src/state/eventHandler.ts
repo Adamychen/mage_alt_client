@@ -4,6 +4,7 @@ import { parseFeedback } from '../game/feedback'
 import { getState, setState, addLog } from './state'
 import type { SideboardCard, SideboardScreenState } from './state'
 import { awaitCardMeta } from '../cards/cardImages'
+import { saveActiveGame, clearActiveGame } from './persistence'
 import {
   gameViewFrom, isOlderThanCurrentGame, consolidatePlayables, combatFromSelect,
   isCombatStep, combatChosenFrom, emptyCombat, targetFirstId,
@@ -72,6 +73,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'START_GAME': {
       const d = data as { gameId?: string; tableName?: string } | null
       const isNewGame = !!d?.gameId && d.gameId !== s.gameId
+      if (d?.gameId) saveActiveGame(d.gameId)
       setState({ phase: 'game', gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null, sideboardScreen: null })
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
       if (isNewGame) {
@@ -85,6 +87,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'GAME_UPDATE_AND_INFORM':
     case 'GAME_SELECT':
     case 'GAME_PLAY_MANA':
+      if (objectId) saveActiveGame(objectId)
       if (embeddedGame) {
         const fresh = getState()
         const { ids, window: playableWindow } = consolidatePlayables(
@@ -109,7 +112,10 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       }
       break
     case 'WATCHGAME': {
-      if (objectId) void cmds.watchGame(objectId)
+      if (objectId) {
+        saveActiveGame(objectId, undefined, 'watcher')
+        void cmds.watchGame(objectId)
+      }
       addLog('partida', `Espectador: mirando la partida ${objectId?.slice(0, 8) ?? ''}…`)
       break
     }
@@ -123,6 +129,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       const matchOver = end.matchView?.endTime != null || /won the match/i.test(end.matchInfo ?? '')
       addLog('partida', matchOver ? (end.matchInfo ?? 'Fin del match') : (end.matchInfo ?? 'Fin de la partida'))
       if (matchOver) {
+        clearActiveGame()
         setState({
           game: null,
           gameId: null,

@@ -2,19 +2,32 @@ import { Gateway } from '../net/Gateway'
 import * as cmds from '../net/commands'
 import { getState, setState, addLog, initialState } from './state'
 import { handleMessage } from './eventHandler'
-import { saveConn } from './persistence'
+import { saveConn, loadActiveGame, clearActiveGame } from './persistence'
 
 let gateway: Gateway | null = null
 
 export function attachGateway(g: Gateway) {
   gateway = g
   g.events.onMessage = handleMessage
-  g.events.onOpen = () => {
+  g.events.onOpen = async () => {
     const s = getState()
     setState({ connecting: false, wsAlive: true, error: null })
     if (s.conn && s.phase !== 'connecting') {
       addLog('conexión', 'reconectado: re-logueando…')
-      void cmds.connect(s.conn.serverHost, s.conn.port, s.conn.username, s.conn.password)
+      const res = await cmds.connect(s.conn.serverHost, s.conn.port, s.conn.username, s.conn.password)
+      if (res.ok) {
+        const active = loadActiveGame()
+        if (active?.gameId) {
+          if (active.role === 'watcher') {
+            addLog('conexión', 'Restaurando modo espectador…')
+            void cmds.watchGame(active.gameId)
+          } else {
+            addLog('conexión', 'Restaurando partida en curso…')
+            void cmds.joinGame(active.gameId)
+          }
+          void cmds.getGameChatId(active.gameId).then((cid) => setState({ gameChatId: cid ?? null }))
+        }
+      }
     }
   }
   g.events.onClose = (reason) => {
@@ -58,6 +71,17 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
   if (res.ok) {
     setState({ phase: 'lobby', connecting: false, error: null, conn })
     saveConn(conn)
+    const active = loadActiveGame()
+    if (active?.gameId) {
+      if (active.role === 'watcher') {
+        addLog('conexión', 'Restaurando modo espectador…')
+        void cmds.watchGame(active.gameId)
+      } else {
+        addLog('conexión', 'Restaurando partida en curso…')
+        void cmds.joinGame(active.gameId)
+      }
+      void cmds.getGameChatId(active.gameId).then((cid) => setState({ gameChatId: cid ?? null }))
+    }
     const chatId = await cmds.getRoomChatId()
     setState({ roomChatId: chatId ?? null })
     if (chatId) void cmds.sendChatMessage(chatId, '¡Hola desde el cliente web!')
@@ -70,5 +94,6 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
 export function reset() {
   gateway?.close()
   saveConn(null)
+  clearActiveGame()
   setState(initialState)
 }

@@ -105,6 +105,7 @@ export interface CardView {
   abilityType?: string
   isToken?: boolean
   ability?: CardView
+  sourceCard?: CardView
   imageFileName?: string
   imageNumber?: number
   expansionSetCode?: string

@@ -34,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,6 +100,9 @@ public class ProxyClient implements MageClient {
     private volatile boolean connected = false;
     private final List<ClientCallback> handshakeBuffer = new java.util.LinkedList<>();
 
+    private ScheduledFuture<?> graceDisconnectTimer = null;
+    public static final int DISCONNECT_GRACE_PERIOD_SECS = 60;
+
     public ProxyClient(Config config, Gateway gateway) {
         this.config = config;
         this.gateway = gateway;
@@ -130,7 +134,11 @@ public class ProxyClient implements MageClient {
         return connected;
     }
 
-    public void shutdown() {
+    public synchronized void shutdown() {
+        if (graceDisconnectTimer != null) {
+            graceDisconnectTimer.cancel(true);
+            graceDisconnectTimer = null;
+        }
         commandExecutor.shutdownNow();
         callbackExecutor.shutdownNow();
         lobbyTimer.shutdownNow();
@@ -142,12 +150,36 @@ public class ProxyClient implements MageClient {
 
     // ============================ websocket client callbacks ============================
 
-    public void onClientOpen(WebSocket conn) {
+    public synchronized void onClientOpen(WebSocket conn) {
+        if (graceDisconnectTimer != null) {
+            graceDisconnectTimer.cancel(false);
+            graceDisconnectTimer = null;
+            logger.info("New WebSocket client connected; cancelled grace disconnect timer.");
+        }
         sendInfo(conn, "Proxy ready. Send {\"action\":\"connect\",...} to log in.");
     }
 
-    public void onClientClose(WebSocket conn) {
+    public synchronized void onClientClose(WebSocket conn) {
         authorized.remove(conn);
+        if (authorized.isEmpty() && connected) {
+            logger.info("All WebSocket clients disconnected. Starting " + DISCONNECT_GRACE_PERIOD_SECS + "s grace period before stopping session.");
+            if (graceDisconnectTimer != null) {
+                graceDisconnectTimer.cancel(false);
+            }
+            graceDisconnectTimer = pingTimer.schedule(() -> {
+                synchronized (ProxyClient.this) {
+                    if (authorized.isEmpty() && connected) {
+                        logger.info("Grace period expired without client reconnect. Cleaning up XMage session.");
+                        stopSims();
+                        try {
+                            session.connectStop(false, false);
+                        } catch (Exception ignored) {
+                        }
+                        connected = false;
+                    }
+                }
+            }, DISCONNECT_GRACE_PERIOD_SECS, TimeUnit.SECONDS);
+        }
     }
 
     /** Reenvía estado solo a conexiones que han autenticado su sesión local. */
@@ -386,6 +418,12 @@ public class ProxyClient implements MageClient {
                     break;
                 }
                 case "disconnect": {
+                    synchronized (this) {
+                        if (graceDisconnectTimer != null) {
+                            graceDisconnectTimer.cancel(false);
+                            graceDisconnectTimer = null;
+                        }
+                    }
                     stopSims();
                     session.connectStop(false, false);
                     connected = false;
@@ -656,6 +694,11 @@ public class ProxyClient implements MageClient {
     }
 
     private synchronized void connect(WebSocket conn, String requestId, String host, int port, String username, String password) {
+        if (graceDisconnectTimer != null) {
+            graceDisconnectTimer.cancel(false);
+            graceDisconnectTimer = null;
+            logger.info("connect: cancelled grace disconnect timer");
+        }
         // idempotent connect: same user + same server already connected (e.g. several browser
         // tabs re-login after a proxy restart). Restarting the session here would kill the
         // server session and start a reconnect loop (test mode kicks duplicate users on the

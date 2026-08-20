@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { usePhase, useStore } from './state/store'
+import { usePhase, useStore, loadConn, doConnect } from './state/store'
 import LoginScreen from './lobby/LoginScreen'
 import LobbyScreen from './lobby/LobbyScreen'
 import GameScreen from './game/GameScreen'
@@ -9,6 +9,20 @@ export default function App() {
   const phase = usePhase()
   const connecting = useStore((s) => s.connecting)
   const wsAlive = useStore((s) => s.wsAlive)
+
+  useEffect(() => {
+    const saved = loadConn()
+    if (saved && saved.username && phase === 'idle') {
+      void doConnect(
+        saved.wsHost,
+        saved.proxyPort,
+        saved.serverHost,
+        saved.port,
+        saved.username,
+        saved.password,
+      )
+    }
+  }, [])
 
   useEffect(() => {
     const onBeforeUnload = () => undefined

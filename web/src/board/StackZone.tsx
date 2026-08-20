@@ -1,28 +1,29 @@
 import type { CardView } from '../net/types'
+import { getSourceCardName, isAbilityCard } from '../cards/cardImages'
 import CardSlot from './CardSlot'
 import './StackZone.css'
 
 interface StackZoneProps {
   stack: Record<string, CardView> | null | undefined
   onCardClick?: (id: string) => void
+  onHover?: (card: CardView | null) => void
   targetIds?: Set<string>
   onResolveClick?: () => void
   canResolve?: boolean
 }
 
 function isStackAbility(card: CardView): boolean {
-  const t = card.mageObjectType ?? ''
-  return t.includes('Ability') || t.includes('ABILITY')
+  return isAbilityCard(card)
 }
 
 function stackTypeLabel(card: CardView): string {
   if (isStackAbility(card)) {
     const at = card.abilityType ?? ''
-    if (at === 'Triggered' || at === 'Triggered Mana') return 'Habilidad disparada'
-    if (at === 'Activated' || at === 'Mana') return 'Habilidad activada'
-    if (at === 'Static') return 'Habilidad estática'
-    if (at === 'Loyalty') return 'Habilidad de lealtad'
-    return 'Habilidad'
+    if (at === 'Triggered' || at === 'Triggered Mana') return '🔔 Habilidad disparada'
+    if (at === 'Activated' || at === 'Mana') return '⚡ Habilidad activada'
+    if (at === 'Static') return '🛡️ Habilidad estática'
+    if (at === 'Loyalty') return '👑 Habilidad de lealtad'
+    return '⚡ Habilidad'
   }
   const types = card.cardTypes ?? []
   const supers = card.superTypes ?? []
@@ -41,7 +42,6 @@ function stackTypeLabel(card: CardView): string {
 }
 
 function stackRulesText(card: CardView): string | null {
-  // Abilities on the stack have rules like "{SourceName} — trigger text"
   const rules = card.rules ?? []
   if (rules.length) return rules.join('\n')
   return null
@@ -50,48 +50,119 @@ function stackRulesText(card: CardView): string | null {
 export default function StackZone({
   stack,
   onCardClick,
+  onHover,
   targetIds = new Set(),
   onResolveClick,
   canResolve = false,
 }: StackZoneProps) {
-  const entries = Object.entries(stack ?? {}).reverse()
+  const entries = Object.entries(stack ?? {})
 
   if (entries.length === 0) {
     return <div className="stack-zone empty" />
   }
 
-  const [topId, topCard] = entries[0]
-  const rest = entries.slice(1)
-  const typeLabel = stackTypeLabel(topCard)
-  const rulesText = stackRulesText(topCard)
+  // Ordered so newest (top of stack) is first and resolves first
+  const ordered = [...entries].reverse()
+  const [topId, topCard] = ordered[0]
+  const underlyingItems = ordered.slice(1)
+
+  const isTopAbility = isStackAbility(topCard)
+  const topTypeLabel = stackTypeLabel(topCard)
+  const topRulesText = stackRulesText(topCard)
+  const topSourceName = isTopAbility ? getSourceCardName(topCard) : topCard.name
 
   return (
     <div className="stack-zone">
-      <div className="stack-info">
-        <div className="stack-type-badge">{typeLabel}</div>
-        {rulesText && (
-          <div className="stack-rules">{rulesText}</div>
-        )}
+      <div className="stack-header">
+        <span className="stack-header-title">Pila ({ordered.length})</span>
+        <span className="stack-header-hint">Resuelve de arriba a abajo</span>
       </div>
-      <div className="stack-unit">
-        {rest.slice(0, 3).map(([id], i) => (
-          <div
-            key={id}
-            className="stack-peek"
-            style={{ '--i': i + 1 } as React.CSSProperties}
-          />
-        ))}
-        <CardSlot
-          card={topCard}
-          onClick={onCardClick ? () => onCardClick(topId) : undefined}
-          isTarget={targetIds.has(topId)}
-          className="stack-top-card"
-        />
-        {canResolve && (
-          <button type="button" className="stack-resolve-btn" onClick={onResolveClick}>
-            Resolve
-          </button>
-        )}
+
+      <div className="stack-items-list">
+        {/* Top of the Stack (Active / Resolving next) */}
+        <div className="stack-item stack-item--top" key={topId}>
+          <div className="stack-top-badge-row">
+            <span className="stack-top-indicator">▶ Siguiente en resolver</span>
+            <span className="stack-type-badge">{topTypeLabel}</span>
+          </div>
+
+          {isTopAbility ? (
+            <div
+              className={[
+                'stack-top-card',
+                'stack-ability-card',
+                targetIds.has(topId) ? 'targetable' : '',
+                onCardClick ? 'clickable' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={onCardClick ? () => onCardClick(topId) : undefined}
+              onMouseEnter={() => onHover?.(topCard)}
+              onMouseLeave={() => onHover?.(null)}
+            >
+              <div className="ability-card-header">
+                <span className="ability-card-badge">{topTypeLabel}</span>
+                <span className="ability-card-source">{topSourceName}</span>
+              </div>
+              <div className="ability-card-body">
+                <div className="ability-card-thumb-wrap">
+                  <CardSlot card={topCard} className="ability-card-thumb" />
+                </div>
+                <div className="ability-card-text">
+                  {topRulesText || topSourceName || 'Efecto en la pila'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <CardSlot
+              card={topCard}
+              onClick={onCardClick ? () => onCardClick(topId) : undefined}
+              onHover={onHover}
+              isTarget={targetIds.has(topId)}
+              className="stack-top-card"
+            />
+          )}
+
+          {canResolve && (
+            <button type="button" className="stack-resolve-btn" onClick={onResolveClick}>
+              Resolver
+            </button>
+          )}
+        </div>
+
+        {/* Underlying items in the stack */}
+        {underlyingItems.map(([id, card], idx) => {
+          const isAbility = isStackAbility(card)
+          const sourceName = isAbility ? getSourceCardName(card) : card.name
+          const typeLabel = stackTypeLabel(card)
+          const rules = stackRulesText(card)
+
+          return (
+            <div
+              key={id}
+              className={[
+                'stack-item',
+                'stack-item--underlying',
+                targetIds.has(id) ? 'targetable' : '',
+                onCardClick ? 'clickable' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={onCardClick ? () => onCardClick(id) : undefined}
+              onMouseEnter={() => onHover?.(card)}
+              onMouseLeave={() => onHover?.(null)}
+              style={{ zIndex: underlyingItems.length - idx }}
+            >
+              <div className="underlying-thumb-wrap">
+                <CardSlot card={card} className="underlying-thumb" />
+              </div>
+              <div className="underlying-info">
+                <div className="underlying-header">
+                  <span className="underlying-type">{typeLabel}</span>
+                  <span className="underlying-pos">#{underlyingItems.length - idx}</span>
+                </div>
+                <div className="underlying-name">{sourceName}</div>
+                {rules && <div className="underlying-rule-preview">{rules}</div>}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

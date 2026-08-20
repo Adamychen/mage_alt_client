@@ -145,3 +145,34 @@
   justify-content: center;
   border-radius: 50%;
 }
+
+/* Copy badge — top-left for copy tokens */
+.copy-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  background: rgba(124, 92, 255, 0.85);
+  color: #fff;
+  pointer-events: none;
+}
+
+.token-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  background: rgba(212, 175, 55, 0.9);
+  color: #12141e;
+  pointer-events: none;
+}

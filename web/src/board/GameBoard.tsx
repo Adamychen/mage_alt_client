@@ -123,6 +123,7 @@ export default function GameBoard({
       <StackZone
         stack={game?.stack ?? null}
         onCardClick={onTargetClick}
+        onHover={onCardHover}
         targetIds={targetIdSet}
         onResolveClick={onResolveClick}
         canResolve={!!me?.hasPriority}

@@ -13,10 +13,10 @@ import type { CardView, GameView, PermanentView, SeatView, TableView } from '../
 import {
   GAME_ID, TABLE_ID, SIM_NAME, HUMAN_NAME, HUMAN_PLAYER_ID, SIM_PLAYER_ID,
   BASIC_LANDS, type CastStep, type HumanGameOptions, type CastRuntime,
-} from './humanGameConstants'
+} from '../humanGameConstants'
 
-export { GAME_ID, TABLE_ID, SIM_NAME, HUMAN_NAME, HUMAN_PLAYER_ID, SIM_PLAYER_ID } from './humanGameConstants'
-export type { CastStep, LandConfig, ResolveEffect, CrossZoneConfig, HumanGameOptions } from './humanGameConstants'
+export { GAME_ID, TABLE_ID, SIM_NAME, HUMAN_NAME, HUMAN_PLAYER_ID, SIM_PLAYER_ID } from '../humanGameConstants'
+export type { CastStep, LandConfig, ResolveEffect, CrossZoneConfig, HumanGameOptions } from '../humanGameConstants'
 
 export class HumanGame {
   readonly tableName: string

@@ -97,6 +97,14 @@ export default function CardSlot({
       {showDamage && perm.damage && perm.damage > 0 && (
         <div className="damage-badge">{perm.damage}</div>
       )}
+
+      {(perm as PermanentView).copy === true && (
+        <div className="copy-badge">COPIA</div>
+      )}
+
+      {((perm as PermanentView).isToken || card.mageObjectType === 'TOKEN') && !(perm as PermanentView).copy && (
+        <div className="token-badge">TOKEN</div>
+      )}
     </div>
   )
 }
