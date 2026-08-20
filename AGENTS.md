@@ -1,121 +1,122 @@
 # AGENTS.md — Mage.Proxy
 
-Cliente web moderno para XMage (Magic: The Gathering). El stack se compone de:
-servidor XMage (Java, modo test) + proxy WebSocket (`Mage.Proxy`, Java) + cliente
-web (`Mage.Proxy/web`, TypeScript + Vite).
+A modern web client for XMage (Magic: The Gathering). The stack consists of:
+XMage server (Java, test mode) + WebSocket proxy (`Mage.Proxy`, Java) + web
+client (`Mage.Proxy/web`, TypeScript + Vite).
 
-**Documento maestro: `PROJECT.md`** — fuente de verdad del estado, fases y
-lecciones. Actualízalo al terminar una tarea (fases, lecciones, tabla de calidad,
-log con fecha) y registra la fecha en el header.
+**Master document: `PROJECT.md`** — source of truth for status, phases and
+lessons. Update it when finishing a task (phases, lessons, quality table,
+dated log) and record the date in the header.
 
-## Stack de desarrollo
+## Development stack
 
 - Control: `node scripts/ctl.mjs start|stop|restart|status [server|proxy|vite|all]`
-- Diagnóstico directo (bloquea la shell): `node scripts/dev.mjs start|stop|status|restart`
-- Logs: `node scripts/tail.mjs [server|proxy|vite|all] [líneas]` — archivos en `.run/*.log`
+- Direct diagnostics (blocks the shell): `node scripts/dev.mjs start|stop|status|restart`
+- Logs: `node scripts/tail.mjs [server|proxy|vite|all] [lines]` — files in `.run/*.log`
   (`server.out.log`, `proxy.out.log`, `proxy.err.log`, `vite.out.log`)
-- Puertos: servidor XMage `17171` (testMode), proxy WS `ws://127.0.0.1:8787`,
-  página test del proxy `http://127.0.0.1:8788/index.html`, Vite dev `http://localhost:5173`
-- Recompilar el jar del proxy: `node scripts/build.mjs proxy` (requiere detener
-  el proxy; `build.mjs` lo para solo) — después `node scripts/ctl.mjs restart proxy`
-- Compilación completa (servidor + plugins + proxy): `node scripts/build.mjs`
-- Versión de XMage: **1.4.61-V1** (upstream magefree/mage; merge del tag `xmage_1.4.61V1`).
-  Jar del proxy: `Mage.Proxy/target/mage-proxy-1.4.61.jar`. El server por defecto del
-  proxy es **`beta.xmage.today:17171`** (server oficial actual; `beta.xmage.de` está obsoleto).
-  Si el server remoto cambia de release (version check estricto `MAGE_VERSION_RELEASE_INFO_MUST_BE_SAME`),
-  el proxy no conecta: hay que actualizar el fork (fetch upstream + merge) y recompilar todo.
-- Smoke contra el server público: funciona vía proxy (probe WS: login, mesa SIM, WATCHGAME/GAME_INIT/updates).
-  Notas: (a) ~~el login anónimo a beta.xmage.today es intermitente~~ **RESUELTO (2026-08-17)**
-  con el handshake buffer en `ProxyClient`; (b) el login del web usa UN solo host para el WS del proxy
-  y el server destino → para jugar contra servers remotos desde el navegador hay que separar esos
-  campos (pendiente, Fase 3).
+- Ports: XMage server `17171` (testMode), proxy WS `ws://127.0.0.1:8787`,
+  proxy test page `http://127.0.0.1:8788/index.html`, Vite dev `http://localhost:5173`
+- Rebuild the proxy jar: `node scripts/build.mjs proxy` (requires stopping
+  the proxy; `build.mjs` stops it on its own) — afterwards `node scripts/ctl.mjs restart proxy`
+- Full build (server + plugins + proxy): `node scripts/build.mjs`
+- XMage version: **1.4.61-V1** (upstream magefree/mage; merge of tag `xmage_1.4.61V1`).
+  Proxy jar: `Mage.Proxy/target/mage-proxy-1.4.61.jar`. The proxy's default
+  server is **`beta.xmage.today:17171`** (current official server; `beta.xmage.de` is obsolete).
+  If the remote server changes release (strict version check `MAGE_VERSION_RELEASE_INFO_MUST_BE_SAME`),
+  the proxy won't connect: the fork must be updated (fetch upstream + merge) and everything rebuilt.
+- Smoke test against the public server: works via the proxy (WS probe: login, SIM table, WATCHGAME/GAME_INIT/updates).
+  Notes: (a) ~~anonymous login to beta.xmage.today is intermittent~~ **RESOLVED (2026-08-17)**
+  with the handshake buffer in `ProxyClient`; (b) the web login uses a SINGLE host for both the
+  proxy WS and the target server → to play against remote servers from the browser those
+  fields must be split (pending, Phase 3).
 
-## Suite de tests
+## Test suite
 
-Orquestador: `node scripts/test.mjs [capa...] [--skip=unit,e2e]` — capas:
+Orchestrator: `node scripts/test.mjs [layer...] [--skip=unit,e2e]` — layers:
 
 `unit` (vitest) · `coverage` (vitest --coverage) · `typecheck` (tsc -b --noEmit) ·
 `build` (tsc -b && vite build) · `java` (mvn -pl Mage.Proxy -am test) ·
-`self-test` (E2E headless contra el proxy; requiere stack) ·
-`human-test` (E2E jugador humano contra IA; requiere stack) ·
-`e2e` (playwright en Mage.Proxy/web; requiere vite)
+`self-test` (headless E2E against the proxy; requires stack) ·
+`human-test` (E2E human player vs AI; requires stack) ·
+`e2e` (playwright in Mage.Proxy/web; requires vite)
 
-Criterios de éxito y detalles en la skill `mage-test-suite`.
+Success criteria and details in the `mage-test-suite` skill.
 
-## E2E con backends duales: fake determinista y real
+## E2E with dual backends: deterministic fake and real
 
-Los e2e de navegador (Playwright) corren en **dos modos con los MISMO specs**:
+Browser E2E (Playwright) runs in **two modes with the SAME specs**:
 
-- **fake (por defecto, `npm run test:e2e` / `test:e2e:fake`)**: contra el
-  `FixtureServer` (`Mage.Proxy/web/fixtures/fake.ts`, contrato de
-  `src/net/types.ts` + escenarios declarativos en `fixtures/scenarios/`). Sin
-  Java, sin proxy, sin flakes — el loop diario de iteración. **El proxy real no
-  debe estar corriendo** (el fake usa el puerto 8787); si lo está, el fixture
-  falla con un mensaje claro. `playwright.config.ts` levanta vite solo en fake.
-- **real (`E2E_BACKEND=real npm run test:e2e:real`)**: contra el stack
-  (server+proxy+vite). Es la red anti-deriva: si el protocolo real se mueve,
-  este modo lo detecta. Corre en CI/nightly y a demanda.
+- **fake (default, `npm run test:e2e` / `test:e2e:fake`)**: against the
+  `FixtureServer` (`Mage.Proxy/web/fixtures/fake.ts`, contract from
+  `src/net/types.ts` + declarative scenarios in `fixtures/scenarios/`). No
+  Java, no proxy, no flakes — the daily iteration loop. **The real proxy must
+  not be running** (the fake uses port 8787); if it is, the fixture fails with
+  a clear message. `playwright.config.ts` starts vite only in fake mode.
+- **real (`E2E_BACKEND=real npm run test:e2e:real`)**: against the stack
+  (server+proxy+vite). This is the anti-drift net: if the real protocol moves,
+  this mode detects it. Runs in CI/nightly and on demand.
 
-El FakeServer se tipa contra `types.ts` (el typecheck vigila la coherencia) y
-los frames que emite se validan con `fixtures/schema.ts` (zod) — si el proxy
-real añade/cambia campos, el schema test falla y se regenera con el grabador.
+The FakeServer is typed against `types.ts` (typecheck guards consistency) and
+the frames it emits are validated with `fixtures/schema.ts` (zod) — if the real
+proxy adds/changes fields, the schema test fails and is regenerated with the recorder.
 
-**Aserciones de UI deterministas**: `BoardScene` publica `window.__mageScene`
-(cards, playable, targeting{active,source,ids,chosen}, game). Los tests asertan
-sobre ese estado (y el DOM), NO sobre píxeles del canvas (byte-diffs eran la
-fuente de flakes).
+**Deterministic UI assertions**: `BoardScene` publishes `window.__mageScene`
+(cards, playable, targeting{active,source,ids,chosen}, game). Tests assert
+against that state (and the DOM), NOT against canvas pixels (byte-diffs were
+the source of flakes).
 
-**Bugs conocidos del stack real (2026-08-16, detectados por el modo real)**:
-1. **La demo IA-vs-IA ya NO se congela (RESUELTO)**: `SimPlayer.tryCast` enviaba
-   el UUID del Bolt aunque sus tierras sin girar fueran ISLANDs; el servidor
-   rechazaba el cast correctamente (`canPay` no cubre {R}) y el juego re-otorgaba
-   prioridad con la misma vista → GAME_SELECT infinito (flood ~48/s al watcher).
-   **Fix**: `tryCast` ahora es color-aware (`colorsOf` + `canProduceColors`, solo
-   castea si hay tierras que producen TODOS los colores del coste) + dedup por
-   firma `(turno, paso, mano, tierras sin girar)` como defensa. Verificado en real
-   ×6+ (la demo castea y resuelve Bolts).
-2. **`spells.spec.ts` y `targeting.spec.ts` en modo real: VERDES** (2026-08-16).
-   La causa de sus fallos ("victoria del Sim tras el ask de maná") era el
-   **estado degradado del servidor por sesiones huérfanas** — reiniciar
-   servidor+proxy JUNTOS lo resuelve (`ctl.mjs restart all`); reiniciar SOLO el
-   proxy deja el primer login colgado. Combinado con fixes de test (reintento
-   de `nextManaSource`, cursor estricto en el bucle de maná).
-3. **La demo del modo fake (`fixtures/scenarios/fullFlow.ts`) no sufre ni el
-   congelado ni el flood**: el timeline es determinista.
+**Known bugs in the real stack (2026-08-16, detected by real mode)**:
+1. **The AI-vs-AI demo NO LONGER FREEZES (RESOLVED)**: `SimPlayer.tryCast` was sending
+   the Bolt UUID even when its untapped lands were ISLANDs; the server correctly
+   rejected the cast (`canPay` doesn't cover {R}) and the game re-granted
+   priority with the same view → infinite GAME_SELECT (flood ~48/s to the watcher).
+   **Fix**: `tryCast` is now color-aware (`colorsOf` + `canProduceColors`, only
+   casts if there are lands that produce ALL the colors of the cost) + dedup by
+   signature `(turn, step, hand, untapped lands)` as defense. Verified in real
+   ×6+ (the demo casts and resolves Bolts).
+2. **`spells.spec.ts` and `targeting.spec.ts` in real mode: GREEN** (2026-08-16).
+   The cause of their failures ("Sim win after the mana ask") was the
+   **degraded server state caused by orphan sessions** — restarting
+   server+proxy TOGETHER fixes it (`ctl.mjs restart all`); restarting ONLY the
+  proxy leaves the first login hanging. Combined with test fixes (`nextManaSource`
+   retry, strict cursor in the mana loop).
+3. **The fake-mode demo (`fixtures/scenarios/fullFlow.ts`) suffers neither the
+   freeze nor the flood**: the timeline is deterministic.
 
-## E2E con oponentes simulados (Sim) y helper WS
+## E2E with simulated opponents (Sim) and WS helper
 
-Los e2e de UI usan asientos `SIM` (el proxy une un bot determinista con su propia
-sesión) y un `HumanHelper` por WS (`Mage.Proxy/web/e2e/wshelper.ts`) que desarrolla
-tierras, pasa prioridades, descarta y responde asks — las acciones frágiles van por
-WS y la UI solo verifica (diálogos, render, pageerrors). Los tests NO activan el
-auto-pase del web (compite con las ventanas de lanzamiento). Cargar `mage-e2e-sim`
-antes de tocar o depurar cualquier e2e.
+UI E2E uses `SIM` seats (the proxy joins a deterministic bot with its own
+session) and a `HumanHelper` over WS (`Mage.Proxy/web/e2e/wshelper.ts`) that
+plays lands, passes priorities, discards and answers asks — fragile actions go
+over WS and the UI only verifies (dialogs, render, pageerrors). Tests do NOT
+enable the web's auto-pass (it competes with the launch windows). Load `mage-e2e-sim`
+before touching or debugging any E2E.
 
-**Arquitectura modular (2026-08-17)**: tests por funcionalidad, partida
-independiente por test. Librerías comunes en `Mage.Proxy/web/e2e/support/`
+**Modular architecture (2026-08-17)**: tests by functionality, independent
+game per test. Common libraries in `Mage.Proxy/web/e2e/support/`
 (`frames.ts`, `start-game.ts`, `game-screen.ts`, `scene.ts`, `canvas.ts`,
-`fake-backend.ts`) y escenarios declarativos del FixtureServer en
-`Mage.Proxy/web/fixtures/scenarios/` (mini-motor `humanGame.ts`). Tags por
-dominio: `@spells`, `@targeting`, `@combat`, `@fullflow` (scripts
-`test:e2e:spells|targeting|combat|fullflow`). Todos los specs corren en fake
-(sin stack, ~56s) y en real (contrato). Al tocar `e2e/support/` o los escenarios,
-correr fake completo + real. **El helper NO responde el mulligan** (el auto-keep
-del web ya lo hace; un segundo false rompe la ventana del test).
+`fake-backend.ts`) and declarative scenarios for the FixtureServer in
+`Mage.Proxy/web/fixtures/scenarios/` (mini-engine `humanGame.ts`). Tags by
+domain: `@spells`, `@targeting`, `@combat`, `@fullflow` (scripts
+`test:e2e:spells|targeting|combat|fullflow`). All specs run in fake
+(no stack, ~56s) and in real (contract). When touching `e2e/support/` or the
+scenarios, run the full fake + real suite. **The helper does NOT answer the
+mulligan** (the web's auto-keep already does it; a second false breaks the
+test window).
 
-## Reglas
+## Rules
 
-- **Tras tocar `Mage.Proxy/web`**: ejecutar `unit` y `typecheck` (y `build` si se
-  cambió la build). Tras tocar Java del proxy: `java` + recompilar jar
-  (`build.mjs proxy`) + reiniciar proxy.
-- **Antes de declarar una tarea "terminada"**: suite completa
-  (`node scripts/test.mjs`) con el stack arriba.
-- **Fallo conocido**: `self-test` puede fallar en `WATCHGAME` solo en la primera
-  partida tras arranque en frío del servidor (el servidor pierde el socket de
-  retorno de callbacks: `SESSION CALLBACK EXCEPTION - Unable to create socket`
-  en `server.out.log`). Reintentar una vez con el servidor caliente; si falla
-  repetidamente, es un bug real, no flake.
-- **No tocar** archivos generados: `dist/`, `.run/`, `local-server/`,
+- **After touching `Mage.Proxy/web`**: run `unit` and `typecheck` (and `build` if
+  the build changed). After touching proxy Java: `java` + rebuild jar
+  (`build.mjs proxy`) + restart proxy.
+- **Before declaring a task "done"**: full suite
+  (`node scripts/test.mjs`) with the stack up.
+- **Known failure**: `self-test` may fail in `WATCHGAME` only on the first
+  game after a cold server start (the server loses the callback
+  return socket: `SESSION CALLBACK EXCEPTION - Unable to create socket`
+  in `server.out.log`). Retry once with a warm server; if it fails
+  repeatedly, it's a real bug, not a flake.
+- **Do not touch** generated files: `dist/`, `.run/`, `local-server/`,
   `node_modules/`, `target/`.
-- Sin comentarios en código salvo que se pidan. Respuestas en español.
-- No commitear salvo petición explícita.
+- No comments in code unless requested. Replies in Spanish.
+- Do not commit unless explicitly requested.
