@@ -68,8 +68,17 @@ export function getSourceCardName(card: CardView): string {
   return 'Habilidad'
 }
 
+export function isCardBackFace(card: CardView): boolean {
+  if ((card as any).isSecondCardFace === true || (card as any).isBackFace === true) return true
+  if ((card as any).transformed === true && !(card as any).isFrontFace) return true
+  return false
+}
+
 export function cardKey(card: CardView): string | null {
   if (card.faceDown === true) return null
+  const isBack = isCardBackFace(card)
+  const backSuffix = isBack ? '#back' : ''
+
   const isAbility = isAbilityCard(card)
   if (isAbility) {
     const src = card.sourceCard || card.ability
@@ -79,7 +88,7 @@ export function cardKey(card: CardView): string | null {
     }
     const sourceName = getSourceCardName(card)
     if (sourceName && !/^habilidad$/i.test(sourceName) && !/^ability$/i.test(sourceName)) {
-      return `named:${sourceName}`
+      return `named:${sourceName}${backSuffix}`
     }
     return null
   }
@@ -90,7 +99,7 @@ export function cardKey(card: CardView): string | null {
 
   // Cards with a real card number (including copy tokens that inherited the original's number)
   if (set && num && num !== '0') {
-    return `${set}/${num}`
+    return `${set}/${num}${backSuffix}`
   }
 
   // Token with cardNumber=0 — resolve via Scryfall token sets (t-prefixed)
@@ -108,7 +117,7 @@ export function cardKey(card: CardView): string | null {
   // Card with only a name (e.g. from game log feed or action history)
   const name = card.displayName || card.name
   if (name && name.trim()) {
-    return `named:${name.trim()}`
+    return `named:${name.trim()}${backSuffix}`
   }
 
   return null
@@ -154,16 +163,17 @@ async function load(key: string): Promise<string | null> {
 }
 
 function candidateUrls(key: string): string[] {
-  if (key.startsWith('named:')) {
-    const name = key.slice(6)
+  const cleanKey = key.replace(/#back$/, '')
+  if (cleanKey.startsWith('named:')) {
+    const name = cleanKey.slice(6)
     return [
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}`,
       `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`,
     ]
   }
 
-  if (key.startsWith('token:')) {
-    const rawName = key.slice(6)
+  if (cleanKey.startsWith('token:')) {
+    const rawName = cleanKey.slice(6)
     const clean = rawName.replace(/\s+Token$/i, '')
     return [
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(clean + ' Token')}`,
@@ -173,12 +183,12 @@ function candidateUrls(key: string): string[] {
   }
 
   // Token key format like "tgrn/goblin" or "txln/treasure"
-  const tokenMatch = /^t([a-z0-9]+)\/([a-z0-9-]+)$/i.exec(key)
+  const tokenMatch = /^t([a-z0-9]+)\/([a-z0-9-]+)$/i.exec(cleanKey)
   if (tokenMatch) {
     const [, tokenSet, slug] = tokenMatch
     const cleanName = slug.replace(/-/g, ' ')
     return [
-      `https://api.scryfall.com/cards/${key}?format=json`,
+      `https://api.scryfall.com/cards/${cleanKey}?format=json`,
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName + ' Token')}&set=t${tokenSet.toLowerCase()}`,
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&set=t${tokenSet.toLowerCase()}`,
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName + ' Token')}`,
@@ -187,10 +197,12 @@ function candidateUrls(key: string): string[] {
   }
 
   // Standard set/number like "LEA/299"
-  return [`https://api.scryfall.com/cards/${key}?format=json`]
+  return [`https://api.scryfall.com/cards/${cleanKey}?format=json`]
 }
 
 async function tryFetch(key: string): Promise<string | null> {
+  const isBack = key.endsWith('#back')
+  const cleanKey = key.replace(/#back$/, '')
   const urls = candidateUrls(key)
   for (const url of urls) {
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -204,7 +216,10 @@ async function tryFetch(key: string): Promise<string | null> {
           throw new Error(`Scryfall HTTP ${res.status}`)
         }
         const data = (await res.json()) as {
-          data?: { image_uris?: { normal?: string; small?: string } }[]
+          data?: {
+            image_uris?: { normal?: string; small?: string }
+            card_faces?: { image_uris?: { normal?: string; small?: string } }[]
+          }[]
           image_uris?: { normal?: string; small?: string }
           card_faces?: { image_uris?: { normal?: string; small?: string } }[]
           name?: string
@@ -213,12 +228,25 @@ async function tryFetch(key: string): Promise<string | null> {
           power?: string
           toughness?: string
         }
+
+        // Cache double-faced cards in memory for both front and back
+        const faces = data.card_faces || data.data?.[0]?.card_faces
+        if (faces && faces.length > 1) {
+          const frontUrl = faces[0]?.image_uris?.normal ?? faces[0]?.image_uris?.small ?? null
+          const backUrl = faces[1]?.image_uris?.normal ?? faces[1]?.image_uris?.small ?? null
+          if (frontUrl) memory.set(cleanKey, frontUrl)
+          if (backUrl) memory.set(`${cleanKey}#back`, backUrl)
+        }
+
         const searchFirst = data.data?.[0]
+        const targetFace = isBack && faces && faces.length > 1 ? faces[1] : faces?.[0]
+
         const imageUrl =
+          (isBack ? targetFace?.image_uris?.normal ?? targetFace?.image_uris?.small : null) ??
           data.image_uris?.normal ??
           data.image_uris?.small ??
-          data.card_faces?.[0]?.image_uris?.normal ??
-          data.card_faces?.[0]?.image_uris?.small ??
+          targetFace?.image_uris?.normal ??
+          targetFace?.image_uris?.small ??
           searchFirst?.image_uris?.normal ??
           searchFirst?.image_uris?.small ??
           null
@@ -258,8 +286,9 @@ export async function awaitImageUrl(card: CardView): Promise<string | null> {
   const p = (async () => {
     let url = await load(key).catch(() => null)
     // If set/number lookup returned null (e.g. 404 from mismatched set codes/promos), fallback by card name!
-    if (!url && cleanName && !key.startsWith('named:')) {
-      const fallbackKey = `named:${cleanName}`
+    if (!url && cleanName && !key.replace(/#back$/, '').startsWith('named:')) {
+      const isBack = key.endsWith('#back')
+      const fallbackKey = `named:${cleanName}${isBack ? '#back' : ''}`
       url = await load(fallbackKey).catch(() => null)
     }
     remember(key, url)

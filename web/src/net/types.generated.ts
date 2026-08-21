@@ -135,6 +135,9 @@ export interface CardView {
   originalToughness?: string | null
   originalColorIdentity?: string | null
   originalIsCopy?: boolean
+  isSecondCardFace?: boolean
+  isFrontFace?: boolean
+  isBackFace?: boolean
 }
 
 export interface PermanentView extends CardView {

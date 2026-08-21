@@ -201,4 +201,71 @@ describe('ability image and metadata resolution', () => {
   })
 })
 
+describe('double-faced and transform card resolution', () => {
+  beforeEach(() => {
+    resetCardImageCache()
+    vi.restoreAllMocks()
+  })
+
+  it('builds distinct cardKeys for front face and second/back face', () => {
+    const front = {
+      name: 'Delver of Secrets',
+      expansionSetCode: 'ISD',
+      cardNumber: '51',
+    } as unknown as CardView
+
+    const back = {
+      name: 'Insectile Aberration',
+      expansionSetCode: 'ISD',
+      cardNumber: '51',
+      isSecondCardFace: true,
+    } as unknown as CardView
+
+    expect(cardKey(front)).toBe('ISD/51')
+    expect(cardKey(back)).toBe('ISD/51#back')
+  })
+
+  it('resolves front face and back face image URLs from Scryfall card_faces', async () => {
+    const front = {
+      name: 'Delver of Secrets',
+      expansionSetCode: 'ISD',
+      cardNumber: '51',
+    } as unknown as CardView
+
+    const back = {
+      name: 'Insectile Aberration',
+      expansionSetCode: 'ISD',
+      cardNumber: '51',
+      isSecondCardFace: true,
+    } as unknown as CardView
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        name: 'Delver of Secrets // Insectile Aberration',
+        card_faces: [
+          {
+            name: 'Delver of Secrets',
+            image_uris: { normal: 'https://img.test/delver_front.jpg' },
+          },
+          {
+            name: 'Insectile Aberration',
+            image_uris: { normal: 'https://img.test/delver_back.jpg' },
+          },
+        ],
+      }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    // Request front
+    const frontUrl = await awaitImageUrl(front)
+    expect(frontUrl).toBe('https://img.test/delver_front.jpg')
+
+    // Request back - should use back face image and avoid duplicate network calls
+    const backUrl = await awaitImageUrl(back)
+    expect(backUrl).toBe('https://img.test/delver_back.jpg')
+  })
+})
+
 

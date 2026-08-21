@@ -30,7 +30,14 @@ export default function CardPreview({ card, onClose }: Props) {
   const hasSecondFace = !!card?.secondCardFace
 
   const activeCard: CardView | null =
-    selectedFaceIndex === 1 && card?.secondCardFace ? card.secondCardFace : card
+    selectedFaceIndex === 1 && card?.secondCardFace
+      ? {
+          ...card.secondCardFace,
+          isSecondCardFace: true,
+          expansionSetCode: card.secondCardFace.expansionSetCode || card.expansionSetCode,
+          cardNumber: card.secondCardFace.cardNumber || card.cardNumber,
+        }
+      : card
 
   useEffect(() => {
     if (!activeCard) {
@@ -44,7 +51,13 @@ export default function CardPreview({ card, onClose }: Props) {
     return () => {
       cancelled = true
     }
-  }, [activeCard?.name, activeCard?.expansionSetCode, activeCard?.cardNumber, selectedFaceIndex])
+  }, [
+    activeCard?.name,
+    activeCard?.expansionSetCode,
+    activeCard?.cardNumber,
+    (activeCard as any)?.isSecondCardFace,
+    selectedFaceIndex,
+  ])
 
   if (!card || !activeCard) {
     return (

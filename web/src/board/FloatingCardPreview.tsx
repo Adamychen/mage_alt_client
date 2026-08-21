@@ -44,16 +44,29 @@ export default function FloatingCardPreview({
   // Determine which face to display
   const activeCard: CardView | PermanentView | null = useMemo(() => {
     if (!card) return null
-    if (!showBackFace) return card
-    if (card.secondCardFace) return card.secondCardFace
+    const isTransformedOnField = (card as PermanentView).transformed === true
+    const shouldShowBack = isTransformedOnField ? !showBackFace : showBackFace
+
+    if (!shouldShowBack) {
+      return { ...card, isFrontFace: true, isSecondCardFace: false } as CardView | PermanentView
+    }
+    if (card.secondCardFace) {
+      return {
+        ...card.secondCardFace,
+        isSecondCardFace: true,
+        expansionSetCode: card.secondCardFace.expansionSetCode || card.expansionSetCode,
+        cardNumber: card.secondCardFace.cardNumber || card.cardNumber,
+      } as CardView | PermanentView
+    }
     if (card.alternateName) {
       return {
         ...card,
         name: card.alternateName,
         displayName: card.alternateName,
-      }
+        isSecondCardFace: true,
+      } as CardView | PermanentView
     }
-    return card
+    return { ...card, isSecondCardFace: true } as CardView | PermanentView
   }, [card, showBackFace])
 
   useEffect(() => {
@@ -68,7 +81,15 @@ export default function FloatingCardPreview({
     return () => {
       cancelled = true
     }
-  }, [activeCard?.name, activeCard?.expansionSetCode, activeCard?.cardNumber, activeCard?.faceDown])
+  }, [
+    activeCard?.name,
+    activeCard?.expansionSetCode,
+    activeCard?.cardNumber,
+    activeCard?.faceDown,
+    (activeCard as any)?.isSecondCardFace,
+    (activeCard as any)?.isFrontFace,
+    showBackFace,
+  ])
 
   if (!card || !anchorRect || card.faceDown || !activeCard) {
     return null

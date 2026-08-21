@@ -137,7 +137,7 @@ describe('FloatingCardPreview', () => {
     expect(container.textContent).toContain('+2 contadores')
   })
 
-  it('renders flip badge for double-faced cards and toggles face on Shift key', () => {
+  it('renders flip badge for double-faced cards and toggles face on Shift key', async () => {
     const tdfcCard: CardView = {
       name: 'Delver of Secrets',
       manaValue: 1,
@@ -175,5 +175,12 @@ describe('FloatingCardPreview', () => {
     fireEvent.keyDown(window, { key: 'Shift' })
 
     expect(container.querySelector('.floating-card-flip-badge')?.textContent).toContain('Reverso')
+    const { awaitImageUrl } = vi.mocked(await import('../cards/cardImages'))
+    expect(awaitImageUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Insectile Aberration',
+        isSecondCardFace: true,
+      })
+    )
   })
 })
