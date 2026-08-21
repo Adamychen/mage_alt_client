@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import * as cmds from '../net/commands'
 import { useStore } from '../state/store'
 import QuickReactions from './QuickReactions'
@@ -10,7 +10,7 @@ import './GameChat.css'
 const EMOJI_PICKS = ['😊', '😂', '😮', '👀', '🙏', '😅', '🤔', '🔥']
 
 export default function GameChat() {
-  const gameId = useStore((s) => s.gameId)
+  const gameChatId = useStore((s) => s.gameChatId)
   const roomChatId = useStore((s) => s.roomChatId)
   const log = useStore((s) => s.log)
   const [input, setInput] = useState('')
@@ -18,12 +18,23 @@ export default function GameChat() {
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const chatId = roomChatId
-  const gameLog = log.filter((e) => e.gameId === chatId || e.gameId === gameId)
+  const chatId = gameChatId || roomChatId
+
+  // Only show real player/user chat messages in the Chat tab (not engine inform lines like "Upkeep - Waiting for...")
+  const chatEntries = useMemo(() => {
+    return log.filter((e) => {
+      if (!e.from || e.from === 'partida' || e.from === 'servidor' || e.from === 'error') {
+        return false
+      }
+      return true
+    })
+  }, [log])
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [gameLog.length])
+    if (endRef.current && typeof endRef.current.scrollIntoView === 'function') {
+      endRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [chatEntries.length])
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,14 +53,20 @@ export default function GameChat() {
   return (
     <div className="game-chat">
       <div className="game-chat-messages">
-        {gameLog.map((entry) => (
-          <div key={entry.id} className="game-chat-entry">
-            {entry.from && <span className="game-chat-player">{entry.from}</span>}
-            <span className="game-chat-text">
-              <FormattedText text={entry.text} />
-            </span>
+        {chatEntries.length === 0 ? (
+          <div className="game-chat-empty">
+            💬 No hay mensajes en el chat aún. ¡Escribe o envía una reacción abajo!
           </div>
-        ))}
+        ) : (
+          chatEntries.map((entry) => (
+            <div key={entry.id} className="game-chat-entry">
+              {entry.from && <span className="game-chat-player">{entry.from}:</span>}
+              <span className="game-chat-text">
+                <FormattedText text={entry.text} />
+              </span>
+            </div>
+          ))
+        )}
         <div ref={endRef} />
       </div>
 
@@ -78,7 +95,7 @@ export default function GameChat() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Chat..."
+          placeholder="Escribe un mensaje en el chat..."
           maxLength={500}
         />
         <button type="submit" className="game-chat-send" disabled={!input.trim() || !chatId}>▸</button>

@@ -6,7 +6,8 @@ import './FloatingCardPreview.css'
 interface FloatingCardPreviewProps {
   card: CardView | PermanentView | null
   anchorRect: DOMRect | null
-  boardRect: DOMRect | null
+  boardRect?: DOMRect | null
+  fixedSide?: 'left' | 'right' | 'auto'
 }
 
 const PREVIEW_WIDTH = 270
@@ -16,6 +17,7 @@ export default function FloatingCardPreview({
   card,
   anchorRect,
   boardRect,
+  fixedSide = 'auto',
 }: FloatingCardPreviewProps) {
   const [imgUrl, setImgUrl] = useState<string | null>(null)
 
@@ -33,55 +35,80 @@ export default function FloatingCardPreview({
     }
   }, [card?.name, card?.expansionSetCode, card?.cardNumber, card?.faceDown])
 
-  if (!card || !anchorRect || !boardRect || card.faceDown) {
+  if (!card || !anchorRect || card.faceDown) {
     return null
   }
 
-  const relLeft = anchorRect.left - boardRect.left
-  const relTop = anchorRect.top - boardRect.top
-  const relRight = anchorRect.right - boardRect.left
-  const relBottom = anchorRect.bottom - boardRect.top
-
-  // Check if card is in the bottom hand area
-  const isHandCard = relBottom > boardRect.height - 140
-
   let style: React.CSSProperties = {}
 
-  if (isHandCard) {
-    // Rise upwards directly above the hand
-    const left = Math.max(
-      12,
-      Math.min(boardRect.width - PREVIEW_WIDTH - 12, relLeft + anchorRect.width / 2 - PREVIEW_WIDTH / 2)
-    )
-    const bottom = Math.max(12, boardRect.height - relTop + 12)
-    style = {
-      position: 'absolute',
-      left: `${left}px`,
-      bottom: `${bottom}px`,
-      width: `${PREVIEW_WIDTH}px`,
-      height: `${PREVIEW_HEIGHT}px`,
+  if (boardRect) {
+    const relLeft = anchorRect.left - boardRect.left
+    const relTop = anchorRect.top - boardRect.top
+    const relRight = anchorRect.right - boardRect.left
+    const relBottom = anchorRect.bottom - boardRect.top
+
+    // Check if card is in the bottom hand area
+    const isHandCard = relBottom > boardRect.height - 140
+
+    if (isHandCard) {
+      // Rise upwards directly above the hand
+      const left = Math.max(
+        12,
+        Math.min(boardRect.width - PREVIEW_WIDTH - 12, relLeft + anchorRect.width / 2 - PREVIEW_WIDTH / 2)
+      )
+      const bottom = Math.max(12, boardRect.height - relTop + 12)
+      style = {
+        position: 'absolute',
+        left: `${left}px`,
+        bottom: `${bottom}px`,
+        width: `${PREVIEW_WIDTH}px`,
+        height: `${PREVIEW_HEIGHT}px`,
+      }
+    } else {
+      // Battlefield/Opponent/Stack: place to the right if fits, otherwise to the left
+      const fitsRight = relRight + 16 + PREVIEW_WIDTH <= boardRect.width - 12
+      const left = fitsRight
+        ? relRight + 16
+        : Math.max(12, relLeft - PREVIEW_WIDTH - 16)
+
+      const top = Math.max(
+        12,
+        Math.min(
+          boardRect.height - PREVIEW_HEIGHT - 12,
+          relTop + anchorRect.height / 2 - PREVIEW_HEIGHT / 2
+        )
+      )
+
+      style = {
+        position: 'absolute',
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${PREVIEW_WIDTH}px`,
+        height: `${PREVIEW_HEIGHT}px`,
+      }
     }
   } else {
-    // Battlefield/Opponent/Stack: place to the right if fits, otherwise to the left
-    const fitsRight = relRight + 16 + PREVIEW_WIDTH <= boardRect.width - 12
-    const left = fitsRight
-      ? relRight + 16
-      : Math.max(12, relLeft - PREVIEW_WIDTH - 16)
+    // Fixed viewport positioning (e.g. from ActionFeed sidebar)
+    const fitsLeft = anchorRect.left - PREVIEW_WIDTH - 16 >= 12
+    const left = fixedSide === 'left' || fitsLeft
+      ? Math.max(12, anchorRect.left - PREVIEW_WIDTH - 16)
+      : Math.min(window.innerWidth - PREVIEW_WIDTH - 12, anchorRect.right + 16)
 
     const top = Math.max(
       12,
       Math.min(
-        boardRect.height - PREVIEW_HEIGHT - 12,
-        relTop + anchorRect.height / 2 - PREVIEW_HEIGHT / 2
+        window.innerHeight - PREVIEW_HEIGHT - 12,
+        anchorRect.top + anchorRect.height / 2 - PREVIEW_HEIGHT / 2
       )
     )
 
     style = {
-      position: 'absolute',
+      position: 'fixed',
       left: `${left}px`,
       top: `${top}px`,
       width: `${PREVIEW_WIDTH}px`,
       height: `${PREVIEW_HEIGHT}px`,
+      zIndex: 10000,
     }
   }
 

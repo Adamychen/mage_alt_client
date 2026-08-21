@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useStore } from '../state/store'
 import { parseGameEvent, type ActionFeedItem } from './gameEventParser'
 import ActionFeedCard from './ActionFeedCard'
 import FormattedText from './FormattedText'
+import FloatingCardPreview from '../board/FloatingCardPreview'
+import type { CardView } from '../net/types'
 import './ActionFeed.css'
 
 interface ActionFeedProps {
@@ -16,9 +18,20 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
   const feedEndRef = useRef<HTMLDivElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [autoScroll, setAutoScroll] = useState(true)
+  const [hoverCard, setHoverCard] = useState<CardView | null>(null)
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
 
   const myPlayer = game?.players?.find((p) => p.controlled)
   const myPlayerName = myPlayer?.name
+
+  const handleCardHover = useCallback(
+    (card: any, rect?: DOMRect) => {
+      setHoverCard(card ?? null)
+      setHoverRect(rect ?? null)
+      if (onHover) onHover(card, rect)
+    },
+    [onHover]
+  )
 
   // Parse all raw log and chat messages into structured action feed items
   const feedItems = useMemo((): ActionFeedItem[] => {
@@ -91,7 +104,7 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
             <div className="action-feed-empty">Esperando acciones de la partida...</div>
           ) : (
             feedItems.map((item) => (
-              <ActionFeedCard key={item.id} item={item} onHover={onHover} />
+              <ActionFeedCard key={item.id} item={item} onHover={handleCardHover} />
             ))
           )
         ) : (
@@ -108,6 +121,13 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
         )}
         <div ref={feedEndRef} />
       </div>
+
+      {/* Floating Card Preview for hovered action feed cards */}
+      <FloatingCardPreview
+        card={hoverCard}
+        anchorRect={hoverRect}
+        fixedSide="left"
+      />
     </div>
   )
 }
