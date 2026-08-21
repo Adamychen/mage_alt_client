@@ -78,13 +78,29 @@ export default function OpponentZone({
   const lands = permanents.filter(([id, p]) => permanentKind(p) === 'lands' && !attachedIds.has(id))
 
   const { cardW, ref: zoneRef } = useZoneScale()
+  const isDefeated = player.hasLeft === true || player.life <= 0
 
   return (
     <div
-      className={`opponent-zone ${compactPod ? 'compact-pod' : ''}`}
+      className={`opponent-zone ${compactPod ? 'compact-pod' : ''} ${isDefeated ? 'is-defeated' : ''}`}
       ref={zoneRef}
       style={{ '--card-w': `${cardW}px` } as React.CSSProperties}
     >
+      {/* Defeated / Left status overlay */}
+      {isDefeated && (
+        <div className="zone-defeated-overlay">
+          <div className="zone-defeated-card">
+            <span className="zone-defeated-icon">{player.hasLeft ? '🚪' : '💀'}</span>
+            <span className="zone-defeated-title">
+              {player.name} {player.hasLeft ? 'ha abandonado la partida' : 'ha sido derrotado'}
+            </span>
+            <span className="zone-defeated-sub">
+              {player.hasLeft ? 'El jugador se ha desconectado o concedido' : 'Vida reducida a 0'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */}
       <div className="oz-row oz-top-row">
         <PlayerInfoBar

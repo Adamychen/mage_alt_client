@@ -54,24 +54,25 @@ describe('StackZone', () => {
   })
 
   it('renders multiple spells in cascade with newest on top', () => {
+    // In XMage, state.getStack() is serialized in resolution order (top of stack is first)
     const stack: Record<string, CardView> = {
-      'spell-1': {
-        name: 'Lightning Bolt',
-        cardTypes: ['INSTANT'],
-        manaValue: 1,
-      },
       'spell-2': {
         name: 'Counterspell',
         cardTypes: ['INSTANT'],
         manaValue: 2,
         rules: ['Counter target spell.'],
       },
+      'spell-1': {
+        name: 'Lightning Bolt',
+        cardTypes: ['INSTANT'],
+        manaValue: 1,
+      },
     }
 
     const { container } = render(<StackZone stack={stack} canResolve={true} />)
 
     expect(container.textContent).toContain('Pila (2)')
-    // Counterspell was added second, so it resolves first (top)
+    // Counterspell is top of stack, so it resolves first (top)
     const topItem = container.querySelector('.stack-item--top')
     expect(topItem?.textContent).toContain('Counterspell')
 
@@ -85,15 +86,15 @@ describe('StackZone', () => {
     const onHover = vi.fn()
 
     const stack: Record<string, CardView> = {
-      'spell-1': {
-        name: 'Lightning Bolt',
-        cardTypes: ['INSTANT'],
-        manaValue: 1,
-      },
       'spell-2': {
         name: 'Counterspell',
         cardTypes: ['INSTANT'],
         manaValue: 2,
+      },
+      'spell-1': {
+        name: 'Lightning Bolt',
+        cardTypes: ['INSTANT'],
+        manaValue: 1,
       },
     }
 

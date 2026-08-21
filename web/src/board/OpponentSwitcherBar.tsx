@@ -52,6 +52,8 @@ export default function OpponentSwitcherBar({
           const isTurn = opp.playerId === activePlayerId || opp.isActive
           const isTargetable = targetIds.has(opp.playerId)
 
+          const isDefeated = opp.hasLeft === true || opp.life <= 0
+
           // Check if this opponent is being attacked or has blockers in combat
           const isInvolvedInCombat = (combat ?? []).some((g) => {
             const defs = (g.defenders as unknown[]) ?? []
@@ -67,6 +69,7 @@ export default function OpponentSwitcherBar({
                 isSelected ? 'is-selected' : '',
                 isTurn ? 'is-turn' : '',
                 isTargetable ? 'is-targetable' : '',
+                isDefeated ? 'is-defeated' : '',
               ].filter(Boolean).join(' ')}
               onClick={() => {
                 if (isTargetable && onTargetClick) {
@@ -74,12 +77,14 @@ export default function OpponentSwitcherBar({
                 }
                 onSelectOpponent(opp.playerId)
               }}
-              title={`Ver mesa de ${opp.name}${isTargetable ? ' (Clic para seleccionar objetivo)' : ''}`}
+              title={`Ver mesa de ${opp.name}${isDefeated ? (opp.hasLeft ? ' (Ha abandonado)' : ' (Derrotado)') : ''}${isTargetable ? ' (Clic para seleccionar objetivo)' : ''}`}
             >
               <span>{opp.name}</span>
-              <span className="opp-pill-life">{opp.life} ❤️</span>
-              {isTurn && <span className="opp-pill-tag turn-tag">TURNO</span>}
-              {isInvolvedInCombat && (
+              <span className="opp-pill-life">
+                {isDefeated ? (opp.hasLeft ? '🚪 Fuera' : '💀 0') : `${opp.life} ❤️`}
+              </span>
+              {isTurn && !isDefeated && <span className="opp-pill-tag turn-tag">TURNO</span>}
+              {isInvolvedInCombat && !isDefeated && (
                 <span className="opp-pill-tag combat-tag">⚔️ COMBATE</span>
               )}
             </button>

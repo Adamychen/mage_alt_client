@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import GameBoard from '../board/GameBoard'
 import OpponentSwitcherBar from '../board/OpponentSwitcherBar'
 import * as cmds from '../net/commands'
@@ -10,6 +10,7 @@ import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
 import ActionButton from './ActionButton'
 import ActionFeed from './ActionFeed'
+import StackZone from '../board/StackZone'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
 import './GameScreen.css'
@@ -21,8 +22,17 @@ export default function GameScreen() {
   const feedback = useStore((s) => s.feedback)
   const playableIds = useStore((s) => s.playableIds)
   const combat = useStore((s) => s.combat)
-  const [rightTab, setRightTab] = useState<'log' | 'chat'>('log')
+  const [rightTab, setRightTab] = useState<'stack' | 'log' | 'chat'>('log')
   const [busy, setBusy] = useState(false)
+  const stackCount = Object.keys(game?.stack ?? {}).length
+  const prevStackCountRef = useRef(0)
+
+  useEffect(() => {
+    if (stackCount > 0 && prevStackCountRef.current === 0) {
+      setRightTab('stack')
+    }
+    prevStackCountRef.current = stackCount
+  }, [stackCount])
 
   useEffect(() => {
     if (game) maybeAutoPass(game)
@@ -80,8 +90,8 @@ export default function GameScreen() {
   }, [canPass, feedback, onResolveClick])
 
   const opps = game?.players?.filter((p) => !p.controlled) ?? []
-  const isSpectator = !me && opps.length >= 2
-  const topOpps = isSpectator ? opps.slice(0, opps.length - 1) : opps
+  const isSpectator = !me
+  const topOpps = isSpectator ? (opps.length >= 2 ? opps.slice(0, opps.length - 1) : []) : opps
 
   const [selectedOppId, setSelectedOppId] = useState<string | null>(null)
 
@@ -158,7 +168,6 @@ export default function GameScreen() {
             combatMode={combat?.mode ?? null}
             combatChosen={combat?.chosen ?? []}
             onCombatClick={onCombatClick}
-            onResolveClick={onResolveClick}
             crossZonePlayables={crossZone}
             onPlayCrossZone={onPlayableClick}
             focusedOpponentId={currentOpp?.playerId}
@@ -168,10 +177,18 @@ export default function GameScreen() {
           <div className="right-panel-tabs">
             <button
               type="button"
+              className={`right-tab-btn ${rightTab === 'stack' ? 'active' : ''}`}
+              onClick={() => setRightTab('stack')}
+            >
+              Stack
+              {stackCount > 0 && <span className="right-tab-badge active-stack">{stackCount}</span>}
+            </button>
+            <button
+              type="button"
               className={`right-tab-btn ${rightTab === 'log' ? 'active' : ''}`}
               onClick={() => setRightTab('log')}
             >
-              Feed / Log
+              Log
             </button>
             <button
               type="button"
@@ -183,7 +200,15 @@ export default function GameScreen() {
           </div>
 
           <div className="right-panel-content">
-            {rightTab === 'log' ? (
+            {rightTab === 'stack' ? (
+              <StackZone
+                stack={game?.stack ?? null}
+                onCardClick={onTargetClick}
+                targetIds={new Set(targetIds)}
+                onResolveClick={onResolveClick}
+                canResolve={canPass}
+              />
+            ) : rightTab === 'log' ? (
               <ActionFeed />
             ) : (
               <GameChat />

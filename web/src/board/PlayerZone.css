@@ -76,3 +76,50 @@
 .pz-band.permanents-band {
   justify-content: center;
 }
+
+/* Defeated / Left zone overlay */
+.player-zone.is-defeated {
+  position: relative;
+}
+
+.player-zone .zone-defeated-overlay,
+.opponent-zone .zone-defeated-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+  background: rgba(10, 12, 24, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.zone-defeated-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 24px;
+  background: rgba(20, 24, 45, 0.92);
+  border: 1.5px solid rgba(235, 68, 54, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.75);
+}
+
+.zone-defeated-icon {
+  font-size: 26px;
+}
+
+.zone-defeated-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff7878;
+  letter-spacing: 0.02em;
+}
+
+.zone-defeated-sub {
+  font-size: 11px;
+  color: #8c96c0;
+}

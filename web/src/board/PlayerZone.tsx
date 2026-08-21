@@ -65,18 +65,34 @@ export default function PlayerZone({
   const combatSelectableSet = useMemo(() => new Set(combatSelectable), [combatSelectable])
   const combatChosenSet = useMemo(() => new Set(combatChosen), [combatChosen])
 
+  const isDefeated = player.hasLeft === true || player.life <= 0
   const handCount = player.handCount ?? 0
   const givenHand = Object.entries(hand ?? {})
 
   const finalHand = useMemo(() => {
     if (givenHand.length > 0) {
+      if (givenHand.length < handCount) {
+        const res: Record<string, CardView> = { ...hand }
+        for (let i = givenHand.length; i < handCount; i++) {
+          const id = `player-${player.playerId}-unknown-${i}`
+          res[id] = {
+            id,
+            name: '?',
+            manaValue: 0,
+            expansionSetCode: '',
+            cardNumber: '0',
+            faceDown: true,
+          }
+        }
+        return res
+      }
       return hand ?? {}
     }
 
     if (handCount > 0) {
       const res: Record<string, CardView> = {}
       for (let i = 0; i < handCount; i++) {
-        const id = `player-unknown-${i}`
+        const id = `player-${player.playerId}-unknown-${i}`
         res[id] = {
           id,
           name: '?',
@@ -90,16 +106,31 @@ export default function PlayerZone({
     }
 
     return {}
-  }, [hand, handCount, givenHand.length])
+  }, [hand, handCount, givenHand.length, player.playerId])
 
   const { cardW, ref: zoneRef } = useZoneScale()
 
   return (
     <div
-      className="player-zone"
+      className={`player-zone ${isDefeated ? 'is-defeated' : ''}`}
       ref={zoneRef}
       style={{ '--card-w': `${cardW}px` } as React.CSSProperties}
     >
+      {/* Defeated / Left status overlay */}
+      {isDefeated && (
+        <div className="zone-defeated-overlay">
+          <div className="zone-defeated-card">
+            <span className="zone-defeated-icon">{player.hasLeft ? '🚪' : '💀'}</span>
+            <span className="zone-defeated-title">
+              {player.name} {player.hasLeft ? 'ha abandonado la partida' : 'ha sido derrotado'}
+            </span>
+            <span className="zone-defeated-sub">
+              {player.hasLeft ? 'El jugador se ha desconectado o concedido' : 'Vida reducida a 0'}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Row 1: Commander + Creatures */}
       <div className="pz-row pz-creatures-row">
         <div className="pz-commander">

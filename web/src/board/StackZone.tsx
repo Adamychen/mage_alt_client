@@ -1,6 +1,8 @@
+import { useCallback, useState } from 'react'
 import type { CardView } from '../net/types'
 import { getSourceCardName, isAbilityCard } from '../cards/cardImages'
 import CardSlot from './CardSlot'
+import FloatingCardPreview from './FloatingCardPreview'
 import './StackZone.css'
 
 interface StackZoneProps {
@@ -55,14 +57,34 @@ export default function StackZone({
   onResolveClick,
   canResolve = false,
 }: StackZoneProps) {
+  const [hoverCard, setHoverCard] = useState<CardView | null>(null)
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
+
+  const handleHover = useCallback(
+    (card: CardView | null, rect?: DOMRect) => {
+      setHoverCard(card)
+      setHoverRect(rect ?? null)
+      onHover?.(card, rect)
+    },
+    [onHover]
+  )
+
   const entries = Object.entries(stack ?? {})
 
   if (entries.length === 0) {
-    return <div className="stack-zone empty" />
+    return (
+      <div className="stack-zone empty">
+        <div className="stack-empty-state">
+          <span className="stack-empty-icon">⚡</span>
+          <span className="stack-empty-title">Pila vacía</span>
+          <span className="stack-empty-desc">Los hechizos y habilidades jugados aparecerán aquí para resolver.</span>
+        </div>
+      </div>
+    )
   }
 
-  // Ordered so newest (top of stack) is first and resolves first
-  const ordered = [...entries].reverse()
+  // XMage serializes state.getStack() in resolution order (top/newest item is first)
+  const ordered = entries
   const [topId, topCard] = ordered[0]
   const underlyingItems = ordered.slice(1)
 
@@ -92,12 +114,13 @@ export default function StackZone({
               className={[
                 'stack-top-card',
                 'stack-ability-card',
+                canResolve ? 'has-resolve-btn' : '',
                 targetIds.has(topId) ? 'targetable' : '',
                 onCardClick ? 'clickable' : '',
               ].filter(Boolean).join(' ')}
               onClick={onCardClick ? () => onCardClick(topId) : undefined}
-              onMouseEnter={(e) => onHover?.(topCard, e.currentTarget.getBoundingClientRect())}
-              onMouseLeave={() => onHover?.(null)}
+              onMouseEnter={(e) => handleHover(topCard, e.currentTarget.getBoundingClientRect())}
+              onMouseLeave={() => handleHover(null)}
             >
               <div className="ability-card-header">
                 <span className="ability-card-badge">{topTypeLabel}</span>
@@ -117,9 +140,9 @@ export default function StackZone({
               cardId={topId}
               card={topCard}
               onClick={onCardClick ? () => onCardClick(topId) : undefined}
-              onHover={onHover}
+              onHover={handleHover}
               isTarget={targetIds.has(topId)}
-              className="stack-top-card"
+              className={`stack-top-card${canResolve ? ' has-resolve-btn' : ''}`}
             />
           )}
 
@@ -148,17 +171,17 @@ export default function StackZone({
                 onCardClick ? 'clickable' : '',
               ].filter(Boolean).join(' ')}
               onClick={onCardClick ? () => onCardClick(id) : undefined}
-              onMouseEnter={(e) => onHover?.(card, e.currentTarget.getBoundingClientRect())}
-              onMouseLeave={() => onHover?.(null)}
+              onMouseEnter={(e) => handleHover(card, e.currentTarget.getBoundingClientRect())}
+              onMouseLeave={() => handleHover(null)}
               style={{ zIndex: underlyingItems.length - idx }}
             >
               <div className="underlying-thumb-wrap">
-                <CardSlot card={card} className="underlying-thumb" />
+                <CardSlot cardId={id} card={card} className="underlying-thumb" />
               </div>
               <div className="underlying-info">
                 <div className="underlying-header">
                   <span className="underlying-type">{typeLabel}</span>
-                  <span className="underlying-pos">#{underlyingItems.length - idx}</span>
+                  <span className="underlying-pos">#{idx + 2}</span>
                 </div>
                 <div className="underlying-name">{sourceName}</div>
                 {rules && <div className="underlying-rule-preview">{rules}</div>}
@@ -167,6 +190,13 @@ export default function StackZone({
           )
         })}
       </div>
+
+      {/* Floating Card Preview on hover */}
+      <FloatingCardPreview
+        card={hoverCard}
+        anchorRect={hoverRect}
+        fixedSide="left"
+      />
     </div>
   )
 }

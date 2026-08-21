@@ -2,7 +2,6 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { CardView, GameView, PermanentView } from '../net/types'
 import OpponentZone from './OpponentZone'
 import PlayerZone from './PlayerZone'
-import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
 import CombatArrowsOverlay from './CombatArrowsOverlay'
 import FloatingCardPreview from './FloatingCardPreview'
@@ -23,7 +22,6 @@ interface GameBoardProps {
   combatMode?: 'attack' | 'block' | null
   combatChosen?: string[]
   onCombatClick?: (id: string) => void
-  onResolveClick?: () => void
   crossZonePlayables?: CrossZonePlayable[]
   onPlayCrossZone?: (id: string) => void
   focusedOpponentId?: string
@@ -83,16 +81,15 @@ export default function GameBoard({
   combatMode = null,
   combatChosen = [],
   onCombatClick,
-  onResolveClick,
   crossZonePlayables = [],
   onPlayCrossZone,
   focusedOpponentId,
 }: GameBoardProps) {
   const me = game?.players?.find((p) => p.controlled)
   const opps = game?.players?.filter((p) => !p.controlled) ?? []
-  const isSpectator = !me && opps.length >= 2
-  const oppBottom = isSpectator ? opps[opps.length - 1] : undefined
-  const topOpps = isSpectator ? opps.slice(0, opps.length - 1) : opps
+  const isSpectator = !me
+  const oppBottom = isSpectator ? (opps.length >= 2 ? opps[opps.length - 1] : opps[0]) : undefined
+  const topOpps = isSpectator ? (opps.length >= 2 ? opps.slice(0, opps.length - 1) : []) : opps
 
   const targetIdSet = useMemo(() => new Set(targetIds), [targetIds])
   const playableIdSet = useMemo(() => new Set(playableIds), [playableIds])
@@ -204,14 +201,6 @@ export default function GameBoard({
         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
         onPlayCrossZone={onPlayCrossZone}
         helperEmblems={game?.myHelperEmblems}
-      />
-      <StackZone
-        stack={game?.stack ?? null}
-        onCardClick={onTargetClick}
-        onHover={handleCardHover}
-        targetIds={targetIdSet}
-        onResolveClick={onResolveClick}
-        canResolve={!!me?.hasPriority || !!me?.isActive}
       />
       <TargetingOverlay
         sourceId={targetSourceId}

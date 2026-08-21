@@ -110,7 +110,7 @@
 
 .right-tab-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 8px 6px;
   font-size: 11px;
   font-weight: 700;
   font-family: var(--font-display);
@@ -121,7 +121,12 @@
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .right-tab-btn:hover {
@@ -133,6 +138,32 @@
   color: #ffffff;
   border-bottom-color: var(--accent);
   background: rgba(124, 92, 255, 0.08);
+}
+
+.right-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  background: #ffb03a;
+  color: #10131f;
+  line-height: 1;
+}
+
+.right-tab-badge.active-stack {
+  background: #63e6be;
+  box-shadow: 0 0 8px rgba(99, 230, 190, 0.6);
+  animation: stackBadgePulse 1.5s infinite alternate;
+}
+
+@keyframes stackBadgePulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 12px rgba(99, 230, 190, 0.9); }
 }
 
 .right-panel-content {

@@ -40,11 +40,12 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
 
   // Active Player Counters (> 0 only)
   const activeCounters = player.counters?.filter((c) => c.count > 0) ?? []
+  const isDefeated = player.hasLeft === true || player.life <= 0
 
   return (
     <div
       data-player-id={player.playerId}
-      className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''} ${hasPriority ? 'has-priority' : ''}`}
+      className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''} ${hasPriority ? 'has-priority' : ''} ${isDefeated ? 'player-defeated' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
     >
@@ -60,6 +61,11 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
           <span className="player-name" data-priority={player.hasPriority || undefined}>
             {player.name}
           </span>
+          {player.hasLeft ? (
+            <span className="player-status-badge status-left">🚪 Fuera</span>
+          ) : player.life <= 0 ? (
+            <span className="player-status-badge status-defeated">💀 Derrotado</span>
+          ) : null}
           {showMatchWins && (
             <span className="match-wins-dots" title={`Victorias en el match: ${wins}/${winsNeeded}`}>
               {Array.from({ length: Math.max(1, winsNeeded) }).map((_, i) => (
