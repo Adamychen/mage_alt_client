@@ -70,7 +70,7 @@ Browser E2E (Playwright) runs in **two modes with the SAME specs**:
    `FixtureServer` (`web/fixtures/fake.ts`, contract from
    `src/net/types.ts` + declarative scenarios in `fixtures/scenarios/`). No
    Java, no proxy, no flakes — the daily iteration loop. Uses dedicated port
-   **8788** (independent of proxy port 8787). `playwright.config.ts` starts
+   **8789** (independent of the proxy ports: WS 8787 and HTTP page 8788). `playwright.config.ts` starts
    vite only in fake mode.
 - **real (`E2E_BACKEND=real npm run test:e2e:real`)**: against the stack
    (server+proxy+vite). This is the anti-drift net: if the real protocol moves,
@@ -102,7 +102,7 @@ the source of flakes).
     retry, strict cursor in the mana loop).
 3. **The fake-mode demo (`fixtures/scenarios/fullFlow.ts`) suffers neither the
     freeze nor the flood**: the timeline is deterministic.
-4. **Port conflict resolved (2026-08-20)**: fake mode now uses port **8788** (dedicated),
+4. **Port conflict resolved (2026-08-20)**: fake mode now uses port **8789** (dedicated; the earlier 8788 collided with the proxy's HTTP test page),
    real proxy stays on **8787**. No more stop/start race conditions — both modes
    can run simultaneously.
 

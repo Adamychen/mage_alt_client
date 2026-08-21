@@ -71,6 +71,9 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   await page.waitForTimeout(1000)
 
   // (g) entrada del espectador en el GameLog (markup real: .game-log-entries > .game-log-entry)
+  //     Al espectar una partida EN CURSO el stack no está vacío y el panel
+  //     derecho arranca en la pestaña Stack: volver a Log antes de asertar.
+  await page.getByRole('button', { name: 'Log', exact: true }).click()
   await expect(page.locator('.game-log-entries')).toContainText(/Espectador: mirando la partida/, {
     timeout: 15_000,
   })

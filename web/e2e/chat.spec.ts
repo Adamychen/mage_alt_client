@@ -47,7 +47,10 @@ chatTest(
 
     // the message should appear in the chat list
     await expect(page.locator('.chat-list')).toContainText('Hello from lobby!', { timeout: 5_000 })
-    await expect(page.locator('.chat-list')).toContainText('player-1:', { timeout: 5_000 })
+    if (FAKE_MODE) {
+      // el eco de otro usuario solo existe en el escenario chatScenario
+      await expect(page.locator('.chat-list')).toContainText('player-1:', { timeout: 5_000 })
+    }
   },
 )
 
@@ -55,6 +58,7 @@ chatTest(
   'game chat: send and receive messages while watching a game',
   { tag: '@chat' },
   async ({ page, chatServer }) => {
+    test.skip(!FAKE_MODE, 'Solo fake: especta la mesa "Chat Test" del escenario chatScenario')
     void chatServer
     const username = `gc-${String(Date.now()).slice(-10)}`
     cleanupUser(username)
@@ -95,6 +99,7 @@ chatTest(
   'game chat: quick reaction appears in chat',
   { tag: '@chat' },
   async ({ page, chatServer }) => {
+    test.skip(!FAKE_MODE, 'Solo fake: especta la mesa "Chat Test" del escenario chatScenario')
     void chatServer
     const username = `qr-${String(Date.now()).slice(-10)}`
     cleanupUser(username)

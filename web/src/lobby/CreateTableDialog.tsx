@@ -645,7 +645,12 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
                         const data = res.data as { tableId?: string; TableId?: string } | undefined
                         const tableId = data?.tableId ?? data?.TableId
                         if (tableId) {
-                          await cmds.watchTable(tableId)
+                          // el servidor NO auto-arranca mesas IA vs IA: hay que
+                          // enviar startMatch antes de colgar el espectador
+                          const started = await cmds.startMatch(tableId)
+                          if (started.ok) {
+                            await cmds.watchTable(tableId)
+                          }
                         }
                         onClose()
                       }

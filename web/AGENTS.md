@@ -21,7 +21,7 @@ proxy over a JSON WebSocket and contains **no XMage/Java code**.
 - `npm run test:e2e` (alias `test:e2e:fake`) — Playwright against the
   **FakeServer** (`web/fixtures/fake.ts`): a Node WS server that speaks the real
   protocol derived from `web/src/net/types.ts`. No proxy, no server, no flakes.
-  Dedicated port **8788**.
+  Dedicated port **8789** (8788 is the Java proxy's HTTP test page — never use it here).
 - `E2E_BACKEND=real npm run test:e2e:real` — against a live stack (needs the
   proxy running; see `Mage.Proxy/AGENTS.md`). Use only as the anti-drift net.
 

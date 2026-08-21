@@ -5,9 +5,9 @@
 // Elimina las carreras del canvas y los cuelgues de desarrollo de tierras:
 // la partida avanza sola y el test solo actúa cuando toca la acción bajo prueba.
 
-import { BACKEND_PORT } from './dual'
+import { PROXY_PORT } from './dual'
 
-const WS_URL = `ws://127.0.0.1:${BACKEND_PORT}`
+const WS_URL = `ws://127.0.0.1:${PROXY_PORT}`
 const HOST = 'localhost'
 const PORT = 17171
 

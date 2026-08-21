@@ -9,7 +9,7 @@ import { expect, type Page } from '@playwright/test'
 import { cleanupUser, registerHelper } from '../cleanup'
 import { HumanHelper } from '../wshelper'
 import { parsedLen } from './frames'
-import { BACKEND_PORT } from '../dual'
+import { PROXY_PORT } from '../dual'
 
 export const MAX_FRAMES = 500
 
@@ -56,7 +56,7 @@ export interface LoginOptions {
 }
 
 export async function login(page: Page, username: string, opts: LoginOptions = {}): Promise<void> {
-  await page.goto(`/?proxyPort=${BACKEND_PORT}`)
+  await page.goto(`/?proxyPort=${PROXY_PORT}`)
   await expect(page.locator('form.login-card')).toBeVisible({ timeout: 20_000 })
   await page.getByLabel(/Proxy/i).fill('localhost')
   await page.getByLabel(/XMage Server/i).fill('localhost')
@@ -96,7 +96,8 @@ export interface CreateTableOptions {
 }
 
 export async function createTable(page: Page, tableName: string, opts: CreateTableOptions = {}): Promise<void> {
-  await page.getByRole('button', { name: /Nueva mesa/i }).click()
+  // exact: el empty-state de "0 mesas" añade un segundo botón "Crear Nueva Mesa"
+  await page.getByRole('button', { name: '➕ Nueva mesa', exact: true }).click()
   await expect(page.getByRole('heading', { name: /Nueva mesa/i })).toBeVisible()
   await page.getByLabel(/Nombre/i).fill(tableName)
 
