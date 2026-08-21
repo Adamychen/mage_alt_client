@@ -102,10 +102,30 @@
 /* Compact Pod Style (Commander FFA 3-pod row) */
 .opponent-zone.compact-pod {
   --card-w: clamp(52px, 4.8vw, 84px);
-  padding: 3px 6px;
+  padding: 4px 6px;
   gap: 4px;
-  background: rgba(14, 18, 38, 0.45);
+  background: transparent;
   border-radius: 6px;
+  justify-content: flex-start;
+  height: 100%;
+}
+
+.opponent-zone.compact-pod .oz-top-row {
+  flex: 0 0 auto;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+.opponent-zone.compact-pod .oz-permanents-row {
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.opponent-zone.compact-pod .oz-creatures-row {
+  flex: 1.2 1 auto;
+  min-height: 0;
+  align-items: flex-start;
 }
 
 .opponent-zone.compact-pod .oz-row {
@@ -114,6 +134,7 @@
 
 .opponent-zone.compact-pod .oz-band {
   gap: 4px;
+  justify-content: flex-start;
 }
 
 .opponent-zone.compact-pod .oz-commander {

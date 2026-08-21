@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import type { CardView, PermanentView, PlayerView } from '../net/types'
-import OpponentZone from './OpponentZone'
+import OpponentPodZone from './OpponentPodZone'
 import './CommanderPodRow.css'
 
 interface CommanderPodRowProps {
@@ -103,13 +103,12 @@ export default function CommanderPodRow({
                   hasPriority ? 'has-priority' : '',
                 ].filter(Boolean).join(' ')}
               >
-                <OpponentZone
+                <OpponentPodZone
                   player={opp}
                   onCardClick={onCardClick}
                   onCardHover={onCardHover}
                   targetIds={targetIds}
                   revealedCards={getRevealedCards(opp)}
-                  compactPod
                 />
               </div>
             )

@@ -15,8 +15,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 4px 12px;
-  background: rgba(14, 18, 38, 0.7);
+  padding: 3px 10px;
+  background: rgba(14, 18, 38, 0.85);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
   z-index: 10;
@@ -26,7 +26,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
+  padding: 2px 10px;
   background: rgba(26, 32, 64, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 14px;
@@ -87,8 +87,8 @@
   flex: 1;
   min-height: 0;
   width: 100%;
-  gap: 12px;
-  padding: 4px 14px 6px 14px;
+  gap: 8px;
+  padding: 4px 10px 4px 10px;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -98,7 +98,7 @@
 }
 
 .pod-slider-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 5px;
 }
 
 .pod-slider-scroll::-webkit-scrollbar-track {
@@ -117,9 +117,10 @@
 
 /* 3. Each Opponent Slide */
 .pod-opponent-slide {
-  flex: 0 0 clamp(440px, 46vw, 680px);
-  min-width: 0;
-  scroll-snap-align: center;
+  flex: 1 1 0;
+  min-width: 340px;
+  max-width: 100%;
+  scroll-snap-align: start;
   background: rgba(14, 18, 38, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 8px;
@@ -145,8 +146,8 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: rgba(18, 22, 46, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -168,9 +169,9 @@
 }
 
 .pod-nav-btn.prev-btn {
-  left: 6px;
+  left: 4px;
 }
 
 .pod-nav-btn.next-btn {
-  right: 6px;
+  right: 4px;
 }

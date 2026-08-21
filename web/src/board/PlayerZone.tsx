@@ -69,23 +69,7 @@ export default function PlayerZone({
 
   const finalHand = useMemo(() => {
     if (givenHand.length > 0) {
-      if (givenHand.length >= handCount) {
-        return hand ?? {}
-      }
-      const res: Record<string, CardView> = { ...(hand ?? {}) }
-      const unknownCount = Math.max(0, handCount - givenHand.length)
-      for (let i = 0; i < unknownCount; i++) {
-        const id = `player-unknown-${i}`
-        res[id] = {
-          id,
-          name: '?',
-          manaValue: 0,
-          expansionSetCode: '',
-          cardNumber: '0',
-          faceDown: true,
-        }
-      }
-      return res
+      return hand ?? {}
     }
 
     if (handCount > 0) {
