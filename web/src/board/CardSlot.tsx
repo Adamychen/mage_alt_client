@@ -53,11 +53,16 @@ export default function CardSlot({
   const counters = card.counters ?? []
   const totalCounters = counters.reduce((a, c) => a + c.count, 0)
 
-  // Strict Creature Check
+  // Strict Type Checks
   const types = (card.cardTypes ?? []).map((t) => String(t).toLowerCase())
   const isCreature = types.includes('creature') || String(card.mageObjectType ?? '').toUpperCase().includes('CREATURE')
   const isLand = types.includes('land')
   const isRealCreature = isCreature && (!isLand || types.includes('creature'))
+  const isPlaneswalker = types.includes('planeswalker') || String(card.mageObjectType ?? '').toUpperCase().includes('PLANESWALKER')
+  const isBattle = types.includes('battle') || String(card.mageObjectType ?? '').toUpperCase().includes('BATTLE')
+
+  const loyaltyVal = perm.loyalty ? parseInt(String(perm.loyalty), 10) : 0
+  const defenseVal = perm.defense ? parseInt(String(perm.defense), 10) : 0
 
   const hasSummoningSickness = isRealCreature && !tapped && perm.summoningSickness === true
 
@@ -95,20 +100,20 @@ export default function CardSlot({
       )}
 
       {/* Creature Power / Toughness Badge (Creatures only) */}
-      {showPt && isRealCreature && perm.power && perm.toughness && (
+      {showPt && isRealCreature && perm.power != null && perm.toughness != null && (
         <div className="pt-badge">{perm.power}/{perm.toughness}</div>
       )}
 
-      {/* Planeswalker Loyalty Badge */}
-      {perm.loyalty && (
+      {/* Planeswalker Loyalty Badge (Planeswalkers only) */}
+      {isPlaneswalker && loyaltyVal > 0 && (
         <div className="loyalty-badge" title={`Lealtad: ${perm.loyalty}`}>
           <span className="loyalty-icon">🛡️</span>
           <span className="loyalty-val">{perm.loyalty}</span>
         </div>
       )}
 
-      {/* Battle Defense Badge */}
-      {perm.defense && (
+      {/* Battle Defense Badge (Battles only) */}
+      {isBattle && defenseVal > 0 && (
         <div className="defense-badge" title={`Defensa: ${perm.defense}`}>
           <span className="defense-icon">⚔️</span>
           <span className="defense-val">{perm.defense}</span>
