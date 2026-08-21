@@ -137,7 +137,7 @@ export default function GameBoard({
         player={isSpectator ? oppBottom : me}
         hand={isSpectator ? spectatorBottomHand : (game?.myHand ?? {})}
         onCardClick={(id) => {
-          if (combatSelectable.includes(id)) onCombatClick?.(id)
+          if (combatSelectable.includes(id) || combatChosen.includes(id)) onCombatClick?.(id)
           else if (targetIds.includes(id)) onTargetClick?.(id)
           else if (playableIds.includes(id)) onPlayableClick?.(id)
         }}
@@ -145,6 +145,8 @@ export default function GameBoard({
         onCardHover={handleCardHover}
         targetIds={targetIdSet}
         playableIds={playableIdSet}
+        combatSelectable={combatSelectable}
+        combatChosen={combatChosen}
         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
         onPlayCrossZone={onPlayCrossZone}
       />

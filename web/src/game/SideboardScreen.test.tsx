@@ -1,5 +1,6 @@
-import { render } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+// @vitest-environment jsdom
+import { cleanup, render } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import SideboardScreen from './SideboardScreen'
 import { reset } from '../state/store'
 import { setState } from '../state/state'
@@ -36,6 +37,11 @@ describe('SideboardScreen', () => {
   beforeEach(() => {
     reset()
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    cleanup()
+    reset()
   })
 
   it('does not render when sideboardScreen is null', () => {

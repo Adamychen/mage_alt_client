@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { PlayerView, CardView, PermanentView } from '../net/types'
 import PlayerInfoBar from '../game/PlayerInfoBar'
 import ResourceBar from '../game/ResourceBar'
@@ -14,6 +15,8 @@ interface PlayerZoneProps {
   onCardHover?: (card: CardView | PermanentView | null, rect?: DOMRect) => void
   targetIds?: Set<string>
   playableIds?: Set<string>
+  combatSelectable?: string[]
+  combatChosen?: string[]
   crossZonePlayables?: CrossZonePlayable[]
   onPlayCrossZone?: (id: string) => void
 }
@@ -33,6 +36,8 @@ export default function PlayerZone({
   onCardHover,
   targetIds = new Set(),
   playableIds = new Set(),
+  combatSelectable = [],
+  combatChosen = [],
   crossZonePlayables,
   onPlayCrossZone,
 }: PlayerZoneProps) {
@@ -43,27 +48,35 @@ export default function PlayerZone({
   const others = permanents.filter(([, p]) => permanentKind(p) === 'other')
   const lands = permanents.filter(([, p]) => permanentKind(p) === 'lands')
 
+  const combatSelectableSet = useMemo(() => new Set(combatSelectable), [combatSelectable])
+  const combatChosenSet = useMemo(() => new Set(combatChosen), [combatChosen])
+
   return (
     <div className="player-zone">
       {/* Row 1: Commander + Creatures */}
       <div className="pz-row pz-creatures-row">
         <div className="pz-commander" />
         <div className="pz-band creatures-band">
-          {creatures.map(([id, perm]) => (
-            <CardSlot
-              key={id}
-              cardId={id}
-              card={perm}
-              onClick={onCardClick ? () => onCardClick(id) : undefined}
-              onHover={onCardHover}
-              isTarget={targetIds.has(id)}
-              isPlayable={playableIds.has(id)}
-              tapped={perm.tapped === true}
-              showPt
-              showCounters
-              showDamage
-            />
-          ))}
+          {creatures.map(([id, perm]) => {
+            const isSelectable = combatSelectableSet.has(id)
+            const isChosen = combatChosenSet.has(id)
+            return (
+              <CardSlot
+                key={id}
+                cardId={id}
+                card={perm}
+                onClick={onCardClick ? () => onCardClick(id) : undefined}
+                onHover={onCardHover}
+                isTarget={targetIds.has(id)}
+                isPlayable={playableIds.has(id) || isSelectable || isChosen}
+                isChosen={isChosen}
+                tapped={perm.tapped === true}
+                showPt
+                showCounters
+                showDamage
+              />
+            )
+          })}
         </div>
       </div>
 
@@ -117,13 +130,13 @@ export default function PlayerZone({
           targetIds={targetIds}
           compact
         />
-          <ResourceBar
-           player={player}
-           side="my"
-           compact
-           crossZonePlayables={crossZonePlayables}
-           onPlayCrossZone={onPlayCrossZone}
-          />
+        <ResourceBar
+          player={player}
+          side="my"
+          compact
+          crossZonePlayables={crossZonePlayables}
+          onPlayCrossZone={onPlayCrossZone}
+        />
       </div>
     </div>
   )
