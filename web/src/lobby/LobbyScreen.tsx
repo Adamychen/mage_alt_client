@@ -80,6 +80,30 @@ export function formatDeckTypeName(deckType?: string): { short: string; full: st
   return { short: deckType, full: deckType }
 }
 
+export function formatSeatHistory(sHistory?: string, userHistory?: string): { short: string | null; full: string } {
+  const full = (userHistory || sHistory || '').trim()
+  if (!full) return { short: null, full: '' }
+
+  // Prefer seat's own concise history if present (e.g. "52 (Q:25)")
+  if (sHistory && sHistory.trim().length <= 16 && !sHistory.includes('Constructed Rating')) {
+    return { short: sHistory.trim(), full }
+  }
+
+  // Parse from raw user history "Matches: 265 (I:3 T:1 Q:13) (6%), Tourneys..."
+  const matchMatch = full.match(/Matches:\s*(\d+)/i)
+  const quitMatch = full.match(/\((\d+%\))\s*,/i) || full.match(/\((\d+%)\)/i)
+  if (matchMatch) {
+    const count = matchMatch[1]
+    const quit = quitMatch ? quitMatch[1] : ''
+    return { short: `${count}M${quit ? ` (${quit})` : ''}`, full }
+  }
+
+  if (full.length > 14) {
+    return { short: full.slice(0, 12) + '…', full }
+  }
+  return { short: full, full }
+}
+
 export function extractLobbyUsers(rawUsers: unknown): import('../net/types').UsersView[] {
   if (!rawUsers) return []
   if (Array.isArray(rawUsers)) {
@@ -531,7 +555,7 @@ export default function LobbyScreen() {
                               ? users.find((u) => u.userName.toLowerCase() === s.playerName.toLowerCase())
                               : undefined
                             const rating = foundUser?.constructedRating ?? (s as any).constructedRating
-                            const history = foundUser?.matchHistory || s.history
+                            const historyInfo = formatSeatHistory(s.history, foundUser?.matchHistory)
                             const seatAvatarId = isHuman
                               ? s.playerName === conn?.username
                                 ? conn?.avatarId
@@ -584,9 +608,9 @@ export default function LobbyScreen() {
 
                                 {/* Parte 3: Resto de info (Historial, Rating, Estado) */}
                                 <div className="seat-part-info">
-                                  {history && (
-                                    <span className="seat-history-pill" title={`Historial: ${history}`}>
-                                      🏆 {history}
+                                  {historyInfo.short && (
+                                    <span className="seat-history-pill" title={historyInfo.full || `Historial: ${historyInfo.short}`}>
+                                      🏆 {historyInfo.short}
                                     </span>
                                   )}
                                   {rating && <RankBadge elo={rating} compact showElo />}

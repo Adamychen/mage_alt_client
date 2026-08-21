@@ -367,19 +367,13 @@
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
   gap: 16px;
   align-content: start;
   padding: 4px;
 }
 
-@media (max-width: 1400px) {
-  .tables-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .tables-list {
     grid-template-columns: 1fr;
   }
@@ -696,22 +690,22 @@
   opacity: 0.6;
 }
 
-/* Parte 2: Nombre Completo (sin cortar, centrado, altura flexible) */
+/* Parte 2: Nombre Completo (sin cortar, centrado, nunca aplastado) */
 .seat-part-name {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 110px;
 }
 
 .seat-player-name {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #ffffff;
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.2;
 }
 
@@ -724,6 +718,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .seat-bot-tag {
@@ -735,6 +730,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Parte 3: Resto de info (Rating, Historial, Estado) */
@@ -743,6 +739,7 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .seat-history-pill {
@@ -755,6 +752,9 @@
   border-radius: 6px;
   font-family: var(--font-mono, monospace);
   white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .seat-ready-indicator {
