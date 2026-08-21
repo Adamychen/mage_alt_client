@@ -4,6 +4,7 @@ import TableFilterBar, {
   INITIAL_TABLE_FILTERS,
   filterTables,
 } from './TableFilterBar'
+import { formatDeckTypeName } from './LobbyScreen'
 import type { TableView } from '../net/types'
 
 afterEach(() => {
@@ -226,5 +227,18 @@ describe('TableFilterBar component', () => {
     expect(getByText('Modo de juego:')).not.toBeNull()
     expect(getByText('Nivel de habilidad:')).not.toBeNull()
     expect(getByText('🔓 Ocultar privadas con contraseña')).not.toBeNull()
+  })
+
+  it('formats massive Chaos Draft booster strings cleanly', () => {
+    const hugeDraft =
+      'Limited 1xMB1 1x7ED 1xBRO 1xRNA 1xTPR 1xDMU 1xCMM 1xSNC 1xRVR 1xSHM 1xRAV 1xINV 1xEMN 1xMOR 1xTHB 1xDRK 1xM13 1xRTR 1xONS 1xFEM 1xLGN 1xLCI 1xEMA 1xBNG 1xDIS 1xMBS 1xMKM 1xME3 1xMM3 1xHOB 1xME1 1xNEM 1xAFR 1xWHO 1xPCY 1xMH1'
+    const res = formatDeckTypeName(hugeDraft)
+    expect(res.short).toContain('Limited (Chaos Draft • 36 sobres)')
+    expect(res.full).toBe(hugeDraft)
+
+    // Standard deck type unchanged
+    const standardRes = formatDeckTypeName('Constructed - Standard')
+    expect(standardRes.short).toBe('Constructed - Standard')
+    expect(standardRes.full).toBe('Constructed - Standard')
   })
 })

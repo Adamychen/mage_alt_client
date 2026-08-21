@@ -20,10 +20,12 @@ import mage.players.net.UserSkipPrioritySteps;
 import mage.remote.Connection;
 import mage.remote.SessionImpl;
 import mage.utils.MageVersion;
+import mage.view.RoomUsersView;
 import mage.view.TableView;
 import org.java_websocket.WebSocket;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -359,7 +361,11 @@ public class ProxyClient implements MageClient {
             lobby.addProperty("type", "lobby");
             lobby.addProperty("roomId", roomId.toString());
             lobby.add("tables", JsonParser.parseString(JsonUtil.toJson(session.getTables(roomId))));
-            lobby.add("users", JsonParser.parseString(JsonUtil.toJson(session.getRoomUsers(roomId))));
+            Collection<RoomUsersView> roomUsers = session.getRoomUsers(roomId);
+            RoomUsersView usersView = (roomUsers != null && !roomUsers.isEmpty())
+                    ? roomUsers.iterator().next()
+                    : new RoomUsersView(Collections.emptyList(), 0, 0, 0);
+            lobby.add("users", JsonParser.parseString(JsonUtil.toJson(usersView)));
             lobby.add("serverMessages", JsonParser.parseString(JsonUtil.toJson(session.getServerMessages())));
             broadcastAuthorized(lobby.toString());
         } catch (Throwable ex) {

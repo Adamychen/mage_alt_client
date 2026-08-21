@@ -63,6 +63,23 @@ function getSkillBadge(skill?: string): { label: string; icon: string; className
   }
 }
 
+export function formatDeckTypeName(deckType?: string): { short: string; full: string } {
+  if (!deckType) return { short: 'Desconocido', full: '' }
+  // Check if it's a huge Chaos Draft booster list (e.g. "Limited 1xMB1 1x7ED 1xBRO...")
+  const boosterMatches = deckType.match(/(\d+x[A-Z0-9]+)/g)
+  if (boosterMatches && boosterMatches.length > 3) {
+    const totalBoosters = boosterMatches.reduce((acc, str) => {
+      const num = parseInt(str.split('x')[0], 10) || 1
+      return acc + num
+    }, 0)
+    return {
+      short: `Limited (Chaos Draft • ${totalBoosters} sobres)`,
+      full: deckType,
+    }
+  }
+  return { short: deckType, full: deckType }
+}
+
 export function extractLobbyUsers(rawUsers: unknown): import('../net/types').UsersView[] {
   if (!rawUsers) return []
   if (Array.isArray(rawUsers)) {
@@ -466,7 +483,12 @@ export default function LobbyScreen() {
 
                         <div className="table-meta-row">
                           <span className="table-game-tag">🎮 {t.gameType}</span>
-                          <span className="table-deck-tag">📜 {t.deckType}</span>
+                          <span
+                            className="table-deck-tag"
+                            title={formatDeckTypeName(t.deckType).full}
+                          >
+                            📜 {formatDeckTypeName(t.deckType).short}
+                          </span>
                           <span className="table-seats-count table-seats">👥 {t.seatsInfo}</span>
                           {skill && (
                             <span className={`table-skill-badge ${skill.className}`} title={`Nivel de habilidad: ${skill.label}`}>
@@ -500,25 +522,28 @@ export default function LobbyScreen() {
                           </div>
                         )}
 
-                        {/* Player Seats Badges */}
+                        {/* Player Seats Section (Full Width, 3-Part Layout: Avatar, Full Name, Info) */}
                         <div className="table-seats-roster">
                           {t.seats.map((s, idx) => {
                             const isOwner = t.controllerName && s.playerName === t.controllerName
                             const isHuman = !s.playerType || s.playerType === 'HUMAN'
+                            const foundUser = s.playerName
+                              ? users.find((u) => u.userName.toLowerCase() === s.playerName.toLowerCase())
+                              : undefined
+                            const rating = foundUser?.constructedRating ?? (s as any).constructedRating
+                            const history = foundUser?.matchHistory || s.history
                             const seatAvatarId = isHuman
                               ? s.playerName === conn?.username
                                 ? conn?.avatarId
-                                : 10
+                                : foundUser?.avatarId
                               : 13
+
                             return (
                               <div
                                 key={idx}
                                 className={`seat-badge ${s.playerName ? 'occupied interactive' : 'empty'} ${isOwner ? 'is-owner' : ''}`}
                                 onClick={() => {
                                   if (!s.playerName) return
-                                  const foundUser = users.find(
-                                    (u) => u.userName.toLowerCase() === s.playerName.toLowerCase(),
-                                  )
                                   setSelectedUser(
                                     foundUser ?? {
                                       userName: s.playerName,
@@ -536,23 +561,44 @@ export default function LobbyScreen() {
                                   )
                                 }}
                                 style={s.playerName ? { cursor: 'pointer' } : undefined}
-                                title={s.playerName ? `Ver acciones de ${s.playerName}` : undefined}
+                                title={s.playerName ? `Ver acciones de ${s.playerName}` : 'Plaza disponible'}
                               >
-                                {s.playerName ? (
-                                  <AvatarImage avatarId={seatAvatarId} username={s.playerName} size="small" />
-                                ) : (
-                                  <span className="seat-icon">⭕</span>
-                                )}
-                                {s.flagName && <CountryFlag flagName={s.flagName} className="seat-flag" />}
-                                <span className="seat-name">
-                                  {s.playerName || 'Plaza vacía'}
-                                  {isOwner && <span className="seat-crown" title="Creador de la mesa">👑</span>}
-                                </span>
-                                {s.history && (
-                                  <span className="seat-history" title={`Historial: ${s.history}`}>
-                                    ({s.history})
+                                {/* Parte 1: Icono / Avatar & Bandera */}
+                                <div className="seat-part-avatar">
+                                  {s.playerName ? (
+                                    <AvatarImage avatarId={seatAvatarId} username={s.playerName} size="small" />
+                                  ) : (
+                                    <span className="seat-icon empty-circle">⭕</span>
+                                  )}
+                                  {s.flagName && <CountryFlag flagName={s.flagName} className="seat-flag" />}
+                                </div>
+
+                                {/* Parte 2: Nombre Completo (sin cortar, centrado, altura flexible) */}
+                                <div className="seat-part-name">
+                                  <span className="seat-player-name">
+                                    {s.playerName || 'Plaza vacía disponible'}
                                   </span>
-                                )}
+                                  {isOwner && <span className="seat-crown" title="Creador / Host de la mesa">👑 Host</span>}
+                                  {!isHuman && <span className="seat-bot-tag" title="Oponente Inteligencia Artificial">🤖 {s.playerType || 'IA'}</span>}
+                                </div>
+
+                                {/* Parte 3: Resto de info (Historial, Rating, Estado) */}
+                                <div className="seat-part-info">
+                                  {history && (
+                                    <span className="seat-history-pill" title={`Historial: ${history}`}>
+                                      🏆 {history}
+                                    </span>
+                                  )}
+                                  {rating && <RankBadge elo={rating} compact showElo />}
+                                  {s.playerName ? (
+                                    <span className="seat-ready-indicator" title="Jugador conectado y listo">
+                                      <span className="seat-ready-dot" />
+                                      <span className="seat-ready-text">Listo</span>
+                                    </span>
+                                  ) : (
+                                    <span className="seat-open-badge">Disponible</span>
+                                  )}
+                                </div>
                               </div>
                             )
                           })}

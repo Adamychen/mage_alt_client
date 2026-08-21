@@ -549,6 +549,13 @@
   white-space: nowrap;
 }
 
+.table-deck-tag {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .table-skill-badge.skill-beginner {
   border-color: rgba(99, 230, 190, 0.4);
   color: #63e6be;
@@ -628,60 +635,159 @@
   text-overflow: ellipsis;
 }
 
-/* Seats Roster */
+/* Seats Roster: Full Width Vertical Stack */
 .table-seats-roster {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 3px;
-}
-
-.seat-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 7px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  max-width: 100%;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
   box-sizing: border-box;
+  margin-top: 6px;
 }
 
-.seat-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
+/* 3-Part Seat Row (Full Width, Centered, Flexible Height) */
+.seat-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(8, 12, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.15s ease;
+  min-height: 40px;
 }
 
 .seat-badge.occupied {
-  background: rgba(30, 38, 76, 0.7);
-  color: #e2e6f8;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 24, 48, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .seat-badge.occupied.is-owner {
-  background: rgba(45, 38, 75, 0.75);
-  border-color: rgba(255, 208, 112, 0.4);
+  background: rgba(30, 24, 60, 0.75);
+  border-color: rgba(255, 208, 112, 0.35);
+}
+
+.seat-badge.empty {
+  background: rgba(8, 12, 28, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: #8c96c0;
+}
+
+.seat-badge.interactive:hover {
+  background: rgba(28, 36, 72, 0.85);
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateX(2px);
+}
+
+/* Parte 1: Avatar & Flag */
+.seat-part-avatar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.empty-circle {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* Parte 2: Nombre Completo (sin cortar, centrado, altura flexible) */
+.seat-part-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.seat-player-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.2;
 }
 
 .seat-crown {
   font-size: 10px;
-  margin-left: 2px;
+  font-weight: 800;
+  color: #ffd070;
+  background: rgba(255, 208, 112, 0.15);
+  border: 1px solid rgba(255, 208, 112, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
-.seat-history {
+.seat-bot-tag {
   font-size: 10px;
-  color: #8c96c0;
-  margin-left: 2px;
-  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  color: #c4b5fd;
+  background: rgba(124, 92, 255, 0.18);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
-.seat-badge.empty {
-  background: rgba(20, 25, 50, 0.4);
-  color: #7c84a8;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
+/* Parte 3: Resto de info (Rating, Historial, Estado) */
+.seat-part-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.seat-history-pill {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
+}
+
+.seat-ready-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #63e6be;
+  background: rgba(99, 230, 190, 0.1);
+  border: 1px solid rgba(99, 230, 190, 0.25);
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.seat-ready-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #63e6be;
+  box-shadow: 0 0 6px #63e6be;
+}
+
+.seat-open-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffd070;
+  background: rgba(255, 208, 112, 0.12);
+  border: 1px solid rgba(255, 208, 112, 0.3);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 .seat-icon {
