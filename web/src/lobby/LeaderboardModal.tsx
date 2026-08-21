@@ -91,7 +91,12 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
   }, [users, searchQuery])
 
   return (
-    <div className="overlay">
+    <div
+      className="overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div className="dialog panel leaderboard-dialog">
         <div className="leaderboard-header">
           <div className="leaderboard-header-title">
@@ -319,12 +324,6 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
               </div>
             </div>
           )}
-        </div>
-
-        <div className="leaderboard-footer">
-          <button type="button" className="primary" onClick={onClose}>
-            Cerrar
-          </button>
         </div>
       </div>
     </div>
