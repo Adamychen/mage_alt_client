@@ -1,8 +1,8 @@
-# AGENTS.md — Mage.Proxy
+# AGENTS.md — XMage Nexus
 
-A modern web client for XMage (Magic: The Gathering). The stack consists of:
+A modern, high-performance web client for XMage. The stack consists of:
 XMage server (Java, test mode) + WebSocket proxy (`Mage.Proxy`, Java) + web
-client (`web`, TypeScript + Vite).
+client (`web`, React 19 + TypeScript + PixiJS 8 + Vite).
 
 **Master document: `PROJECT.md`** — source of truth for status, phases and
 lessons. Update it when finishing a task (phases, lessons, quality table,

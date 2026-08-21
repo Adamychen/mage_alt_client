@@ -1,30 +1,30 @@
-# Mage — Modern Web Client for XMage
+# XMage Nexus — Modern Web Client for XMage
 
-A modern web client for [XMage](https://github.com/magefree/mage) (Magic: The Gathering), with a visual style inspired by MTG Arena. Play directly in the browser **without installing anything**.
+**XMage Nexus** is a modern, high-performance web client for [XMage](https://github.com/magefree/mage), featuring a visual aesthetic inspired by modern digital card games. Play directly in the browser **without installing Java or desktop apps**.
 
-> **Note:** This is an alternative client, NOT the official XMage client. The rules engine remains XMAGE (Java).
+> **Note:** XMage Nexus is an independent modern client interface. The rules engine and card database remain the battle-tested XMage Java server (`Mage.Server`).
 
 ## Architecture
 
 ```
-┌──────────────────┐   WS JSON    ┌────────────────────┐   XMage protocol    ┌───────────────────┐
-│  Browser         │ ──────────▶ │ Proxy Java (Mage    │ ─────────────────── │ Server XMage        │
-│  React + PixiJS  │ ◀────────── │ .Proxy)             │ ◀────────────────── │ (Mage.Server)       │
-│  WebGL2          │              │ WebSocket :8787     │                     │ 1.4.61-V1           │
-└──────────────────┘              └────────────────────┘                     └───────────────────┘
+┌──────────────────────────┐   WS JSON    ┌────────────────────┐   XMage protocol    ┌───────────────────┐
+│  XMage Nexus Web Client  │ ──────────▶ │ Proxy Java (Mage   │ ─────────────────── │ Server XMage        │
+│  React 19 + PixiJS 8     │ ◀────────── │ .Proxy)            │ ◀────────────────── │ (Mage.Server)       │
+│  WebGL2 Rendering        │              │ WebSocket :8787    │                     │ 1.4.61-V1           │
+└──────────────────────────┘              └────────────────────┘                     └───────────────────┘
 ```
 
-- **XMage Server** (`Mage.Server/`): rules engine, card database and networking (Java). Existing project, not modified.
-- **WebSocket Proxy** (`Mage.Proxy/`): bridge that translates between JSON/WebSocket and the XMage protocol (Java serialization). The browser only communicates with this proxy.
-- **Web Client** (`web/`): React + PixiJS (WebGL2) application that renders the board, animations and UI.
+- **XMage Server** (`Mage.Server/`): rules engine, card database (+25,000 cards) and networking (Java). Existing project.
+- **WebSocket Proxy** (`Mage.Proxy/`): high-throughput bridge that translates between JSON/WebSocket and the XMage serialization protocol.
+- **Web Client** (`web/`): React 19 + PixiJS 8 (WebGL2) client rendering the board, animations, targeting, audio, and lobby UI.
 
 ## Tech Stack
 
 | Layer | Technologies |
 |---|---|
-| XMage Server | Java, jboss-remoting (1.4.61-V1) |
-| Proxy | Java, Java-WebSocket, Gson |
-| Web Client | React 19, PixiJS 8 (WebGL2), TypeScript, Vite 8, Playwright |
+| XMage Server | Java 17, jboss-remoting (1.4.61-V1) |
+| WebSocket Proxy | Java 17, Java-WebSocket, Gson (`Mage.Proxy`) |
+| Web Client | React 19, PixiJS 8 (WebGL2), TypeScript, Vite 8, Vitest, Playwright |
 
 ## Requirements
 
@@ -36,8 +36,8 @@ A modern web client for [XMage](https://github.com/magefree/mage) (Magic: The Ga
 
 1. Clone the repository:
    ```bash
-   git clone <url>
-   cd mage_alt_client
+   git clone https://github.com/Adamychen/xmage-nexus.git
+   cd xmage-nexus
    ```
 
 2. Build the proxy:

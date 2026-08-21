@@ -160,7 +160,7 @@ export default function JoinTableDialog({
             {/* Inline Quick Importer */}
             {showImport && (
               <div className="join-inline-importer">
-                <h4>Importar mazo desde texto (MTG Arena / Moxfield / Archidekt)</h4>
+                <h4>Importar mazo desde texto (Formato texto / Moxfield / Archidekt)</h4>
                 <div className="import-row">
                   <input
                     type="text"

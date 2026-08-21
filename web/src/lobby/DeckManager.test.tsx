@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import DeckManager, { parseArenaDeck } from './DeckManager'
 
 describe('DeckManager & parseArenaDeck', () => {
-  it('parses MTG Arena export decklist text properly', () => {
+  it('parses decklist text export properly', () => {
     const arenaText = `
 Deck
 4 Lightning Bolt (M10) 146

@@ -60,7 +60,7 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
       }
     }
 
-    // 2. Generate remaining cards as face-down cards with official Magic card back
+    // 2. Generate remaining cards as face-down cards with standard card back
     const startIndex = player.topCard ? 2 : 1
     for (let i = startIndex; i <= count; i++) {
       const id = `lib-${player.playerId}-${i}`

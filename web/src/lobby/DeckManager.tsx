@@ -75,7 +75,7 @@ export default function DeckManager() {
     setImportError(null)
     const parsed = parseArenaDeck(importText, importName.trim() || 'Mazo Importado')
     if (!parsed) {
-      setImportError('No se pudieron reconocer cartas. Usa el formato MTG Arena (ej. "4 Lightning Bolt").')
+      setImportError('No se pudieron reconocer cartas. Usa el formato estándar (ej. "4 Lightning Bolt").')
       return
     }
 
@@ -201,8 +201,8 @@ export default function DeckManager() {
       {showImportModal && (
         <div className="overlay">
           <div className="dialog panel import-dialog">
-            <h2>📥 Importar Mazo desde MTG Arena / MTGO</h2>
-            <p className="import-desc">Pega la lista de cartas exportada de MTG Arena o Archidekt en formato de texto:</p>
+            <h2>📥 Importar Mazo desde Texto</h2>
+            <p className="import-desc">Pega la lista de cartas exportada en formato de texto:</p>
 
             <label>
               Nombre del Mazo

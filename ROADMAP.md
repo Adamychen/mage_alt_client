@@ -1,18 +1,18 @@
-# Project Roadmap: Mage Alt Client
+# Project Roadmap: XMage Nexus
 
-> **A Modern, Web-Based MTG Arena-Style Client for XMage**  
-> *Last updated: 2026-08-20*
+> **A Modern, Web-Based Digital Card Game Client for XMage**  
+> *Last updated: 2026-08-21*
 
 ---
 
 ## 1. Vision & Architectural Philosophy
 
-The goal of **Mage Alt Client** is to deliver a fast, modern, and beautiful client for *Magic: The Gathering* with an **MTG Arena aesthetic** (WebGL2 rendering, animated targeting, sound, smooth interaction) while leveraging the battle-tested, 10-year **XMage Java server** (`Mage.Server`) as the authoritative rules engine, card database (+25,000 cards), and multiplayer matchmaking backend.
+The goal of **XMage Nexus** is to deliver a fast, modern, and beautiful web client with an **Arena-grade aesthetic** (WebGL2 rendering, animated targeting, sound, smooth interaction) while leveraging the battle-tested, 10-year **XMage Java server** (`Mage.Server`) as the authoritative rules engine, card database (+25,000 cards), and multiplayer matchmaking backend.
 
 ### The 3-Tier Architecture
 ```
 ┌─────────────────────────┐          WebSocket JSON          ┌──────────────────────────┐      JBoss / TCP      ┌─────────────────────────┐
-│     Web Client          │ ◄──────────────────────────────► │        Mage.Proxy        │ ◄───────────────────► │      XMage Server       │
+│  XMage Nexus Web Client │ ◄──────────────────────────────► │        Mage.Proxy        │ ◄───────────────────► │      XMage Server       │
 │  (React 19 + PixiJS)    │   (Type-safe protocol schema)    │  (Java 17 / MageClient)  │   (Native protocol)   │  (1.4.61-V1 / Official) │
 └─────────────────────────┘                                  └──────────────────────────┘                       └─────────────────────────┘
 ```
@@ -36,9 +36,9 @@ The project has successfully conquered the most difficult engineering hurdles (p
 
 ---
 
-## 3. Feature Parity Matrix: Official XMage (Swing) vs. Mage Alt Client
+## 3. Feature Parity Matrix: Official XMage (Swing) vs. XMage Nexus
 
-| Category | Feature | Official XMage (Swing) | Mage Alt Client (Current) | Roadmap Phase |
+| Category | Feature | Official XMage (Swing) | XMage Nexus (Current) | Roadmap Phase |
 |---|---|---|---|---|
 | **Connectivity & Lobby** | Connect to Local / Custom / Public Server (`beta.xmage.today`) | ✅ Yes | ✅ Yes | Completed |
 | | Real-time Table & User Broadcasts | ✅ Yes | ✅ Yes | Completed |
@@ -48,7 +48,7 @@ The project has successfully conquered the most difficult engineering hurdles (p
 | | Match Clocks / Visible Timers | ✅ Yes | 🟡 Backend-only | **Phase 2.5** |
 | **Deck Management** | Predefined / JSON Deck Loading | ✅ Yes | ✅ Yes | Completed |
 | | Full-featured In-App Deck Builder with Scryfall Filters | ✅ Yes (Local DB) | ❌ No | Phase 3 |
-| | Text / MTG Arena / MTGO Deck Import & Export | ✅ Yes | ❌ No | Phase 3 |
+| | Text / Arena / Standard Deck Import & Export | ✅ Yes | ❌ No | Phase 3 |
 | **1v1 In-Game Board** | Hand, Battlefield (Lands / Creatures / Non-creatures) | ✅ Yes | ✅ Yes (HD Art) | Completed (Surpasses Swing) |
 | | Stack, Library, Graveyard, Exile | ✅ Yes | ✅ Yes | Completed |
 | | Tap Rotations, Life Totals, Counters (+1/+1, loyalty) | ✅ Yes | ✅ Yes | Completed |
@@ -84,7 +84,7 @@ flowchart TD
 
     subgraph P3["Phase 3: Visual Polish, Audio & Deck Builder"]
         B1["Web Audio Engine\n(Spell cast, tap, life damage, turn bell)"] --> B2["VFX & Particle System\n(Damage numbers, spell trails, screen shake)"]
-        B2 --> B3["Integrated Web Deck Builder\n(Scryfall live search, Arena/MTGO import)"]
+        B2 --> B3["Integrated Web Deck Builder\n(Scryfall live search, Arena/Text import)"]
         B3 --> B4["Customization\n(Playmats, card sleeves, avatars)"]
     end
 
@@ -111,7 +111,7 @@ flowchart TD
 #### 2.5.1 Card Selection Modals (Tutors, Scry, Surveil, Hand Reveal) — **CRITICAL**
 - **XMage Events**: `GAME_CHOOSE_CARDS`, `SHOW_CARDS`, `GAME_TARGET` with `cardsView1` lists.
 - **Features**:
-  - Modal card-grid overlay styled after MTG Arena.
+  - Modal card-grid overlay styled after modern digital card games.
   - Search library (Fetchlands, Demonic Tutor).
   - Scry / Surveil / Look at top N cards (allow reordering/placing on top or bottom).
   - Reveal hand effects (*Thoughtseize*, *Inquisition of Kozilek*): view opponent's hand in a dedicated reveal window and click to discard.
@@ -120,7 +120,7 @@ flowchart TD
 #### 2.5.2 Phase Stops & Priority Shortcuts — **CRITICAL**
 - **Features**:
   - Interactive stop markers on `PhaseBar`: click on specific steps (Upkeep, Draw, Precombat Main, Beginning of Combat, Declare Attackers, End of Combat, Postcombat Main, End Step) to set personal stops.
-  - Standard MTG priority keyboard shortcuts:
+  - Standard priority keyboard shortcuts:
     - **Space / Enter**: Yield current priority (pass).
     - **F4**: Pass priority until stack is non-empty or an opponent acts.
     - **F9**: Pass all priority until end of turn.
@@ -151,7 +151,7 @@ flowchart TD
 ---
 
 ### Phase 3: Visual Polish, Audio & Integrated Deck Builder
-*Objective: Transform the functional client into a premium, responsive MTG Arena-quality experience.*
+*Objective: Transform the functional client into a premium, responsive Arena-quality experience.*
 
 #### 3.1 Audio Engine (Web Audio API)
 - Sound FX for core interactions: card draw, card tap, spell cast whoosh, land drop, creature attack impact, life total counter tick, turn bell/notification chimes.
@@ -165,7 +165,7 @@ flowchart TD
 #### 3.3 Integrated Web Deck Builder
 - In-client Scryfall search with full syntax (`t:creature c:red cmc<=3 o:"haste"`).
 - Visual deck view (stacks sorted by mana cost, color breakdown chart, mana curve histogram).
-- One-click clipboard import/export in MTG Arena, MTGO, and `.dck` text formats.
+- One-click clipboard import/export in Arena, plain text, and `.dck` formats.
 - Sample hand generator (Goldfish opening hand simulator).
 
 #### 3.4 Player Customization
@@ -192,7 +192,7 @@ flowchart TD
 ---
 
 ### Phase 5: Advanced Game Modes & Tournaments (Expansion)
-*Objective: Extend the platform to support MTG's most popular casual and limited formats.*
+*Objective: Extend the platform to support popular casual and limited formats.*
 
 #### 5.1 4-Player Commander (EDH) / Brawl
 - 4-quadrant dynamic board layout with individual player life totals, mana pools, and status bars.
@@ -238,119 +238,125 @@ flowchart TD
    - Core protocol/interaction changes must pass `node scripts/test.mjs` against the live stack with `SimPlayer` bots.
 4. **Zero Flake Policy**: Avoid canvas byte-diff comparisons in E2E tests. Assert against deterministic scene state exposed on `window.__mageScene`.
 
+---
 
-### 1. Morfología de Cartas Especiales (MDFCs, Transformables, Aventuras, Sagas)
+## 7. Standardized Card Component Architecture
 
-  En Magic moderno, muchas cartas no son un rectángulo estático con 1 sola cara:
+### 1. Special Card Morphology (MDFCs, Transform, Adventures, Sagas)
 
-  • Cartas de Doble Cara (MDFCs / Transformables / Hombres Lobo / Batallas): Valakut Awakening, Delver of Secrets, Invasion of Zendikar.
-  • Aventuras y Cartas Divididas (Split / Aftermath): Brazen Borrower // Petty Theft, Fire // Ice.
-  • Sagas y Clases: Tienen capítulos I, II, III o niveles que avanzan con contadores.
-  • Fichas (Tokens): Criaturas, Tesoros, Comida, Pistas, Mapas, Sangre.
+In modern card games, many cards are not static single-faced rectangles:
 
-    ┌──────────────────────────┐           ┌──────────────────────────┐
-    │ [Delver of Secrets]  (U) │           │ [Insectile Aberration]   │
-    │ 1/1 Creature - Wizard    │  ──(⟲)──▶ │ 3/2 Creature - Insect    │
-    │ At the beginning of...   │   Flip    │ Flying                   │
-    │                    [ ⟲ ] │           │                    [ ⟲ ] │
-    └──────────────────────────┘           └──────────────────────────┘
+• Double-Faced Cards (MDFCs / Transform / Battles): e.g. Delver of Secrets, Valakut Awakening, Invasion of Zendikar.
+• Adventures and Split Cards: e.g. Brazen Borrower // Petty Theft, Fire // Ice.
+• Sagas and Classes: Have chapters (I, II, III) or levels that progress with counters.
+• Tokens: Creatures, Treasures, Food, Clues, Maps, Blood.
 
-  #### Cómo se estandariza (Patrón MultiFaceCard):
+```
+  ┌──────────────────────────┐           ┌──────────────────────────┐
+  │ [Delver of Secrets]  (U) │           │ [Insectile Aberration]   │
+  │ 1/1 Creature - Wizard    │  ──(⟲)──▶ │ 3/2 Creature - Insect    │
+  │ At the beginning of...   │   Flip    │ Flying                   │
+  │                    [ ⟲ ] │           │                    [ ⟲ ] │
+  └──────────────────────────┘           └──────────────────────────┘
+```
 
-  • En datos: XMage ya expone en CardView los campos secondCardFace, isTransformed, isToken y counters.LORE.
-  • En UI:
-      1. Un botón flotante ⟲ (o atajo de teclado / hover) en la esquina de la carta para previsualizar la otra cara en mano y cementerio.
-      2. En el campo de batalla, si isTransformed === true, se renderiza automáticamente la textura de la cara B (Scryfall lo indexa como card_faces[1]).
-      3. Para Sagas y Clases, una insignia (badge) sobre la carta con el capítulo actual (ChapterBadge: [II]).
+#### How it is standardized (MultiFaceCard Pattern):
+• In data: XMage already exposes `secondCardFace`, `isTransformed`, `isToken`, and `counters.LORE` in `CardView`.
+• In UI:
+  1. A floating flip button ⟲ (or keyboard shortcut / hover) on the card corner to preview the back face in hand and graveyard.
+  2. On the battlefield, if `isTransformed === true`, automatically render the face-B texture (Scryfall indexes this as `card_faces[1]`).
+  3. For Sagas and Classes, a badge on the card showing the current chapter (`ChapterBadge: [II]`).
 
-  ──────
-  ### 2. Jerarquía de Anexos (Attachments: Auras, Equipos, Mutar)
+──────
+### 2. Attachment Hierarchy (Auras, Equipment, Mutate)
 
-  Cuando juegas un Aura (Pacifism) o un Equipo (Shadowspear), se "anexan" a una criatura. En cartas de Ikoria (Mutate), varias cartas se apilan físicamente debajo de la criatura líder.
+When playing an Aura or Equipment, they attach to a creature. In Mutate mechanics, multiple cards stack under/over the host creature.
 
-    ┌──────────────────────────────┐
-    │  ┌───────────────────────┐   │  (Shadowspear - Equipo)
-    │  │ ┌───────────────────┐ │   │
-    │  │ │                   │ │   │
-    │  │ │  Tarmogoyf (5/6)  │ │   │  (Criatura anfitriona)
-    │  │ │                   │ │   │
-    │  │ └───────────────────┘ │   │
-    │  └───────────────────────┘   │
-    └──────────────────────────────┘
+```
+  ┌──────────────────────────────┐
+  │  ┌───────────────────────┐   │  (Equipment)
+  │  │ ┌───────────────────┐ │   │
+  │  │ │                   │ │   │
+  │  │ │ Host Creature (5/6)│ │  │
+  │  │ │                   │ │   │
+  │  │ └───────────────────┘ │   │
+  │  └───────────────────────┘   │
+  └──────────────────────────────┘
+```
 
-  #### Cómo se estandariza (Patrón AttachmentAnchor):
+#### How it is standardized (AttachmentAnchor Pattern):
+• In data: XMage sends `attachedTo: UUID` or `attachments: UUID[]` on each permanent.
+• In UI:
+  1. Rather than occupying independent slots on the battlefield, attachments render cascaded behind the host creature (offset 10px up/right).
+  2. If the host creature taps or attacks, all its attachments move along with it as a single unit.
 
-  • En datos: XMage envía en cada permanente attachedTo: UUID o attachments: UUID[].
-  • En UI:
-      1. En lugar de ocupar un slot independiente en el battlefield, las cartas anexadas se renderizan escalonadas ligeramente detrás de la criatura anfitriona (desplazadas 10px arriba/derecha).
-      2. Si la criatura anfitriona se gira (tap) o ataca, todos sus anexos se mueven junto a ella como un único grupo.
+──────
+### 3. Global State Indicators and Player Counters
 
-  ──────
-  ### 3. Indicadores de Estado Global y Marcadores de Jugador
+In addition to life and mana, the game engine tracks persistent global states and counters:
 
-  Además de las vidas y el maná, Magic tiene estados persistentes globales y contadores que afectan la partida:
+• Player counters: Poison (Poison ≥ 10 = defeat), Energy, Experience, Radiation (Rad counters).
+• Global designation states:
+  • The Monarch (👑).
+  • The Initiative / Dungeons (🏰).
+  • Day / Night (☀️ / 🌙).
+  • City's Blessing.
+• Planeswalker Emblems: Permanent passive abilities.
 
-  • Contadores en jugadores: Veneno (Poison ≥10 = derrota), Energía (EE), Experiencia, Radiación (Rad counters).
-  • Estados de designación global:
-      • El Monarca (The Monarch 👑).
-      • La Iniciativa / Mazmorras (The Initiative / Dungeons 🏰).
-      • Día / Noche (☀️ / 🌙).
-      • Bendición de la ciudad (City's Blessing).
-  • Emblemas de Planeswalkers: Habilidades pasivas permanentes (emblemas de Teferi, Chandra, etc.).
+#### How it is standardized (PlayerBadgeStrip & EmblemTray Pattern):
+• In data: `PlayerView` includes `counters.POISON`, `isMonarch`, `hasCitysBlessing`, and `GameView.emblems`.
+• In UI: A compact pill bar beside player life:
+  `[ 💖 20 ] [ 💀 3 ] [ ⚡ 4 ] [ 👑 Monarch ] [ ☀️ Day ]`
+  Hovering over an emblem opens the enlarged card preview.
 
-  #### Cómo se estandariza (Patrón PlayerBadgeStrip & EmblemTray):
+──────
+### 4. Keyword Ability Badges
 
-  • En datos: PlayerView incluye counters.POISON, isMonarch, hasCitysBlessing, y GameView.emblems.
-  • En UI: Una barra compacta de chips/píldoras junto a la vida del jugador:
-  [ 💖 20 ] [ 💀 3 ] [ ⚡ 4 ] [ 👑 Monarca ] [ ☀️ Día ]
-  Al hacer hover sobre un emblema, se despliega la carta en grande.
-  ──────
-  ### 4. Iconografía de Habilidades Clave (Keyword Badges estilo MTG Arena)
+In a match with many creatures on the board, reading card text to check for Flying, Deathtouch, or Trample creates cognitive load.
 
-  En una partida con 15 criaturas en mesa, leer el texto de cada carta para saber si tiene Volar, Toque Mortal o Arrollar satura al jugador.
+```
+  ┌────────────────────────┐
+  │  Questing Beast   4/4  │
+  │                        │
+  │   [🪽] [⚡] [☠️] [🛡️]  │  ◄── Visual badges on the frame
+  └────────────────────────┘
+```
 
-    ┌────────────────────────┐
-    │  Questing Beast   4/4  │
-    │                        │
-    │   [🪽] [⚡] [☠️] [🛡️]  │  ◄── Badges visuales sobre el frame
-    └────────────────────────┘
+#### How it is standardized (KeywordBadgeSet Pattern):
+• In data: `CardView.rules` and `CardView.abilities` contain parsed keywords.
+• In UI: A set of micro SVG icons on the lower-left corner of the permanent:
+  • 🪽 Flying / Reach
+  • ⚡ Haste / First Strike
+  • ☠️ Deathtouch
+  • 🦏 Trample
+  • 🛡️ Vigilance / Hexproof / Ward
+  • 💖 Lifelink
 
-  #### Cómo se estandariza (Patrón KeywordBadgeSet):
+──────
+### 5. Revealed Information / Known Cards (Known Information Tray)
 
-  • En datos: CardView.rules y CardView.abilities ya contienen las palabras clave parseadas.
-  • En UI: Un conjunto de micro-iconos svg sobre la esquina inferior izquierda de la criatura:
-      • 🪽 Volar / Alcance (Flying / Reach)
-      • ⚡ Prisa / Dañar primero (Haste / First Strike)
-      • ☠️ Toque mortal (Deathtouch)
-      • 🦏 Arrollar (Trample)
-      • 🛡️ Vigilancia / Antimaleficio (Vigilance / Hexproof / Ward)
-      • 💖 Vínculo vital (Lifelink)
+When an effect reveals an opponent's hand, those cards remain public knowledge until played or discarded.
 
-  ──────
-  ### 5. Información Revelada / Cartas Conocidas (Known Information Tray)
+```
+  ┌────────────────────────────────────────────────────────┐
+  │  Opponent's Hand:   [ 🂠 ] [ 🂠 ] [ 🂠 ]                 │  (3 hidden cards)
+  │  Known Cards:       [ Bolt ] [ Push ]                  │  (Previously revealed)
+  └────────────────────────────────────────────────────────┘
+```
 
-  En Magic competitivo, si le lanzas un Thoughtseize al rival y ves su mano, esas cartas son información pública para ti hasta que las juegue o robe cartas nuevas. En el cliente oficial de Java Swing tienes que acordarte o mirar el log.
+#### How it is standardized (KnownHandTracker Pattern):
+• In data: XMage tracks shown cards in `PlayerView.revealedHand`.
+• In UI: A miniature tray directly above the opponent's hidden hand displaying verified known cards face up.
 
-    ┌────────────────────────────────────────────────────────┐
-    │  Mano del Oponente: [ 🂠 ] [ 🂠 ] [ 🂠 ]                 │  (3 cartas ocultas)
-    │  Cartas Conocidas:  [ Bolt ] [ Fatal Push ]            │  (Reveladas previamente)
-    └────────────────────────────────────────────────────────┘
+──────
+### Summary of Component Architecture
 
-  #### Cómo se estandariza (Patrón KnownHandTracker):
+| Standard Component | Solves | Implementation Complexity |
+|---|---|---|
+| `MultiFaceCard` | MDFCs, Transform, Werewolves, Sagas, Adventures | 🟢 Low (Flip button + alternate texture) |
+| `AttachmentAnchor` | Auras, Equipment, and Mutate grouped visually | 🟢 Low (CSS / relative offsets) |
+| `PlayerBadgeStrip` | Poison, Energy, Monarch, Day/Night, Emblems | 🟢 Low (Status icon badges) |
+| `KeywordBadges` | Flying, Deathtouch, Trample, Haste, etc. | 🟢 Low (SVG icons on card sprite) |
+| `KnownHandTracker` | Revealed cards after discard / look effects | 🟢 Low (Mini-tray of known cards) |
 
-  • En datos: XMage guarda en PlayerView.revealedHand las cartas que han sido mostradas.
-  • En UI: Una fila en miniatura justo encima de la mano oculta del rival mostrando las cartas que sabemos con certeza que tiene.
-  ──────
-  ### Resumen de la Arquitectura de Componentes
-
-  Con estas 5 estandarizaciones adicionales, el sistema queda completamente modular y escalable:
-
-   Componente Estándar                                                               | Resuelve                                                                          | Complejidad de Implementación
-  -----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|----------------------------------------------------------------------------------
-   MultiFaceCard                                                                     | MDFCs, Transform, Hombres Lobo, Sagas, Aventuras                                  | 🟢 Baja (Botón Flip + textura alternativa)
-   AttachmentAnchor                                                                  | Auras, Equipos y Mutate agrupados                                                 | 🟢 Baja (CSS / Posicionamiento relativo)
-   PlayerBadgeStrip                                                                  | Veneno, Energía, Monarca, Día/Noche, Emblemas                                     | 🟢 Baja (Iconos de estado)
-   KeywordBadges                                                                     | Volar, Toque Mortal, Arrollar, Prisa, etc.                                        | 🟢 Baja (Iconos SVG en el sprite/card)
-   KnownHandTracker                                                                  | Cartas reveladas tras Thoughtseize / Scry                                         | 🟢 Baja (Mini-bandeja de cartas)
-
-  Todo esto se conecta directamente a campos que GameView ya envía desde Java, sin necesidad de tocar el servidor.
+All of these connect directly to fields already sent by `GameView` from Java without requiring server changes.

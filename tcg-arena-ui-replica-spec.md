@@ -1,32 +1,21 @@
-# Especificación para replicar la interfaz de TCG Arena
+# XMage Nexus — UI Visual Specification
 
-## -1. Contexto del proyecto: esto es un cliente real de XMage, no una maqueta
+## -1. Project Context: A Full Web Client for XMage
 
-Este documento nace para **reemplazar visualmente el cliente oficial de XMage** (Java/Swing) por
-una interfaz nueva con este aspecto, pero **manteniendo la conexión real al motor de partidas de
-XMage**. No es un mockup ni una demo con datos inventados: al final tiene que jugarse una partida
-de verdad contra el servidor de XMage.
+This document defines the visual specification and design system for **XMage Nexus**, replacing the legacy Java/Swing client with a modern, high-performance web interface connected to the real XMage rules engine.
 
-Esto tiene consecuencias directas sobre la arquitectura que el resto del documento no cubre, así
-que hay que tenerlas en cuenta desde el principio:
+### a) XMage Proxy Architecture
 
-### a) XMage no habla HTTP/WebSocket de forma nativa
-
-El cliente-servidor de XMage está escrito en Java y se comunica mediante un protocolo propio
-sobre RMI (Java Remote Method Invocation), no sobre WebSockets ni JSON. Un frontend web **no
-puede conectarse directamente** al servidor de XMage.
-
-Esto implica que hace falta una pieza intermedia:
+XMage server communicates over Java RMI/serialization. The web client communicates with the Java proxy over WebSocket JSON:
 
 ```text
 XMage Server (Java, RMI)
         │
         ▼
-  Bridge / Adapter service
-  (Java o Kotlin, usa las clases cliente de XMage)
-        │  traduce a JSON / WebSocket
+  Mage.Proxy (Java)
+        │  WebSocket JSON (:8787)
         ▼
-   Nuevo cliente web (esta interfaz)
+  XMage Nexus Web Client (React 19 + PixiJS 8)
 ```
 
 El bridge es responsable de:

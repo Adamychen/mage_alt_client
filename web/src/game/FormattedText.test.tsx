@@ -13,7 +13,7 @@ describe('FormattedText', () => {
     expect(cleanMageHtml(raw)).toBe('Pay {R} Lightning Bolt')
   })
 
-  it('renders MTG mana symbols as styled badges', () => {
+  it('renders mana symbols as styled badges', () => {
     const { container } = render(<FormattedText text="Pay {R} to cast Lightning Bolt" />)
     expect(container.textContent).toContain('Pay')
     expect(container.textContent).toContain('to cast Lightning Bolt')
