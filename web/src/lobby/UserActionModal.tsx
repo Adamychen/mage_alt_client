@@ -13,7 +13,6 @@ interface UserActionModalProps {
   tables?: TableView[]
   onWhisper: (username: string) => void
   onViewLeaderboard: (username: string) => void
-  onSendChatCommand: (command: string) => void
   onWatchTable?: (tableId: string) => void
   onClose: () => void
 }
@@ -24,7 +23,6 @@ export default function UserActionModal({
   tables = [],
   onWhisper,
   onViewLeaderboard,
-  onSendChatCommand,
   onWatchTable,
   onClose,
 }: UserActionModalProps) {
@@ -38,11 +36,6 @@ export default function UserActionModal({
 
   const handleWhisper = () => {
     onWhisper(user.userName)
-    onClose()
-  }
-
-  const handleHistory = () => {
-    onSendChatCommand(`/history ${user.userName}`)
     onClose()
   }
 
@@ -141,14 +134,6 @@ export default function UserActionModal({
             <div className="action-btn-text">
               <span className="action-btn-title">Ver Perfil y Rango de Liga</span>
               <span className="action-btn-desc">Consultar medallas, ELO y estadísticas en el Leaderboard</span>
-            </div>
-          </button>
-
-          <button type="button" className="user-action-btn" onClick={handleHistory}>
-            <span className="action-btn-icon">📜</span>
-            <div className="action-btn-text">
-              <span className="action-btn-title">Consultar Historial del Servidor</span>
-              <span className="action-btn-desc">Ejecutar /history en el servidor de juego</span>
             </div>
           </button>
 

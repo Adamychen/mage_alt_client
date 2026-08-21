@@ -332,6 +332,91 @@ export default function LeaderboardModal({
                 )}
               </div>
 
+              {/* Formats & Secondary Ratings Grid */}
+              <div className="profile-formats-grid">
+                <div className="format-card">
+                  <div className="format-card-header">
+                    <span className="format-icon">⭐</span>
+                    <span className="format-title">Construido (Ranked)</span>
+                  </div>
+                  <div className="format-card-body">
+                    <span className="format-elo">{displayedElo} ELO</span>
+                    <span className="format-tier" style={{ color: displayedRank.color }}>
+                      {displayedRank.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="format-card">
+                  <div className="format-card-header">
+                    <span className="format-icon">🎲</span>
+                    <span className="format-title">Limitado (Draft/Sellado)</span>
+                  </div>
+                  <div className="format-card-body">
+                    <span className="format-elo">
+                      {targetUser?.limitedRating && targetUser.limitedRating > 0
+                        ? targetUser.limitedRating
+                        : 1500}{' '}
+                      ELO
+                    </span>
+                    <span
+                      className="format-tier"
+                      style={{
+                        color: getRankInfo(
+                          targetUser?.limitedRating && targetUser.limitedRating > 0
+                            ? targetUser.limitedRating
+                            : 1500,
+                        ).color,
+                      }}
+                    >
+                      {
+                        getRankInfo(
+                          targetUser?.limitedRating && targetUser.limitedRating > 0
+                            ? targetUser.limitedRating
+                            : 1500,
+                        ).label
+                      }
+                    </span>
+                  </div>
+                </div>
+
+                <div className="format-card">
+                  <div className="format-card-header">
+                    <span className="format-icon">🏆</span>
+                    <span className="format-title">Torneos Jugados</span>
+                  </div>
+                  <div className="format-card-body">
+                    <span className="format-elo">
+                      {targetUser?.tourneyHistory && targetUser.tourneyHistory !== '0'
+                        ? targetUser.tourneyHistory
+                        : '0'}
+                    </span>
+                    <span className="format-tier text-muted">
+                      {targetUser?.tourneyQuitRatio
+                        ? `${targetUser.tourneyQuitRatio}% aband.`
+                        : '0% aband.'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="format-card">
+                  <div className="format-card-header">
+                    <span className="format-icon">🛡️</span>
+                    <span className="format-title">Juego Limpio</span>
+                  </div>
+                  <div className="format-card-body">
+                    <span className="format-elo text-green">
+                      {Math.max(0, 100 - (targetUser?.matchQuitRatio ?? 0))}%
+                    </span>
+                    <span className="format-tier text-muted">
+                      {targetUser?.matchQuitRatio
+                        ? `${targetUser.matchQuitRatio}% aband.`
+                        : '100% fiable'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Player Stats Grid */}
               <div className="profile-stats-grid">
                 <div className="stat-card">

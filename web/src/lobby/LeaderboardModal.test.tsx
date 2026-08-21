@@ -74,12 +74,12 @@ describe('LeaderboardModal Component', () => {
     // Switch to profile tab
     fireEvent.click(screen.getByText(/Mi Rango & Estadísticas/i))
     expect(screen.getByText(/⭐ 1650 ELO/i)).toBeDefined()
-    expect(screen.getByText('Oro II')).toBeDefined()
+    expect(screen.getAllByText('Oro II').length).toBeGreaterThan(0)
 
     // Switch to tiers guide tab
     fireEvent.click(screen.getByText(/Guía de Rangos/i))
     expect(screen.getByText('Bronce')).toBeDefined()
-    expect(screen.getByText('Mítico')).toBeDefined()
+    expect(screen.getAllByText('Mítico').length).toBeGreaterThan(0)
   })
 
   it('filters leaderboard by search query', () => {
@@ -108,7 +108,7 @@ describe('LeaderboardModal Component', () => {
     expect(screen.getByText(/Estás inspeccionando el perfil de/i)).toBeDefined()
     expect(screen.getAllByText('mythic_player').length).toBeGreaterThan(0)
     expect(screen.getByText(/⭐ 2050 ELO/i)).toBeDefined()
-    expect(screen.getByText('Mítico')).toBeDefined()
+    expect(screen.getAllByText('Mítico').length).toBeGreaterThan(0)
   })
 
   it('renders ignored users in my profile and allows unignoring', () => {

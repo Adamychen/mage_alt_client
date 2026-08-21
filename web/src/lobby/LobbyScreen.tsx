@@ -91,7 +91,6 @@ export default function LobbyScreen() {
   const myDeck = useStore((s) => s.myDeck)
   const error = useStore((s) => s.error)
   const events = useStore((s) => s.events)
-  const roomChatId = useStore((s) => s.roomChatId)
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
@@ -750,12 +749,6 @@ export default function LobbyScreen() {
           }}
           onViewLeaderboard={(username) => {
             openLeaderboard(username, 'profile')
-          }}
-          onSendChatCommand={(cmd) => {
-            setActiveTab('community')
-            if (roomChatId) {
-              void cmds.sendChatMessage(roomChatId, cmd)
-            }
           }}
           onWatchTable={async (tableId) => {
             setNotice('Conectando como espectador…')

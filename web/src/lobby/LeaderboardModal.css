@@ -434,6 +434,66 @@
   letter-spacing: 0.04em;
 }
 
+/* Formats & Secondary Ratings Grid */
+.profile-formats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.format-card {
+  background: rgba(18, 24, 48, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.format-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.format-icon {
+  font-size: 14px;
+}
+
+.format-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4cae8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.format-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.format-elo {
+  font-size: 16px;
+  font-weight: 900;
+  font-family: var(--font-mono, monospace);
+  color: #ffffff;
+}
+
+.format-tier {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.text-muted {
+  color: #8c96c0;
+}
+
 /* Ignored Users Panel in Profile */
 .profile-ignored-box {
   background: rgba(14, 18, 38, 0.7);

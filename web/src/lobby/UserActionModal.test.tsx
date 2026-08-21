@@ -52,7 +52,6 @@ describe('UserActionModal', () => {
         tables={mockTables}
         onWhisper={vi.fn()}
         onViewLeaderboard={vi.fn()}
-        onSendChatCommand={vi.fn()}
         onWatchTable={vi.fn()}
         onClose={vi.fn()}
       />,
@@ -63,7 +62,6 @@ describe('UserActionModal', () => {
     expect(screen.getByText('Enviar Susurro Privado')).toBeDefined()
     expect(screen.getByText('Espectar Partida')).toBeDefined()
     expect(screen.getByText('Ver Perfil y Rango de Liga')).toBeDefined()
-    expect(screen.getByText('Consultar Historial del Servidor')).toBeDefined()
     expect(screen.getByText('Ignorar / Silenciar Usuario')).toBeDefined()
   })
 
@@ -77,7 +75,6 @@ describe('UserActionModal', () => {
         tables={mockTables}
         onWhisper={onWhisper}
         onViewLeaderboard={vi.fn()}
-        onSendChatCommand={vi.fn()}
         onWatchTable={vi.fn()}
         onClose={onClose}
       />,
@@ -98,7 +95,6 @@ describe('UserActionModal', () => {
         tables={mockTables}
         onWhisper={vi.fn()}
         onViewLeaderboard={vi.fn()}
-        onSendChatCommand={vi.fn()}
         onWatchTable={onWatchTable}
         onClose={onClose}
       />,
@@ -110,7 +106,6 @@ describe('UserActionModal', () => {
   })
 
   it('triggers ignore command when clicking ignore button', () => {
-    const onSendChatCommand = vi.fn()
     const onClose = vi.fn()
     render(
       <UserActionModal
@@ -119,7 +114,6 @@ describe('UserActionModal', () => {
         tables={mockTables}
         onWhisper={vi.fn()}
         onViewLeaderboard={vi.fn()}
-        onSendChatCommand={onSendChatCommand}
         onWatchTable={vi.fn()}
         onClose={onClose}
       />,
