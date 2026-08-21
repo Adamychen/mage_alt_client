@@ -3,6 +3,7 @@ import * as cmds from '../net/commands'
 import type { DeckJson } from '../net/types'
 import type { GameView } from '../net/types'
 import { BASIC_LANDS } from './gameUtils'
+import { clearActiveGame } from './persistence'
 import type { AppState } from './state'
 
 export function clearError() {
@@ -23,6 +24,33 @@ export function setMyDeck(deck: DeckJson | null) {
 
 export function clearGameEnd() {
   setState({ gameEnd: null })
+}
+
+export function returnToLobby() {
+  const s = getState()
+  const gameId = s.gameId
+  clearActiveGame()
+  if (gameId) {
+    const me = s.game?.players?.find((p) => p.controlled)
+    if (!me) {
+      void cmds.stopWatching(gameId)
+    } else {
+      void cmds.quitMatch(gameId)
+    }
+  }
+  setState({
+    phase: 'lobby',
+    game: null,
+    gameId: null,
+    gameChatId: null,
+    playableIds: [],
+    playableWindow: null,
+    combat: null,
+    feedback: null,
+    gameEnd: null,
+    sideboardScreen: null,
+    error: null,
+  })
 }
 
 export function setSetting<K extends keyof AppState['settings']>(key: K, value: AppState['settings'][K]) {

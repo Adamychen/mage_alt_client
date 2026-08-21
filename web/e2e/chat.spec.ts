@@ -32,7 +32,7 @@ chatTest(
     await login(page, username)
 
     // lobby visible
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
 
     // find the chat input in the lobby
     const chatInput = page.locator('.chat-input input')
@@ -59,7 +59,7 @@ chatTest(
     await login(page, username)
 
     // lobby visible
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
 
     // watch the demo game — the table row has a "Ver" button
     const tableRow = page.locator('.table-row', { hasText: 'Chat Test' })
@@ -96,7 +96,7 @@ chatTest(
     await login(page, username)
 
     // lobby visible
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
 
     // watch the demo game — the table row has a "Ver" button
     const tableRow = page.locator('.table-row', { hasText: 'Chat Test' })

@@ -28,6 +28,31 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   })
 }
 
+function formatTimeAgo(epochMs?: number): string {
+  if (!epochMs) return ''
+  const diffSec = Math.floor((Date.now() - epochMs) / 1000)
+  if (diffSec < 45) return 'ahora'
+  const diffMin = Math.floor(diffSec / 60)
+  if (diffMin < 60) return `hace ${diffMin}m`
+  const diffHours = Math.floor(diffMin / 60)
+  if (diffHours < 24) return `hace ${diffHours}h`
+  return `hace ${Math.floor(diffHours / 24)}d`
+}
+
+function getSkillBadge(skill?: string): { label: string; icon: string; className: string } | null {
+  if (!skill) return null
+  switch (skill.toUpperCase()) {
+    case 'BEGINNER':
+      return { label: 'Novato', icon: '⭐', className: 'skill-beginner' }
+    case 'CASUAL':
+      return { label: 'Casual', icon: '⭐⭐', className: 'skill-casual' }
+    case 'SERIOUS':
+      return { label: 'Competitivo', icon: '⭐⭐⭐', className: 'skill-serious' }
+    default:
+      return null
+  }
+}
+
 export type LobbyTab = 'tables' | 'decks' | 'community'
 
 export default function LobbyScreen() {
@@ -320,28 +345,100 @@ export default function LobbyScreen() {
                     ? 'status-playing'
                     : 'status-waiting'
 
+                  const timeAgo = formatTimeAgo(t.createTime)
+                  const skill = getSkillBadge(t.skillLevel)
+
                   return (
-                    <div key={t.tableId} className={`table-card ${statusClass}`}>
+                    <div key={t.tableId} className={`table-card table-row ${statusClass}`}>
                       <div className="table-card-main">
-                        <div className="table-header-row">
-                          <strong className="table-name-text">{t.tableName}</strong>
-                          <span className={`table-state-badge ${statusClass}`}>{t.tableStateText}</span>
+                        {/* Top Badges & Status */}
+                        <div className="table-card-top-bar">
+                          <div className="table-badges-left">
+                            {t.isTournament ? (
+                              <span className="table-type-badge tourney" title="Torneo">🏆 Torneo</span>
+                            ) : (
+                              <span className="table-type-badge match" title="Duelo">⚔️ Duelo</span>
+                            )}
+                            {t.passworded && (
+                              <span className="table-badge-lock" title="Mesa privada con contraseña">🔒 Privada</span>
+                            )}
+                            {skill && (
+                              <span className={`table-skill-badge ${skill.className}`} title={`Nivel de habilidad: ${skill.label}`}>
+                                {skill.icon} {skill.label}
+                              </span>
+                            )}
+                            {t.rated ? (
+                              <span className="table-tag-rated" title="Partida clasificatoria (afecta a ELO)">🏅 Rated</span>
+                            ) : (
+                              <span className="table-tag-unrated" title="Partida casual sin rating">Unrated</span>
+                            )}
+                          </div>
+                          <div className="table-header-right">
+                            {timeAgo && (
+                              <span className="table-time-ago" title={t.createTime ? new Date(t.createTime).toLocaleTimeString() : undefined}>
+                                ⏱️ {timeAgo}
+                              </span>
+                            )}
+                            <span className={`table-state-badge ${statusClass}`}>{t.tableStateText}</span>
+                          </div>
+                        </div>
+
+                        {/* Prominent Table Title */}
+                        <div className="table-title-area">
+                          <h3 className="table-name-text" title={t.tableName}>{t.tableName}</h3>
                         </div>
 
                         <div className="table-meta-row">
                           <span className="table-game-tag">🎮 {t.gameType}</span>
                           <span className="table-deck-tag">📜 {t.deckType}</span>
-                          <span className="table-seats-count">👥 {t.seatsInfo}</span>
+                          <span className="table-seats-count table-seats">👥 {t.seatsInfo}</span>
+                          {skill && (
+                            <span className={`table-skill-badge ${skill.className}`} title={`Nivel de habilidad: ${skill.label}`}>
+                              {skill.icon} {skill.label}
+                            </span>
+                          )}
+                          {t.rated ? (
+                            <span className="table-tag-rated" title="Partida clasificatoria (afecta a ELO)">🏅 Rated</span>
+                          ) : (
+                            <span className="table-tag-unrated" title="Partida casual sin rating">Unrated</span>
+                          )}
+                          {t.spectatorsAllowed && (
+                            <span className="table-tag-spectate" title="Espectadores permitidos">👁️ Espectadores</span>
+                          )}
                         </div>
+
+                        {t.additionalInfoShort && (
+                          <div className="table-info-strip" title={t.additionalInfoFull || t.additionalInfoShort}>
+                            <span className="info-strip-icon">ℹ️</span>
+                            <span className="info-strip-text">{t.additionalInfoShort}</span>
+                          </div>
+                        )}
 
                         {/* Player Seats Badges */}
                         <div className="table-seats-roster">
-                          {t.seats.map((s, idx) => (
-                            <div key={idx} className={`seat-badge ${s.playerName ? 'occupied' : 'empty'}`}>
-                              <span className="seat-icon">{s.playerName ? (s.playerType === 'HUMAN' ? '👤' : '🤖') : '⭕'}</span>
-                              <span className="seat-name">{s.playerName || 'Plaza vacía'}</span>
-                            </div>
-                          ))}
+                          {t.seats.map((s, idx) => {
+                            const isOwner = t.controllerName && s.playerName === t.controllerName
+                            const isHuman = !s.playerType || s.playerType === 'HUMAN'
+                            return (
+                              <div
+                                key={idx}
+                                className={`seat-badge ${s.playerName ? 'occupied' : 'empty'} ${isOwner ? 'is-owner' : ''}`}
+                              >
+                                <span className="seat-icon">
+                                  {s.playerName ? (isHuman ? '👤' : '🤖') : '⭕'}
+                                </span>
+                                <span className="seat-name">
+                                  {s.playerName || 'Plaza vacía'}
+                                  {isOwner && <span className="seat-crown" title="Creador de la mesa">👑</span>}
+                                </span>
+                                {s.history && (
+                                  <span className="seat-history" title={`Historial: ${s.history}`}>
+                                    ({s.history})
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
 

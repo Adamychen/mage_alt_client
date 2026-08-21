@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import GameBoard from '../board/GameBoard'
 import OpponentSwitcherBar from '../board/OpponentSwitcherBar'
 import * as cmds from '../net/commands'
-import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
+import { returnToLobby, maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import FeedbackDialog from './FeedbackDialog'
 import SideboardScreen from './SideboardScreen'
 import Sidebar from './Sidebar'
@@ -147,10 +147,22 @@ export default function GameScreen() {
             />
             Auto-pass
           </label>
-          <button disabled={!canPass} onClick={onResolveClick}>
-            Pass
+          <button
+            type="button"
+            className="leave-game-btn"
+            onClick={() => {
+              const isPlayer = !!me
+              const msg = isPlayer
+                ? '¿Seguro que quieres conceder la partida y volver al lobby?'
+                : '¿Dejar de espectar y volver al lobby?'
+              if (confirm(msg)) {
+                returnToLobby()
+              }
+            }}
+            title={me ? 'Conceder la partida y volver al lobby' : 'Volver al lobby'}
+          >
+            {me ? '🏳️ Conceder' : '🚪 Salir'}
           </button>
-          <button disabled={!gameId} onClick={() => gameId && void cmds.quitMatch(gameId)}>Quit</button>
         </div>
       </header>
       <div className="game-body">

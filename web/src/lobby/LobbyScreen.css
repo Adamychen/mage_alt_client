@@ -335,60 +335,136 @@
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   align-content: start;
+  padding: 4px;
+}
+
+@media (max-width: 1400px) {
+  .tables-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .tables-list {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Table Cards */
 .table-card {
-  background: rgba(20, 25, 52, 0.75);
+  background: rgba(20, 25, 52, 0.82);
   border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  height: 100%;
+  box-sizing: border-box;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 .table-card:hover {
-  background: rgba(28, 35, 72, 0.9);
-  border-color: rgba(255, 208, 112, 0.4);
+  background: rgba(28, 35, 75, 0.95);
+  border-color: rgba(255, 208, 112, 0.45);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 18px rgba(124, 92, 255, 0.2);
 }
 
 .table-card.status-ready {
-  border-color: rgba(99, 230, 190, 0.4);
+  border-color: rgba(99, 230, 190, 0.45);
 }
 
 .table-card.status-playing {
-  border-color: rgba(124, 92, 255, 0.4);
+  border-color: rgba(124, 92, 255, 0.45);
 }
 
 .table-card-main {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.table-header-row {
+.table-card-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.table-badges-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.table-title-area {
+  margin: 2px 0;
 }
 
 .table-name-text {
-  font-size: 15px;
+  font-size: 16.5px;
   font-weight: 800;
   color: #ffffff;
+  margin: 0;
+  line-height: 1.35;
+  word-break: break-word;
+  letter-spacing: 0.01em;
+}
+
+.table-type-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.03em;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.table-type-badge.match {
+  background: rgba(99, 230, 190, 0.15);
+  border: 1px solid rgba(99, 230, 190, 0.4);
+  color: #63e6be;
+}
+
+.table-type-badge.tourney {
+  background: rgba(255, 180, 50, 0.2);
+  border: 1px solid rgba(255, 180, 50, 0.5);
+  color: #ffd070;
+}
+
+.table-badge-lock {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffd070;
+  background: rgba(255, 208, 112, 0.15);
+  border: 1px solid rgba(255, 208, 112, 0.35);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.table-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.table-time-ago {
+  font-size: 11px;
+  color: #8c96c0;
+  font-family: var(--font-mono, monospace);
+  white-space: nowrap;
 }
 
 .table-state-badge {
@@ -420,42 +496,135 @@
 .table-meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
   font-size: 11.5px;
   color: #9aa2c8;
 }
 
 .table-game-tag,
 .table-deck-tag,
-.table-seats-count {
+.table-seats-count,
+.table-skill-badge,
+.table-tag-rated,
+.table-tag-unrated,
+.table-tag-spectate {
   background: rgba(10, 13, 28, 0.6);
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.table-skill-badge.skill-beginner {
+  border-color: rgba(99, 230, 190, 0.4);
+  color: #63e6be;
+  background: rgba(28, 107, 80, 0.25);
+}
+
+.table-skill-badge.skill-casual {
+  border-color: rgba(124, 92, 255, 0.4);
+  color: #c4b5fd;
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.table-skill-badge.skill-serious {
+  border-color: rgba(255, 118, 117, 0.5);
+  color: #ffb8b8;
+  background: rgba(214, 48, 49, 0.2);
+}
+
+.table-tag-rated {
+  border-color: rgba(255, 208, 112, 0.4);
+  color: #ffd070;
+  background: rgba(255, 208, 112, 0.15);
+  font-weight: 700;
+}
+
+.table-tag-unrated {
+  color: #8c96c0;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.table-tag-spectate {
+  border-color: rgba(99, 230, 190, 0.3);
+  color: #80ebd1;
+  background: rgba(20, 60, 48, 0.3);
+}
+
+/* Info Strip */
+.table-info-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 14, 30, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: #a5b0d8;
+}
+
+.info-strip-icon {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.info-strip-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Seats Roster */
 .table-seats-roster {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 2px;
+  gap: 5px;
+  margin-top: 3px;
 }
 
 .seat-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 8px;
+  gap: 4px;
+  padding: 3px 7px;
   border-radius: 6px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.seat-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
 .seat-badge.occupied {
   background: rgba(30, 38, 76, 0.7);
   color: #e2e6f8;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.seat-badge.occupied.is-owner {
+  background: rgba(45, 38, 75, 0.75);
+  border-color: rgba(255, 208, 112, 0.4);
+}
+
+.seat-crown {
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.seat-history {
+  font-size: 10px;
+  color: #8c96c0;
+  margin-left: 2px;
+  font-family: var(--font-mono, monospace);
 }
 
 .seat-badge.empty {
@@ -471,20 +640,24 @@
 /* Table Card Action Buttons */
 .table-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 10px;
+  gap: 6px;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+  flex-shrink: 0;
 }
 
 .table-action-btn {
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 5px 11px;
+  font-size: 11.5px;
   font-weight: 700;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .join-btn {

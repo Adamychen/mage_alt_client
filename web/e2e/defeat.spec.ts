@@ -111,7 +111,7 @@ test('derrota: el Sim gana 2-0 y el match termina con "You lost the match"', { t
     expect((end2?.data as { matchInfo?: string } | null)?.matchInfo ?? '', 'matchInfo marca derrota').toMatch(/lost/i)
 
     await page.getByRole('button', { name: 'Volver al lobby' }).click()
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })

@@ -61,6 +61,22 @@
   border-radius: 6px;
 }
 
+.leave-game-btn {
+  background: rgba(60, 20, 30, 0.7);
+  border: 1px solid rgba(255, 92, 108, 0.4);
+  color: #ff9ea8;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.leave-game-btn:hover {
+  background: rgba(180, 40, 60, 0.85);
+  border-color: #ff5c6c;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 92, 108, 0.4);
+}
+
 .toggle {
   display: flex;
   align-items: center;

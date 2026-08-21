@@ -139,7 +139,7 @@ test('best-of-5: sweep 3-0, match terminado en game 3 sin SIDEBOARD extra', { ta
     expect((end3?.data as { wins?: number } | null)?.wins, 'wins=3 al ganar el match').toBe(3)
 
     await page.getByRole('button', { name: 'Volver al lobby' }).click()
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })

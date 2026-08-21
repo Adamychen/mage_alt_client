@@ -53,7 +53,7 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   await login(page, username)
 
   // (d) lobby (el broadcast de mesas llega cada ~2s)
-  await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: /Mesas/ })).toBeVisible({ timeout: 15_000 })
 
   // (e) crear mesa IA vs IA y entrar como espectador

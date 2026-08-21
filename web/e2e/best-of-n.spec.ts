@@ -185,7 +185,7 @@ test('match best-of-N: END_GAME_INFO + SIDEBOARD + submitDeck + siguiente partid
 
     // vuelta al lobby con el resumen
     await page.getByRole('button', { name: 'Volver al lobby' }).click()
-    await expect(page.getByRole('heading', { name: 'Lobby' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })

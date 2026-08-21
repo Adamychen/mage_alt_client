@@ -1,4 +1,4 @@
-import { clearGameEnd, useStore } from '../state/store'
+import { returnToLobby, useStore } from '../state/store'
 import './GameEndDialog.css'
 
 /** Resumen del fin de partida/match (END_GAME_INFO del servidor). En un match
@@ -22,7 +22,7 @@ export default function GameEndDialog() {
           </p>
         )}
         {matchOver ? (
-          <button className="primary" onClick={clearGameEnd}>
+          <button className="primary" onClick={returnToLobby}>
             Volver al lobby
           </button>
         ) : (

@@ -58,12 +58,12 @@ export interface LoginOptions {
 export async function login(page: Page, username: string, opts: LoginOptions = {}): Promise<void> {
   await page.goto(`/?proxyPort=${BACKEND_PORT}`)
   await expect(page.locator('form.login-card')).toBeVisible({ timeout: 20_000 })
-  await page.getByLabel('Servidor del proxy (host)').fill('localhost')
-  await page.getByLabel('Host del servidor XMage').fill('localhost')
-  await page.getByLabel('Puerto del servidor XMage').fill('17171')
+  await page.getByLabel(/Proxy/i).fill('localhost')
+  await page.getByLabel(/XMage Server/i).fill('localhost')
+  await page.getByLabel(/Port/i).fill('17171')
   await page.getByLabel('Usuario').fill(username)
   await page.getByLabel('Contraseña').fill('x')
-  const lobby = page.getByRole('heading', { name: 'Lobby' })
+  const lobby = page.getByRole('heading', { name: /Lobby|XMage Nexus/i })
   const connect = page.getByRole('button', { name: 'Conectar' })
   await connect.click()
   if (opts.retryLobby) {
