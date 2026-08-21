@@ -1,6 +1,6 @@
 // ── Re-exports ──────────────────────────────────────────────────────
 export type { ConnectionInfo } from './persistence'
-export { loadConn } from './persistence'
+export { loadConn, saveActiveGame, clearActiveGame } from './persistence'
 export type { LogEntry, CombatState, AppState } from './state'
 export { getState } from './state'
 export { useStore, usePhase, useLobby, useGame, useSettings } from './selectors'

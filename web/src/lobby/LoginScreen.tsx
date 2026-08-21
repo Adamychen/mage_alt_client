@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { clearError, doConnect, useStore, loadConn } from '../state/store'
+import { clearError, doConnect, useStore, loadConn, clearActiveGame } from '../state/store'
 import './LoginScreen.css'
 
 function urlProxyPort(): number | null {
@@ -37,6 +37,7 @@ export default function LoginScreen() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (busy) return
+    clearActiveGame()
     void doConnect(proxyHost.trim(), proxyPort, serverHost.trim() || proxyHost.trim(), parseInt(port, 10) || 17171, username.trim(), password)
   }
 

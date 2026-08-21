@@ -35,7 +35,21 @@ export default function App() {
   return (
     <>
       {reconnecting && <div className="reconnect-banner">Conexión con el proxy perdida — reconectando…</div>}
-      {phase === 'lobby' ? <LobbyScreen /> : phase === 'game' ? <GameScreen /> : <LoginScreen />}
+      {phase === 'lobby' ? (
+        <LobbyScreen />
+      ) : phase === 'game' ? (
+        <GameScreen />
+      ) : phase === 'connecting' ? (
+        <div className="login-wrap">
+          <div className="login-card panel connecting-splash">
+            <h1>Mage Web</h1>
+            <p className="subtitle">Conectando al servidor XMage…</p>
+            <div className="connecting-spinner" />
+          </div>
+        </div>
+      ) : (
+        <LoginScreen />
+      )}
       <GameEndDialog />
     </>
   )

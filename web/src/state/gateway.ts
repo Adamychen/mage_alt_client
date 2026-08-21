@@ -20,10 +20,14 @@ export function attachGateway(g: Gateway) {
         if (active?.gameId) {
           if (active.role === 'watcher') {
             addLog('conexión', 'Restaurando modo espectador…')
-            void cmds.watchGame(active.gameId)
+            void cmds.watchGame(active.gameId).then((r) => {
+              if (!r?.ok) clearActiveGame()
+            })
           } else {
             addLog('conexión', 'Restaurando partida en curso…')
-            void cmds.joinGame(active.gameId)
+            void cmds.joinGame(active.gameId).then((r) => {
+              if (!r?.ok) clearActiveGame()
+            })
           }
           void cmds.getGameChatId(active.gameId).then((cid) => setState({ gameChatId: cid ?? null }))
         }
@@ -63,7 +67,7 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
     return
   }
   const res = await cmds.connect(serverHost, port, username, password)
-  if (!res.ok && /already connected/i.test(res.error ?? '')) {
+  if (!res.ok && /already connected|already logged in/i.test(res.error ?? '')) {
     await cmds.disconnect()
     await new Promise((r) => setTimeout(r, 500))
     return doConnect(wsHost, proxyPort, serverHost, port, username, password)
@@ -75,10 +79,14 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
     if (active?.gameId) {
       if (active.role === 'watcher') {
         addLog('conexión', 'Restaurando modo espectador…')
-        void cmds.watchGame(active.gameId)
+        void cmds.watchGame(active.gameId).then((r) => {
+          if (!r?.ok) clearActiveGame()
+        })
       } else {
         addLog('conexión', 'Restaurando partida en curso…')
-        void cmds.joinGame(active.gameId)
+        void cmds.joinGame(active.gameId).then((r) => {
+          if (!r?.ok) clearActiveGame()
+        })
       }
       void cmds.getGameChatId(active.gameId).then((cid) => setState({ gameChatId: cid ?? null }))
     }

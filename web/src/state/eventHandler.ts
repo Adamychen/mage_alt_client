@@ -150,6 +150,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     }
     case 'GAME_OVER': {
       const d = data as { gameId?: string; winnerName?: string; message?: string } | null
+      clearActiveGame()
       addLog('partida', d?.message ?? 'Fin de partida', d?.gameId ?? undefined)
       break
     }
