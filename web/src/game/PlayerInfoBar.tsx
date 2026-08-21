@@ -19,26 +19,28 @@ function secondaryCounter(player: PlayerView): { label: string; value: number } 
 
 export default function PlayerInfoBar({ player, side, compact = false, onClick, isTarget = false }: PlayerInfoBarProps) {
   const secondary = secondaryCounter(player)
+  const hasPriority = !!player.hasPriority
 
   return (
     <div
-      className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''}`}
+      className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''} ${hasPriority ? 'has-priority' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
     >
-      <div className="player-avatar">
+      <div className={`player-avatar ${hasPriority ? 'avatar-active' : ''}`}>
         <div className="avatar-frame">
           {player.name.charAt(0).toUpperCase()}
         </div>
+        {hasPriority && <span className="avatar-priority-ring" />}
       </div>
       <div className="player-details">
         <div className="player-name" data-priority={player.hasPriority || undefined}>
           {player.name}
         </div>
         <div className="player-counters">
-          <span className="counter life-counter" title="Vida">
+          <span className={`counter life-counter ${player.life <= 5 ? 'life-danger' : ''}`} title="Vida">
             <span className="counter-icon">&#9829;</span>
-            {player.life}
+            <span className="life-value">{player.life}</span>
           </span>
           {secondary.value > 0 && (
             <span className="counter secondary-counter" title={secondary.label}>
@@ -47,7 +49,7 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
           )}
         </div>
       </div>
-      {(player.monarch || player.initiative || player.designationNames?.length > 0) && (
+      {(player.monarch || player.initiative || (player.designationNames && player.designationNames.length > 0)) && (
         <div className="player-badges">
           {player.monarch && <span className="badge" title="Monarch">&#9819;</span>}
           {player.initiative && <span className="badge" title="Initiative">&#9876;</span>}

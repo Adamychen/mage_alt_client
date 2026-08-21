@@ -1,7 +1,12 @@
 .phase-bar {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 3px;
+  background: rgba(14, 18, 34, 0.75);
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
 }
 
 .phase-group {
@@ -11,32 +16,77 @@
 }
 
 .phase-sep {
-  color: #2e3560;
-  font-size: 10px;
-  margin: 0 3px;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 11px;
+  margin: 0 4px;
   user-select: none;
 }
 
 .phase-badge {
-  padding: 2px 6px;
-  border-radius: 4px;
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 6px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 5px;
   font-size: 11px;
-  font-weight: 600;
-  font-family: 'Cinzel', 'Merriweather', Georgia, serif;
-  color: #3a4068;
-  background: transparent;
-  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
+  font-weight: 700;
+  font-family: var(--font-display, sans-serif);
+  color: #8c96bc;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
-  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phase-badge:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
 }
 
 .phase-badge.past {
-  color: #7c84a8;
-  background: #1a1e33;
+  color: #586082;
+  background: transparent;
 }
 
 .phase-badge.active {
-  color: #fff;
-  background: #7c5cff;
-  box-shadow: 0 0 8px rgba(124, 92, 255, 0.5);
+  color: #ffffff;
+  background: linear-gradient(135deg, #7c5cff 0%, #5636db 100%);
+  border-color: #a084ff;
+  box-shadow: 0 0 12px rgba(124, 92, 255, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+  z-index: 2;
+}
+
+.phase-badge.has-stop {
+  border-color: rgba(255, 208, 112, 0.35);
+}
+
+/* Stop indicator dots */
+.stop-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Opponent turn stop: top dot */
+.stop-dot-opp {
+  top: 1px;
+  background: #38bdf8;
+  box-shadow: 0 0 4px #38bdf8;
+}
+
+/* Your turn stop: bottom dot */
+.stop-dot-you {
+  bottom: 1px;
+  background: #ffd070;
+  box-shadow: 0 0 4px #ffd070;
 }

@@ -88,6 +88,49 @@
   flex-direction: column;
   background: #0d1020;
   border-left: 1px solid #1e2444;
+  overflow: hidden;
+}
+
+.right-panel-tabs {
+  display: flex;
+  border-top: 1px solid #1e2444;
+  border-bottom: 1px solid #1e2444;
+  background: #0a0d1a;
+}
+
+.right-tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b759a;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.right-tab-btn:hover {
+  color: #c8d0ea;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.right-tab-btn.active {
+  color: #ffffff;
+  border-bottom-color: var(--accent);
+  background: rgba(124, 92, 255, 0.08);
+}
+
+.right-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .game-log-section {
@@ -95,17 +138,6 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-top: 1px solid #1e2444;
-}
-
-.game-log-header {
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #4a5080;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border-bottom: 1px solid #1e2444;
 }
 
 .game-log-entries {

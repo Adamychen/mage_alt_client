@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import GameBoard from '../board/GameBoard'
 import * as cmds from '../net/commands'
 import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import FeedbackDialog from './FeedbackDialog'
 import SideboardScreen from './SideboardScreen'
-import PhaseStopSelector from './PhaseStopSelector'
 import Sidebar from './Sidebar'
 import CardPreview from './CardPreview'
 import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
+import ActionButton from './ActionButton'
 import FormattedText from './FormattedText'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
@@ -24,6 +24,8 @@ export default function GameScreen() {
   const combat = useStore((s) => s.combat)
   const log = useStore((s) => s.log)
   const [previewCard, setPreviewCard] = useState<CardView | null>(null)
+  const [rightTab, setRightTab] = useState<'log' | 'chat'>('log')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (game) maybeAutoPass(game)
@@ -45,7 +47,7 @@ export default function GameScreen() {
     if (!gameId) return
     const result = await cmds.sendPlayerUUID(id, gameId)
     if (!result.ok) setStoreError(result.error ?? 'No se pudo jugar la carta')
-   }
+  }
 
   const crossZone = crossZonePlayables(game, feedback ?? undefined)
 
@@ -55,11 +57,28 @@ export default function GameScreen() {
     if (!result.ok) setStoreError(result.error ?? 'No se pudo declarar la criatura en combate')
   }
 
-  const onResolveClick = async () => {
-    if (!gameId) return
-    const result = await cmds.sendPlayerBoolean(false, gameId)
-    if (!result.ok) setStoreError(result.error ?? 'No se pudo pasar prioridad')
-  }
+  const onResolveClick = useCallback(async () => {
+    if (!gameId || busy) return
+    setBusy(true)
+    try {
+      const result = await cmds.sendPlayerBoolean(false, gameId)
+      if (!result.ok) setStoreError(result.error ?? 'No se pudo pasar prioridad')
+    } finally {
+      setBusy(false)
+    }
+  }, [gameId, busy])
+
+  // Espacio activa la acción principal / pasar prioridad
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault()
+        if (canPass) void onResolveClick()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [canPass, onResolveClick])
 
   return (
     <div className="game">
@@ -69,7 +88,6 @@ export default function GameScreen() {
             <div className="game-state" data-testid="game-status">
               <span className="game-turn">Turn {game.turn}</span>
               <PhaseBar step={game.step} />
-              <PhaseStopSelector />
             </div>
           )}
         </div>
@@ -90,7 +108,7 @@ export default function GameScreen() {
             />
             Auto-pass
           </label>
-          <button disabled={!canPass} onClick={() => gameId && void cmds.sendPlayerBoolean(false, gameId)}>
+          <button disabled={!canPass} onClick={onResolveClick}>
             Pass
           </button>
           <button disabled={!gameId} onClick={() => gameId && void cmds.quitMatch(gameId)}>Quit</button>
@@ -99,40 +117,71 @@ export default function GameScreen() {
       <div className="game-body">
         <Sidebar />
         <div className="board-wrap">
-            <GameBoard
-             game={game}
-             targetIds={targetIds}
-             chosenTargetIds={chosenTargetIds}
-             onTargetClick={onTargetClick}
-             targetSourceId={targetSourceId}
-             playableIds={playableIds}
-             onPlayableClick={onPlayableClick}
-             onCardHover={setPreviewCard}
-             combatSelectable={combat?.selectable ?? []}
-             combatMode={combat?.mode ?? null}
-             combatChosen={combat?.chosen ?? []}
-             onCombatClick={onCombatClick}
-             onResolveClick={onResolveClick}
-             crossZonePlayables={crossZone}
-             onPlayCrossZone={onPlayableClick}
-            />
+          <GameBoard
+            game={game}
+            targetIds={targetIds}
+            chosenTargetIds={chosenTargetIds}
+            onTargetClick={onTargetClick}
+            targetSourceId={targetSourceId}
+            playableIds={playableIds}
+            onPlayableClick={onPlayableClick}
+            onCardHover={setPreviewCard}
+            combatSelectable={combat?.selectable ?? []}
+            combatMode={combat?.mode ?? null}
+            combatChosen={combat?.chosen ?? []}
+            onCombatClick={onCombatClick}
+            onResolveClick={onResolveClick}
+            crossZonePlayables={crossZone}
+            onPlayCrossZone={onPlayableClick}
+          />
         </div>
         <div className="game-right-panel">
           <CardPreview card={previewCard} />
-          <div className="game-log-section">
-            <div className="game-log-header">Game Log</div>
-            <div className="game-log-entries">
-              {log?.slice(-50).map((entry, i) => (
-                <div key={entry.id ?? i} className="game-log-entry">
-                  {entry.from && <span className="game-log-player">{entry.from}</span>}
-                  <span className="game-log-text">
-                    <FormattedText text={entry.text} />
-                  </span>
-                </div>
-              ))}
-            </div>
+
+          <div className="right-panel-tabs">
+            <button
+              type="button"
+              className={`right-tab-btn ${rightTab === 'log' ? 'active' : ''}`}
+              onClick={() => setRightTab('log')}
+            >
+              Log de Partida
+            </button>
+            <button
+              type="button"
+              className={`right-tab-btn ${rightTab === 'chat' ? 'active' : ''}`}
+              onClick={() => setRightTab('chat')}
+            >
+              Chat
+            </button>
           </div>
-          <GameChat />
+
+          <div className="right-panel-content">
+            {rightTab === 'log' ? (
+              <div className="game-log-section">
+                <div className="game-log-entries">
+                  {log?.slice(-60).map((entry, i) => (
+                    <div key={entry.id ?? i} className="game-log-entry">
+                      {entry.from && <span className="game-log-player">{entry.from}</span>}
+                      <span className="game-log-text">
+                        <FormattedText text={entry.text} />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <GameChat />
+            )}
+          </div>
+
+          <ActionButton
+            game={game}
+            feedback={feedback}
+            gameId={gameId}
+            canPass={canPass}
+            onPass={onResolveClick}
+            busy={busy}
+          />
         </div>
       </div>
       <FeedbackDialog />
