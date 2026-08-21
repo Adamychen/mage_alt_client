@@ -58,7 +58,7 @@
   * Influence range and attack mode for multiplayer/Commander FFA.
 
 ### E. Match History & Replays (`MatchesTableModel`)
-* [ ] **5.1 Finished Matches View**:
+* [x] **5.1 Finished Matches View**:
   * Final score (e.g. `Player1 2 - 1 Player2`).
   * Match duration and completion timestamp.
   * Replay launcher / viewer.
@@ -74,4 +74,4 @@
 | **3** | **Community, Country Flags & ELO** | User list with flags, ELO, stats, status, and MTG Arena rank badges | ✅ Completed |
 | **4** | **Advanced Table Creation Modal** | Turn clocks, rules, password, skill level, player restrictions, and seat setup | ✅ Completed |
 | **5** | **Live Room Leaderboard & Tiers** | MTG Arena style 6-tier ladder modal (Bronze to Mythic) with room ranking & profile | ✅ Completed |
-| **6** | **Finished Matches & Replays** | History view of completed duels with final scores and replay viewer | ⬜ Pending |
+| **6** | **Finished Matches & Replays** | History view of completed duels with final scores and replay viewer | ✅ Completed |

@@ -13,6 +13,7 @@ import PingBadge from './PingBadge'
 import LeaderboardModal from './LeaderboardModal'
 import UserActionModal from './UserActionModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
+import FinishedMatchesPanel from './FinishedMatchesPanel'
 import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
 
@@ -84,7 +85,7 @@ export function extractLobbyUsers(rawUsers: unknown): import('../net/types').Use
   return []
 }
 
-export type LobbyTab = 'tables' | 'decks' | 'community'
+export type LobbyTab = 'tables' | 'decks' | 'community' | 'matches'
 
 export default function LobbyScreen() {
   const lobby = useLobby()
@@ -299,6 +300,15 @@ export default function LobbyScreen() {
           >
             <span className="tab-icon">👥</span>
             <span>Comunidad & Chat</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
+            onClick={() => setActiveTab('matches')}
+            title="Ver resultados y repeticiones de partidas finalizadas"
+          >
+            <span className="tab-icon">📜</span>
+            <span>Partidas Finalizadas</span>
           </button>
           <button
             type="button"
@@ -696,6 +706,14 @@ export default function LobbyScreen() {
               </ul>
             </section>
           </div>
+        )}
+
+        {/* Tab: Finished Matches History & Replays */}
+        {activeTab === 'matches' && (
+          <FinishedMatchesPanel
+            users={users}
+            onInspectUser={(username) => openLeaderboard(username, 'profile')}
+          />
         )}
       </div>
 

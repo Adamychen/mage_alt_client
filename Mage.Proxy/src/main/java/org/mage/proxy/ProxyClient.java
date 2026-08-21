@@ -567,6 +567,12 @@ public class ProxyClient implements MageClient {
                     gateway.send(conn, resultJson(action, requestId, session.watchGame(gameId), null, null));
                     break;
                 }
+                case "replayGame": {
+                    UUID gameId = uuid(args, "gameId", null);
+                    boolean ok = gameId != null && session.replayGame(gameId);
+                    gateway.send(conn, resultJson(action, requestId, ok, ok ? null : ERR_FAILED, null));
+                    break;
+                }
                 case "stopWatching": {
                     UUID gameId = uuid(args, "gameId", null);
                     gateway.send(conn, resultJson(action, requestId, session.stopWatching(gameId), null, null));

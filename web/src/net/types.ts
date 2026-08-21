@@ -106,6 +106,24 @@ export interface SideboardEvent {
   flag?: boolean
 }
 
+// ─── Partidas Finalizadas (MatchView del servidor) ───────────────────────────
+
+export interface MatchView {
+  tableId: UUID
+  matchId?: UUID
+  matchName?: string
+  gameType?: string
+  deckType?: string
+  games?: UUID[]
+  result?: string
+  players?: string
+  startTime?: number | string
+  endTime?: number | string
+  replayAvailable?: boolean
+  isTournament?: boolean
+  rated?: boolean
+}
+
 // ─── Métodos de evento del servidor (MageClient) más comunes ────────────────
 
 export const EVENT_METHODS = {
@@ -142,4 +160,8 @@ export const EVENT_METHODS = {
   serverMessage: 'SERVER_MESSAGE',
   joinedTable: 'JOINED_TABLE',
   startGame: 'START_GAME',
+  replayGame: 'REPLAY_GAME',
+  replayInit: 'REPLAY_INIT',
+  replayUpdate: 'REPLAY_UPDATE',
+  replayDone: 'REPLAY_DONE',
 } as const
