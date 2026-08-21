@@ -19,6 +19,7 @@ interface CommandObject {
   card: CardView
   isEmblem: boolean
   isCommander: boolean
+  isCompanion: boolean
   castCount: number
 }
 
@@ -41,7 +42,16 @@ function parseCommandList(
       String(card.name ?? '').toLowerCase().includes('emblem') ||
       (card.cardTypes && card.cardTypes.some((t: string) => String(t).toLowerCase() === 'emblem'))
 
-    const isCommander = !isEmblem || card.mageObjectType === 'COMMANDER' || card.isCommander === true
+    const isCompanion =
+      card.mageObjectType === 'COMPANION' ||
+      card.isCompanion === true ||
+      (Array.isArray(card.rules) && card.rules.some((r: string) => String(r).toLowerCase().includes('companion')))
+
+    const isCommander =
+      (!isEmblem && !isCompanion) ||
+      card.mageObjectType === 'COMMANDER' ||
+      card.isCommander === true
+
     const castCount = typeof card.castCount === 'number' ? card.castCount : 0
 
     items.push({
@@ -49,6 +59,7 @@ function parseCommandList(
       card: card as CardView,
       isEmblem,
       isCommander,
+      isCompanion,
       castCount,
     })
   }
@@ -79,6 +90,7 @@ export default function CommandZone({
   helperEmblems,
 }: CommandZoneProps) {
   const hoverHandler = onHover ?? onCardHover
+
   const items = useMemo(() => {
     return parseCommandList(player?.commandList, {
       ...(player?.helperCards ?? {}),
@@ -90,12 +102,12 @@ export default function CommandZone({
     return null
   }
 
-  const commanders = items.filter((item) => item.isCommander)
+  const commanders = items.filter((item) => item.isCommander || item.isCompanion)
   const emblems = items.filter((item) => item.isEmblem)
 
   return (
     <div className={`command-zone ${side}`}>
-      {/* Commanders */}
+      {/* Commanders & Companions */}
       {commanders.map((item) => {
         const isPlayable = playableIds.has(item.id)
         const isTarget = targetIds.has(item.id)
@@ -112,10 +124,16 @@ export default function CommandZone({
               isTarget={isTarget}
               className="commander-slot"
             />
-            {/* Commander Badge */}
-            <div className="commander-badge" title="Comandante en la Zona de Comando">
-              👑
-            </div>
+            {/* Commander or Companion Badge */}
+            {item.isCompanion ? (
+              <div className="companion-badge" title="Compañero (Companion)">
+                🦄
+              </div>
+            ) : (
+              <div className="commander-badge" title="Comandante en la Zona de Comando">
+                👑
+              </div>
+            )}
             {/* Commander Tax Badge */}
             {tax > 0 && (
               <div className="commander-tax-badge" title={`Impuesto de Comandante: +{${tax}} (Casteado ${item.castCount} veces)`}>
