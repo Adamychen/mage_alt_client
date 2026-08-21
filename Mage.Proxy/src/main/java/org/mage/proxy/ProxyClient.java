@@ -414,7 +414,9 @@ public class ProxyClient implements MageClient {
                     int port = getInt(args, "port", config.getServerPort());
                     String username = str(args, "username", config.getUsername());
                     String password = str(args, "password", config.getPassword());
-                    connect(conn, requestId, host, port, username, password);
+                    String flagName = str(args, "flagName", "world.png");
+                    int avatarId = getInt(args, "avatarId", 51);
+                    connect(conn, requestId, host, port, username, password, flagName, avatarId);
                     break;
                 }
                 case "disconnect": {
@@ -693,7 +695,7 @@ public class ProxyClient implements MageClient {
         }
     }
 
-    private synchronized void connect(WebSocket conn, String requestId, String host, int port, String username, String password) {
+    private synchronized void connect(WebSocket conn, String requestId, String host, int port, String username, String password, String flagName, int avatarId) {
         if (graceDisconnectTimer != null) {
             graceDisconnectTimer.cancel(false);
             graceDisconnectTimer = null;
@@ -732,7 +734,15 @@ public class ProxyClient implements MageClient {
         connection.setUsername(username);
         connection.setPassword(password);
         connection.setUserIdStr(System.getProperty("user.name") + ":" + System.getProperty("os.name") + ":mage-proxy");
-        connection.setUserData(UserData.getDefaultUserDataView());
+        String cleanFlag = flagName == null || flagName.isEmpty() ? "world.png" : flagName;
+        if (!cleanFlag.endsWith(".png")) {
+            cleanFlag = cleanFlag + ".png";
+        }
+        int avatar = avatarId > 0 ? avatarId : 51;
+        UserData userData = UserData.getDefaultUserDataView();
+        userData.setFlagName(cleanFlag);
+        userData.setAvatarId(avatar);
+        connection.setUserData(userData);
         connection.setProxyType(Connection.ProxyType.NONE);
 
         serverHost = host;
@@ -767,7 +777,7 @@ public class ProxyClient implements MageClient {
     }
 
     public void connect(String host, int port, String username, String password) {
-        connect(null, "", host, port, username, password);
+        connect(null, "", host, port, username, password, "world.png", 51);
     }
 
     private boolean isSameSession(String host, int port, String username) {
@@ -830,6 +840,15 @@ public class ProxyClient implements MageClient {
                 options.setRange(mage.constants.RangeOfInfluence.valueOf(str(args, "range", "ALL").toUpperCase(Locale.ROOT)));
             } catch (Exception ignored) {
             }
+        }
+        if (args.has("minimumRating")) {
+            options.setMinimumRating(getInt(args, "minimumRating", 0));
+        }
+        if (args.has("quitRatio")) {
+            options.setQuitRatio(getInt(args, "quitRatio", 100));
+        }
+        if (args.has("edhPowerLevel")) {
+            options.setEdhPowerLevel(getInt(args, "edhPowerLevel", 100));
         }
         // modo test: no barajar el mazo inicial (la librería queda en el orden
         // enviado); los servidores sin modificar ignoran el campo

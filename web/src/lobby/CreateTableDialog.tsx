@@ -91,6 +91,9 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const [password, setPassword] = useState('')
   const [spectatorsAllowed, setSpectatorsAllowed] = useState(true)
   const [rollbackTurnsAllowed, setRollbackTurnsAllowed] = useState(true)
+  const [minimumRating, setMinimumRating] = useState(0)
+  const [quitRatio, setQuitRatio] = useState(100)
+  const [edhPowerLevel, setEdhPowerLevel] = useState(100)
 
   // Seats & Decks tab
   const [humanSeat, setHumanSeat] = useState(true)
@@ -197,6 +200,9 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
       freeMulligans,
       attackOption: isMultiplayerGame ? attackOption : undefined,
       range: isMultiplayerGame ? range : undefined,
+      minimumRating: minimumRating > 0 ? minimumRating : undefined,
+      quitRatio: quitRatio < 100 ? quitRatio : undefined,
+      edhPowerLevel: edhPowerLevel < 100 ? edhPowerLevel : undefined,
       skipInitShuffling,
       skipStartingPlayerChoice,
       simDecks: simSeats > 0 ? Array.from({ length: simSeats }, () => simDeck) : undefined,
@@ -445,6 +451,63 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
                 />
               </label>
 
+              <div className="create-restrictions-box">
+                <span className="restrictions-box-title">🛡️ Restricciones de Jugadores</span>
+                <div className="create-grid-2col">
+                  <label>
+                    Rating ELO mínimo
+                    <input
+                      type="number"
+                      min={0}
+                      max={3000}
+                      step={50}
+                      value={minimumRating}
+                      onChange={(e) => setMinimumRating(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      placeholder="0 = Sin restricción"
+                    />
+                    <span className="create-field-hint">
+                      {minimumRating > 0 ? `Requiere ≥ ${minimumRating} ELO` : 'Cualquier jugador puede unirse'}
+                    </span>
+                  </label>
+
+                  <label>
+                    Abandono máx. permitido (%)
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={quitRatio}
+                      onChange={(e) => setQuitRatio(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))}
+                      placeholder="100% = Sin restricción"
+                    />
+                    <span className="create-field-hint">
+                      {quitRatio < 100 ? `Máx. ${quitRatio}% abandonos` : 'Sin límite de porcentaje'}
+                    </span>
+                  </label>
+                </div>
+
+                {isMultiplayerGame && (
+                  <div style={{ marginTop: 10 }}>
+                    <label>
+                      Nivel de poder Commander / EDH (Power Level)
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={5}
+                        value={edhPowerLevel}
+                        onChange={(e) => setEdhPowerLevel(Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0)))}
+                        placeholder="100 = Sin restricción"
+                      />
+                      <span className="create-field-hint">
+                        {edhPowerLevel < 100 ? `Nivel máx. de poder: ${edhPowerLevel}` : 'Cualquier nivel de poder'}
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <label className="toggle-label-row">
                 <input
                   type="checkbox"
@@ -592,6 +655,8 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
           <span className="summary-pill">Bo{wins === 1 ? '1' : wins === 2 ? '3' : '5'}</span>
           <span className="summary-pill">{timeLimit === 'NONE' ? 'Sin reloj' : timeLimit.replace('MIN__', '') + 'm'}</span>
           <span className="summary-pill">{SKILL_LEVEL_OPTIONS.find((s) => s.value === skillLevel)?.label}</span>
+          {minimumRating > 0 && <span className="summary-pill">⭐ Min {minimumRating}</span>}
+          {quitRatio < 100 && <span className="summary-pill">🚫 Max Quit {quitRatio}%</span>}
           {password.trim() && <span className="summary-pill security">🔒 Clave</span>}
           {rated && <span className="summary-pill rated">⭐ Ranked</span>}
         </div>

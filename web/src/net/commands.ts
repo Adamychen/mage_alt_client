@@ -21,8 +21,15 @@ export function getGateway(): Gateway {
   return gateway
 }
 
-export async function connect(host: string, port: number, username: string, password: string) {
-  return getGateway().send('connect', { host, port, username, password })
+export async function connect(
+  host: string,
+  port: number,
+  username: string,
+  password: string,
+  flagName?: string,
+  avatarId?: number,
+) {
+  return getGateway().send('connect', { host, port, username, password, flagName, avatarId })
 }
 
 export async function getGameTypes(): Promise<GameTypeInfo[]> {
@@ -78,6 +85,9 @@ export interface CreateTableArgs {
   freeMulligans?: number
   attackOption?: string
   range?: string
+  minimumRating?: number
+  quitRatio?: number
+  edhPowerLevel?: number
   skipInitShuffling?: boolean
   skipStartingPlayerChoice?: boolean
   /** mazos de los asientos "SIM" (oponentes simulados que une el proxy) */

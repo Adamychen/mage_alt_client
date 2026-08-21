@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { clearError, doConnect, useStore, loadConn, clearActiveGame } from '../state/store'
+import CountryFlag from './CountryFlag'
 import './LoginScreen.css'
 
 function urlProxyPort(): number | null {
@@ -8,6 +9,24 @@ function urlProxyPort(): number | null {
 }
 
 export type ServerPreset = 'local' | 'official' | 'custom'
+
+export const POPULAR_FLAGS = [
+  { code: 'world', name: '🌐 Global / Mundo' },
+  { code: 'es', name: '🇪🇸 España' },
+  { code: 'us', name: '🇺🇸 Estados Unidos' },
+  { code: 'mx', name: '🇲🇽 México' },
+  { code: 'ar', name: '🇦🇷 Argentina' },
+  { code: 'cl', name: '🇨🇱 Chile' },
+  { code: 'co', name: '🇨🇴 Colombia' },
+  { code: 'de', name: '🇩🇪 Alemania' },
+  { code: 'fr', name: '🇫🇷 Francia' },
+  { code: 'gb', name: '🇬🇧 Reino Unido' },
+  { code: 'it', name: '🇮🇹 Italia' },
+  { code: 'jp', name: '🇯🇵 Japón' },
+  { code: 'br', name: '🇧🇷 Brasil' },
+  { code: 'ca', name: '🇨🇦 Canadá' },
+  { code: 'au', name: '🇦🇺 Australia' },
+]
 
 export default function LoginScreen() {
   const phase = useStore((s) => s.phase)
@@ -18,6 +37,7 @@ export default function LoginScreen() {
   const [port, setPort] = useState('17171')
   const [username, setUsername] = useState('player1')
   const [password, setPassword] = useState('password')
+  const [flagName, setFlagName] = useState('es')
   const [preset, setPreset] = useState<ServerPreset>('local')
 
   useEffect(() => {
@@ -30,6 +50,7 @@ export default function LoginScreen() {
       setPort(String(saved.port))
       setUsername(saved.username)
       setPassword(saved.password)
+      if (saved.flagName) setFlagName(saved.flagName)
 
       if (saved.serverHost === 'beta.xmage.today') {
         setPreset('official')
@@ -68,7 +89,8 @@ export default function LoginScreen() {
       serverHost.trim() || proxyHost.trim(),
       parseInt(port, 10) || 17171,
       username.trim(),
-      password
+      password,
+      flagName,
     )
   }
 
@@ -120,19 +142,34 @@ export default function LoginScreen() {
         <div className="login-user-section">
           <div className="user-avatar-preview">
             <span>{userInitial}</span>
+            <div className="user-avatar-flag-pill">
+              <CountryFlag flagName={flagName} />
+            </div>
           </div>
           <div className="user-inputs-col">
-            <label>
-              Usuario
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                maxLength={14}
-                placeholder="Nombre de usuario"
-                autoComplete="username"
-                required
-              />
-            </label>
+            <div className="user-name-and-flag-grid">
+              <label className="login-field-username">
+                Usuario
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  maxLength={14}
+                  placeholder="Nombre de usuario"
+                  autoComplete="username"
+                  required
+                />
+              </label>
+              <label className="login-field-flag">
+                País
+                <select value={flagName} onChange={(e) => setFlagName(e.target.value)}>
+                  {POPULAR_FLAGS.map((f) => (
+                    <option key={f.code} value={f.code}>
+                      {f.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <label>
               Contraseña
               <input

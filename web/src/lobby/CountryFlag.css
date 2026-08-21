@@ -1,0 +1,26 @@
+.country-flag-icon {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.flag-fallback {
+  font-size: 10px;
+  font-weight: 700;
+  color: #c4cae8;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono, monospace);
+  vertical-align: middle;
+}
+
+.flag-empty {
+  font-size: 11px;
+  vertical-align: middle;
+}

@@ -2,7 +2,7 @@ import { Gateway } from '../net/Gateway'
 import * as cmds from '../net/commands'
 import { getState, setState, addLog, initialState } from './state'
 import { handleMessage } from './eventHandler'
-import { saveConn, loadActiveGame, clearActiveGame } from './persistence'
+import { saveConn, loadActiveGame, clearActiveGame, type ConnectionInfo } from './persistence'
 
 let gateway: Gateway | null = null
 
@@ -14,7 +14,14 @@ export function attachGateway(g: Gateway) {
     setState({ connecting: false, wsAlive: true, error: null })
     if (s.conn && s.phase !== 'connecting') {
       addLog('conexión', 'reconectado: re-logueando…')
-      const res = await cmds.connect(s.conn.serverHost, s.conn.port, s.conn.username, s.conn.password)
+      const res = await cmds.connect(
+        s.conn.serverHost,
+        s.conn.port,
+        s.conn.username,
+        s.conn.password,
+        s.conn.flagName,
+        s.conn.avatarId,
+      )
       if (res.ok) {
         const active = loadActiveGame()
         if (active?.gameId) {
@@ -51,8 +58,17 @@ export function getGateway(): Gateway | null {
   return gateway
 }
 
-export async function doConnect(wsHost: string, proxyPort: number, serverHost: string, port: number, username: string, password: string) {
-  const conn = { wsHost, proxyPort, serverHost, port, username, password }
+export async function doConnect(
+  wsHost: string,
+  proxyPort: number,
+  serverHost: string,
+  port: number,
+  username: string,
+  password: string,
+  flagName?: string,
+  avatarId?: number,
+) {
+  const conn: ConnectionInfo = { wsHost, proxyPort, serverHost, port, username, password, flagName, avatarId }
   setState({ phase: 'connecting', conn, connecting: true, error: null })
   detachGateway()
   const g = new Gateway()
@@ -66,11 +82,11 @@ export async function doConnect(wsHost: string, proxyPort: number, serverHost: s
     setState({ phase: 'idle', connecting: false, error: `no se pudo conectar al proxy en ${url}: ${(e as Error).message}` })
     return
   }
-  const res = await cmds.connect(serverHost, port, username, password)
+  const res = await cmds.connect(serverHost, port, username, password, flagName, avatarId)
   if (!res.ok && /already connected|already logged in/i.test(res.error ?? '')) {
     await cmds.disconnect()
     await new Promise((r) => setTimeout(r, 500))
-    return doConnect(wsHost, proxyPort, serverHost, port, username, password)
+    return doConnect(wsHost, proxyPort, serverHost, port, username, password, flagName, avatarId)
   }
   if (res.ok) {
     setState({ phase: 'lobby', connecting: false, error: null, conn })

@@ -543,6 +543,25 @@
   background: rgba(20, 60, 48, 0.3);
 }
 
+.table-tag-restriction {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.seat-flag {
+  margin-right: 2px;
+}
+
+.user-list-flag {
+  margin-right: 4px;
+}
+
 /* Info Strip */
 .table-info-strip {
   display: flex;

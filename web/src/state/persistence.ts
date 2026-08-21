@@ -9,6 +9,8 @@ export interface ConnectionInfo {
   port: number
   username: string
   password: string
+  flagName?: string
+  avatarId?: number
 }
 
 export interface ActiveGamePersistence {

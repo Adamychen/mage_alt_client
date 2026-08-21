@@ -288,6 +288,37 @@
 .multiplayer-box-title {
   font-size: 11px;
   font-weight: 700;
+  color: #c4b5fd;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Restrictions Box */
+.create-restrictions-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(20, 30, 55, 0.5);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+}
+
+.restrictions-box-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #93c5fd;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.create-field-hint {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: none;
+  letter-spacing: normal;
+}
   text-transform: uppercase;
   color: #c4b5fd;
   letter-spacing: 0.04em;

@@ -6,6 +6,7 @@ import CreateTableDialog from './CreateTableDialog'
 import JoinTableDialog from './JoinTableDialog'
 import ChatBox from './ChatBox'
 import DeckManager from './DeckManager'
+import CountryFlag from './CountryFlag'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
@@ -425,6 +426,16 @@ export default function LobbyScreen() {
                           {t.spectatorsAllowed && (
                             <span className="table-tag-spectate" title="Espectadores permitidos">👁️ Espectadores</span>
                           )}
+                          {Number(t.minimumRating) > 0 && (
+                            <span className="table-tag-restriction" title={`Rating mínimo requerido: ${t.minimumRating}`}>
+                              ⭐ Min {t.minimumRating}
+                            </span>
+                          )}
+                          {Number(String(t.quitRatio ?? '100').replace('%', '')) < 100 && (
+                            <span className="table-tag-restriction" title={`Máximo porcentaje de abandono permitido: ${t.quitRatio}`}>
+                              🚫 Max Quit {t.quitRatio}
+                            </span>
+                          )}
                         </div>
 
                         {t.additionalInfoShort && (
@@ -447,6 +458,7 @@ export default function LobbyScreen() {
                                 <span className="seat-icon">
                                   {s.playerName ? (isHuman ? '👤' : '🤖') : '⭕'}
                                 </span>
+                                {s.flagName && <CountryFlag flagName={s.flagName} className="seat-flag" />}
                                 <span className="seat-name">
                                   {s.playerName || 'Plaza vacía'}
                                   {isOwner && <span className="seat-crown" title="Creador de la mesa">👑</span>}
@@ -553,7 +565,7 @@ export default function LobbyScreen() {
                     <span className={`dot ${u.infoGames ? 'playing' : 'online'}`} />
                     <div className="user-info-col">
                       <div className="user-name-row">
-                        {u.flagName && <span className="user-flag-tag">{u.flagName}</span>}
+                        {u.flagName && <CountryFlag flagName={u.flagName} className="user-list-flag" showTextFallback />}
                         <span className="user-name-text">{u.userName}</span>
                         {u.constructedRating > 0 && (
                           <span className="user-rating-pill">⭐ {u.constructedRating}</span>
