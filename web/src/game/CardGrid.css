@@ -1,17 +1,17 @@
 .card-grid-dialog {
-  width: min(720px, 100%);
-  max-height: min(800px, 90vh);
+  width: min(1050px, 94vw);
+  max-height: min(850px, 90vh);
 }
 
 .card-grid-filter {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 14px;
   margin-top: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: 14px;
   outline: none;
 }
 
@@ -21,12 +21,12 @@
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
   margin-top: 16px;
-  max-height: 480px;
+  max-height: 580px;
   overflow-y: auto;
-  padding: 4px;
+  padding: 6px;
 }
 
 .card-grid-cell {

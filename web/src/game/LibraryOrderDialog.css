@@ -3,8 +3,8 @@
 }
 
 .library-order-dialog {
-  max-width: 900px !important;
-  width: 90vw !important;
+  max-width: 1150px !important;
+  width: 95vw !important;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -28,7 +28,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 60vh;
+  max-height: 68vh;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -83,10 +83,10 @@
 .order-cards-list {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 16px;
   overflow-x: auto;
-  padding: 8px 4px;
-  min-height: 180px;
+  padding: 10px 6px;
+  min-height: 270px;
 }
 
 .empty-zone-placeholder {
@@ -105,7 +105,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -113,19 +113,19 @@
   position: absolute;
   top: 4px;
   left: 4px;
-  padding: 1px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.85);
   color: #63e6be;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   z-index: 10;
   border: 1px solid rgba(99, 230, 190, 0.6);
 }
 
 .order-card-slot {
-  width: 110px !important;
-  height: 154px !important;
+  width: 175px !important;
+  height: 245px !important;
 }
 
 .order-card-controls {
