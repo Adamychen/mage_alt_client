@@ -105,9 +105,9 @@ describe('OpponentZone', () => {
     expect(getByText('Grizzly Bears')).not.toBeNull()
     expect(getByText('Pacifism')).not.toBeNull()
 
-    // Aura should be nested in attachments-list and not in others-band
-    const otherBand = container.querySelector('.other-band')
-    expect(otherBand?.querySelectorAll('.card-slot').length).toBe(0)
+    // Aura should be nested in attachments-list and not in permanents-band
+    const permBand = container.querySelector('.permanents-band')
+    expect(permBand?.querySelectorAll('.card-slot').length).toBe(0)
   })
 
   it('renders opponent commander in command zone', () => {

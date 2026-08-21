@@ -98,7 +98,7 @@ export default function OpponentZone({
 
       {/* Row 2: Lands + Others */}
       <div className="oz-row oz-permanents-row">
-        <div className="oz-band lands-band">
+        <div className="oz-band permanents-band">
           {lands.map(([id, perm]) => (
             <CardSlot
               key={id}
@@ -111,8 +111,6 @@ export default function OpponentZone({
               showCounters
             />
           ))}
-        </div>
-        <div className="oz-band other-band">
           {others.map(([id, perm]) => (
             <CardSlot
               key={id}

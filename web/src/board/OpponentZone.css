@@ -78,28 +78,23 @@
   flex: 1;
   height: 100%;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   padding: 2px;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 8px;
   border: none;
   align-items: center;
   justify-content: center;
   min-width: 0;
   min-height: 0;
+  scrollbar-width: none;
 }
 
-.oz-band.creatures-band {
-  background: transparent;
-}
-
-.oz-band.other-band {
-  background: transparent;
-}
-
-.oz-band.lands-band {
-  background: transparent;
+.oz-band.creatures-band,
+.oz-band.permanents-band {
+  justify-content: center;
 }
 
 /* Compact Pod Style (Commander FFA 3-pod row) */

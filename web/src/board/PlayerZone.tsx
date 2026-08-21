@@ -173,7 +173,7 @@ export default function PlayerZone({
 
       {/* Row 2: Lands + Others */}
       <div className="pz-row pz-permanents-row">
-        <div className="pz-band lands-band">
+        <div className="pz-band permanents-band">
           {lands.map(([id, perm]) => (
             <CardSlot
               key={id}
@@ -187,8 +187,6 @@ export default function PlayerZone({
               showCounters
             />
           ))}
-        </div>
-        <div className="pz-band other-band">
           {others.map(([id, perm]) => (
             <CardSlot
               key={id}

@@ -56,26 +56,21 @@
   flex: 1;
   height: 100%;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
   padding: 2px;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
   border-radius: 8px;
   border: none;
   align-items: center;
   justify-content: center;
   min-width: 0;
   min-height: 0;
+  scrollbar-width: none;
 }
 
-.creatures-band {
-  background: transparent;
-}
-
-.other-band {
-  background: transparent;
-}
-
-.lands-band {
-  background: transparent;
+.pz-band.creatures-band,
+.pz-band.permanents-band {
+  justify-content: center;
 }
