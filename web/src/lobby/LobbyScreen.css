@@ -367,13 +367,13 @@
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 18px;
   align-content: start;
   padding: 4px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1040px) {
   .tables-list {
     grid-template-columns: 1fr;
   }
