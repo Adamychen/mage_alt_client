@@ -42,7 +42,7 @@ export default function App() {
       ) : phase === 'connecting' ? (
         <div className="login-wrap">
           <div className="login-card panel connecting-splash">
-            <h1>Mage Web</h1>
+            <img src="/logo.jpeg" alt="XMage Nexus" className="login-logo-img" />
             <p className="subtitle">Conectando al servidor XMage…</p>
             <div className="connecting-spinner" />
           </div>

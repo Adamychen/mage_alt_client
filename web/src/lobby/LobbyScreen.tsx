@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { reset, useLobby, useStore } from '../state/store'
 import * as cmds from '../net/commands'
 import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
 import ChatBox from './ChatBox'
+import DeckManager from './DeckManager'
 import { AI_OPPONENT_DECK, DEFAULT_DECK, STABLE_DECK } from './decks'
 import './LobbyScreen.css'
 
@@ -27,17 +28,32 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   })
 }
 
+export type LobbyTab = 'tables' | 'decks' | 'community'
+
 export default function LobbyScreen() {
   const lobby = useLobby()
   const conn = useStore((s) => s.conn)
+  const myDeck = useStore((s) => s.myDeck)
   const error = useStore((s) => s.error)
   const events = useStore((s) => s.events)
+  const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
+  const [showDebug, setShowDebug] = useState(false)
+  const [formatFilter, setFormatFilter] = useState('ALL')
   const [busyTable, setBusyTable] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
   const tables = lobby?.tables ?? []
   const users = lobby?.users.usersView ?? []
+
+  const filteredTables = useMemo(() => {
+    if (formatFilter === 'ALL') return tables
+    return tables.filter(
+      (t) =>
+        t.gameType?.toLowerCase().includes(formatFilter.toLowerCase()) ||
+        t.deckType?.toLowerCase().includes(formatFilter.toLowerCase())
+    )
+  }, [tables, formatFilter])
 
   const runDemo = async () => {
     setBusyTable('demo')
@@ -64,7 +80,6 @@ export default function LobbyScreen() {
         setNotice('la creación de mesa no devolvió tableId')
         return
       }
-      // los asientos SIM los une el proxy con sus propias sesiones
       const started = await withTimeout(cmds.startMatch(tableId), 20000, 'startMatch')
       if (!started.ok) {
         setNotice(`startMatch falló: ${started.error}`)
@@ -95,7 +110,7 @@ export default function LobbyScreen() {
           playerName: conn?.username ?? 'player',
           playerType: 'HUMAN',
           skill: 1,
-          deck: DEFAULT_DECK,
+          deck: myDeck ?? DEFAULT_DECK,
         }),
         15000,
         'joinTable',
@@ -162,99 +177,290 @@ export default function LobbyScreen() {
     }
   }
 
+  const userInitial = conn?.username?.charAt(0).toUpperCase() || 'P'
+
   return (
     <div className="lobby">
+      {/* Top Arena Navigation Bar */}
       <header className="lobby-top">
-        <div>
-          <h1>Lobby</h1>
-          <span className="conn-info">
-            {conn?.username} @ {conn?.serverHost}:{conn?.port} — {users.length} usuarios
-          </span>
+        <div className="lobby-brand-col">
+          <img src="/logo.jpeg" alt="XMage Nexus" className="lobby-brand-logo" />
+          <div className="lobby-brand-titles">
+            <h1 className="lobby-main-heading">XMage Nexus</h1>
+            <span className="conn-info">
+              <span className="conn-status-dot" />
+              {conn?.serverHost}:{conn?.port} • {users.length} jugadores en línea
+            </span>
+          </div>
         </div>
-        <div className="lobby-actions">
-          <button onClick={() => setShowCreate(true)}>Nueva mesa</button>
-          <button className="primary" disabled={busyTable === 'demo'} onClick={runDemo}>
-            {busyTable === 'demo' ? '…' : '▶ Demo IA vs IA (espectador)'}
+
+        {/* Navigation Tabs */}
+        <nav className="lobby-nav-tabs">
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === 'tables' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tables')}
+          >
+            <span className="tab-icon">⚔️</span>
+            <span>Mesas ({tables.length})</span>
           </button>
-          <button onClick={reset}>Desconectar</button>
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === 'decks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('decks')}
+          >
+            <span className="tab-icon">🃏</span>
+            <span>Mis Mazos</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-tab-btn ${activeTab === 'community' ? 'active' : ''}`}
+            onClick={() => setActiveTab('community')}
+          >
+            <span className="tab-icon">👥</span>
+            <span>Comunidad & Chat</span>
+          </button>
+        </nav>
+
+        {/* User Identity & Disconnect */}
+        <div className="lobby-user-actions">
+          <div className="lobby-user-badge">
+            <div className="lobby-avatar-pill">{userInitial}</div>
+            <span className="lobby-username">{conn?.username}</span>
+          </div>
+          <button className="lobby-disconnect-btn" onClick={reset} title="Cerrar sesión">
+            Desconectar
+          </button>
         </div>
       </header>
 
       {error && <div className="error-box panel">{error}</div>}
       {notice && <div className="notice panel">{notice}</div>}
 
-      <div className="lobby-main">
-        <section className="panel tables-panel">
-          <h2>Mesas ({tables.length})</h2>
-          <div className="tables-list">
-            {tables.map((t) => (
-              <div key={t.tableId} className="table-row">
-                <div className="table-info">
-                  <strong>{t.tableName}</strong>
-                  <span>
-                    {t.gameType} · {t.deckType}
-                  </span>
-                  <span className="table-seats">{t.seatsInfo}</span>
-                </div>
-                <div className="table-state">{t.tableStateText}</div>
-                <div className="table-actions">
-                  {t.tableState === 'READY_TO_START' && (
-                    <button disabled={busyTable === t.tableId} onClick={() => startTable(t)}>
-                      Empezar
-                    </button>
-                  )}
-                  {(t.tableState === 'WAITING' || t.tableState === 'READY_TO_START') && t.seats.some((s) => !s.playerName && (!s.playerType || s.playerType === 'HUMAN')) && (
-                    <button disabled={busyTable === t.tableId} onClick={() => joinHuman(t)}>
-                      Unirse (humano)
-                    </button>
-                  )}
-                  {(t.tableState === 'WAITING' || t.tableState === 'READY_TO_START') && t.seats.some((s) => !s.playerName && s.playerType && /COMPUTER|AI/i.test(s.playerType)) && (
-                    <button disabled={busyTable === t.tableId} onClick={() => joinAi(t)}>
-                      Unirse IA
-                    </button>
-                  )}
-                  <button disabled={busyTable === t.tableId} onClick={() => watchTable(t)}>
-                    Ver
-                  </button>
-                </div>
+      {/* Main Tab Content */}
+      <div className="lobby-body-container">
+        {activeTab === 'tables' && (
+          <div className="lobby-tables-view">
+            {/* Hero Quick Action Bar */}
+            <div className="tables-hero-bar">
+              <div className="hero-left-actions">
+                <button className="primary hero-create-btn" onClick={() => setShowCreate(true)}>
+                  <span className="btn-icon">➕</span>
+                  <span>Nueva mesa</span>
+                </button>
+                <button
+                  className="hero-demo-btn"
+                  disabled={busyTable === 'demo'}
+                  onClick={runDemo}
+                  title="Inicia una partida de prueba IA vs IA y conéctate como espectador"
+                >
+                  <span className="btn-icon">▶</span>
+                  <span>{busyTable === 'demo' ? 'Iniciando demo…' : 'Demo IA vs IA (espectador)'}</span>
+                </button>
               </div>
-            ))}
-            {tables.length === 0 && <p className="empty">No hay mesas todavía</p>}
+
+              {/* Format Filters */}
+              <div className="table-filter-pills">
+                <button
+                  type="button"
+                  className={`filter-pill ${formatFilter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setFormatFilter('ALL')}
+                >
+                  Todas ({tables.length})
+                </button>
+                <button
+                  type="button"
+                  className={`filter-pill ${formatFilter === 'Duel' ? 'active' : ''}`}
+                  onClick={() => setFormatFilter('Duel')}
+                >
+                  Duelo 1v1
+                </button>
+                <button
+                  type="button"
+                  className={`filter-pill ${formatFilter === 'Modern' ? 'active' : ''}`}
+                  onClick={() => setFormatFilter('Modern')}
+                >
+                  Modern
+                </button>
+                <button
+                  type="button"
+                  className={`filter-pill ${formatFilter === 'Commander' ? 'active' : ''}`}
+                  onClick={() => setFormatFilter('Commander')}
+                >
+                  Commander
+                </button>
+              </div>
+            </div>
+
+            {/* Tables Grid Section */}
+            <section className="panel tables-panel">
+              <div className="tables-panel-header">
+                <h2>Mesas ({filteredTables.length})</h2>
+                <span className="tables-deck-hint">
+                  Mazo equipado: <strong>{myDeck?.name ?? 'Mage Web bolt'}</strong>
+                </span>
+              </div>
+
+              <div className="tables-list">
+                {filteredTables.map((t) => {
+                  const isReady = t.tableState === 'READY_TO_START'
+                  const isPlaying = t.tableState === 'DUELING' || t.tableState === 'SIDEBOARDING'
+                  const isWaiting = t.tableState === 'WAITING'
+
+                  const hasHumanSeat =
+                    (isWaiting || isReady) &&
+                    t.seats.some((s) => !s.playerName && (!s.playerType || s.playerType === 'HUMAN'))
+                  const hasAiSeat =
+                    (isWaiting || isReady) &&
+                    t.seats.some((s) => !s.playerName && s.playerType && /COMPUTER|AI/i.test(s.playerType))
+
+                  const statusClass = isReady
+                    ? 'status-ready'
+                    : isPlaying
+                    ? 'status-playing'
+                    : 'status-waiting'
+
+                  return (
+                    <div key={t.tableId} className={`table-card ${statusClass}`}>
+                      <div className="table-card-main">
+                        <div className="table-header-row">
+                          <strong className="table-name-text">{t.tableName}</strong>
+                          <span className={`table-state-badge ${statusClass}`}>{t.tableStateText}</span>
+                        </div>
+
+                        <div className="table-meta-row">
+                          <span className="table-game-tag">🎮 {t.gameType}</span>
+                          <span className="table-deck-tag">📜 {t.deckType}</span>
+                          <span className="table-seats-count">👥 {t.seatsInfo}</span>
+                        </div>
+
+                        {/* Player Seats Badges */}
+                        <div className="table-seats-roster">
+                          {t.seats.map((s, idx) => (
+                            <div key={idx} className={`seat-badge ${s.playerName ? 'occupied' : 'empty'}`}>
+                              <span className="seat-icon">{s.playerName ? (s.playerType === 'HUMAN' ? '👤' : '🤖') : '⭕'}</span>
+                              <span className="seat-name">{s.playerName || 'Plaza vacía'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="table-actions">
+                        {isReady && (
+                          <button
+                            className="primary table-action-btn"
+                            disabled={busyTable === t.tableId}
+                            onClick={() => startTable(t)}
+                          >
+                            Empezar
+                          </button>
+                        )}
+                        {hasHumanSeat && (
+                          <button
+                            className="table-action-btn join-btn"
+                            disabled={busyTable === t.tableId}
+                            onClick={() => joinHuman(t)}
+                          >
+                            Unirse (humano)
+                          </button>
+                        )}
+                        {hasAiSeat && (
+                          <button
+                            className="table-action-btn ai-btn"
+                            disabled={busyTable === t.tableId}
+                            onClick={() => joinAi(t)}
+                          >
+                            Unirse IA
+                          </button>
+                        )}
+                        <button
+                          className="table-action-btn watch-btn"
+                          disabled={busyTable === t.tableId}
+                          onClick={() => watchTable(t)}
+                        >
+                          👁️ Ver
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {filteredTables.length === 0 && (
+                  <div className="tables-empty-state">
+                    <span className="empty-icon">🏰</span>
+                    <h3>No hay mesas disponibles en este momento</h3>
+                    <p>Crea una nueva partida o lanza una demo rápida contra la IA.</p>
+                    <button className="primary" onClick={() => setShowCreate(true)}>
+                      ➕ Crear Nueva Mesa
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
-        </section>
+        )}
 
-        <section className="panel users-panel">
-          <h2>Usuarios ({users.length})</h2>
-          <ul className="users-list">
-            {users.map((u) => (
-              <li key={u.userName}>
-                <span className={`dot ${u.infoGames ? 'playing' : ''}`} />
-                {u.userName}
-                {u.infoGames ? <span className="game-info">{u.infoGames}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
+        {activeTab === 'decks' && <DeckManager />}
 
-        <section className="panel chat-panel">
-          <h2>Chat</h2>
-          <ChatBox />
-        </section>
+        {activeTab === 'community' && (
+          <div className="lobby-community-grid">
+            <section className="panel chat-panel">
+              <h2>💬 Sala de Chat Global</h2>
+              <ChatBox />
+            </section>
 
-        <section className="panel events-panel">
-          <h2>Eventos (depuración)</h2>
-          <ul className="events-list">
-            {events.map((e, i) => (
-              <li key={i}>
-                {new Date(e.time).toLocaleTimeString()} — {e.method}
-              </li>
-            ))}
-            {events.length === 0 && <p className="empty">Esperando eventos…</p>}
-          </ul>
-        </section>
+            <section className="panel users-panel">
+              <h2>👥 Jugadores Conectados ({users.length})</h2>
+              <ul className="users-list">
+                {users.map((u) => (
+                  <li key={u.userName} className="user-list-item">
+                    <span className={`dot ${u.infoGames ? 'playing' : 'online'}`} />
+                    <span className="user-name-text">{u.userName}</span>
+                    {u.infoGames ? (
+                      <span className="game-info-badge">⚔️ {u.infoGames}</span>
+                    ) : (
+                      <span className="lobby-idle-badge">En lobby</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        )}
+      </div>
+
+      {/* Collapsible Debug Drawer Toggle at Bottom */}
+      <div className="debug-drawer-container">
+        <button
+          type="button"
+          className="debug-toggle-btn"
+          onClick={() => setShowDebug(!showDebug)}
+        >
+          <span>🛠️ Eventos de red ({events.length})</span>
+          <span>{showDebug ? '▼ Ocultar' : '▲ Ver'}</span>
+        </button>
+
+        {showDebug && (
+          <div className="debug-drawer-panel panel">
+            <div className="debug-drawer-header">
+              <h3>Registro de Eventos WebSocket</h3>
+              <span className="debug-count">{events.length} recibidos</span>
+            </div>
+            <ul className="events-list">
+              {events.slice(-50).map((e, i) => (
+                <li key={i}>
+                  <span className="debug-time">{new Date(e.time).toLocaleTimeString()}</span>
+                  <span className="debug-method">{e.method}</span>
+                </li>
+              ))}
+              {events.length === 0 && <p className="empty">Esperando eventos…</p>}
+            </ul>
+          </div>
+        )}
       </div>
 
       {showCreate && <CreateTableDialog onClose={() => setShowCreate(false)} />}
     </div>
   )
 }
+

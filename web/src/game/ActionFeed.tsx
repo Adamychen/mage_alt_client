@@ -47,6 +47,14 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
       const parsed = parseGameEvent(entry.text, myPlayerName, `log-${entry.id ?? i}`)
       if (parsed) {
         items.push(parsed)
+      } else if (entry.text) {
+        items.push({
+          id: `log-sys-${entry.id ?? i}`,
+          type: 'system',
+          description: entry.text,
+          rawText: entry.text,
+          timestamp: entry.time,
+        })
       }
     }
 
@@ -95,7 +103,7 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
 
       {/* Main content list */}
       <div
-        className="action-feed-list"
+        className="action-feed-list game-log-entries"
         ref={containerRef}
         onScroll={handleScroll}
       >

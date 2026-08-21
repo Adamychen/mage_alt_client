@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import type { CardView, GameView, PermanentView } from '../net/types'
+import type { CardView, GameView, PermanentView, PlayerView } from '../net/types'
 import OpponentZone from './OpponentZone'
 import PlayerZone from './PlayerZone'
 import TargetingOverlay from './TargetingOverlay'
@@ -85,8 +85,25 @@ export default function GameBoard({
   onPlayCrossZone,
   focusedOpponentId,
 }: GameBoardProps) {
-  const me = game?.players?.find((p) => p.controlled)
-  const opps = game?.players?.filter((p) => !p.controlled) ?? []
+  const allPlayers = useMemo(() => {
+    if (game?.players && game.players.length > 0) return game.players
+    if (game?.watchedHands) {
+      const names = Object.keys(game.watchedHands)
+      if (names.length > 0) {
+        return names.map((name, i) => ({
+          playerId: `p-spec-${i}`,
+          name,
+          life: 20,
+          controlled: false,
+          handCount: Object.keys(game.watchedHands?.[name] ?? {}).length,
+        } as unknown as PlayerView))
+      }
+    }
+    return []
+  }, [game?.players, game?.watchedHands])
+
+  const me = allPlayers.find((p) => p.controlled)
+  const opps = allPlayers.filter((p) => !p.controlled)
   const isSpectator = !me
   const oppBottom = isSpectator ? (opps.length >= 2 ? opps[opps.length - 1] : opps[0]) : undefined
   const topOpps = isSpectator ? (opps.length >= 2 ? opps.slice(0, opps.length - 1) : []) : opps

@@ -52,7 +52,7 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
 
   if (item.type === 'system') {
     return (
-      <div className="action-feed-system-banner">
+      <div className="action-feed-system-banner game-log-entry">
         <span className="system-icon">{icon}</span>
         <span className="system-text">{item.description}</span>
       </div>

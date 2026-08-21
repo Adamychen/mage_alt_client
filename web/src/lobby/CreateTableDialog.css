@@ -1,61 +1,125 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 15, 0.7);
+  background: rgba(4, 6, 16, 0.82);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .dialog {
-  width: 420px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+  background: rgba(18, 22, 45, 0.94);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 208, 112, 0.4);
+  border-radius: 16px;
+  padding: 24px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8),
+              0 0 32px rgba(124, 92, 255, 0.2);
+  box-sizing: border-box;
 }
 
 .dialog h2 {
-  margin: 0;
-  font-size: 18px;
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  background: linear-gradient(135deg, #ffffff 0%, #ffd070 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .dialog label {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8c96c0;
+  letter-spacing: 0.04em;
+}
+
+.dialog input,
+.dialog select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(10, 13, 28, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
   font-size: 13px;
-  color: var(--text-dim);
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.dialog input:focus,
+.dialog select:focus {
+  border-color: #ffd070;
+  box-shadow: 0 0 10px rgba(255, 208, 112, 0.35);
 }
 
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
-  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8c96c0;
+  letter-spacing: 0.04em;
 }
 
 .chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .chip {
-  padding: 4px 10px;
+  padding: 6px 12px;
   font-size: 12px;
+  font-weight: 600;
   border-radius: 20px;
+  background: rgba(22, 28, 56, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c4cae8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.chip:hover {
+  background: rgba(36, 44, 88, 0.8);
+  border-color: rgba(255, 208, 112, 0.4);
+  color: #ffffff;
 }
 
 .chip.on {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: rgba(124, 92, 255, 0.3);
+  border-color: #7c5cff;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(124, 92, 255, 0.4);
 }
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 6px;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+

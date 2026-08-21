@@ -61,7 +61,7 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
 
    // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
   await expect(page.getByTestId('game-status')).toBeVisible({ timeout: 20_000 })
-  const board = page.locator('.game-board')
+  const board = page.locator('.game')
   await expect(board).toBeVisible({ timeout: 20_000 })
   const gameStatus = page.getByTestId('game-status')
   await expect(gameStatus).toBeVisible()
