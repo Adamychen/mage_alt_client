@@ -1,9 +1,9 @@
 .game-chat {
   display: flex;
   flex-direction: column;
-  height: 200px;
-  min-height: 120px;
-  border-top: 1px solid #1e2444;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
 }
 
 .game-chat-messages {

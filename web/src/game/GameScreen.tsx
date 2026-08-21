@@ -5,14 +5,12 @@ import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStor
 import FeedbackDialog from './FeedbackDialog'
 import SideboardScreen from './SideboardScreen'
 import Sidebar from './Sidebar'
-import CardPreview from './CardPreview'
 import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
 import ActionButton from './ActionButton'
 import ActionFeed from './ActionFeed'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
-import type { CardView } from '../net/types'
 import './GameScreen.css'
 
 export default function GameScreen() {
@@ -22,7 +20,6 @@ export default function GameScreen() {
   const feedback = useStore((s) => s.feedback)
   const playableIds = useStore((s) => s.playableIds)
   const combat = useStore((s) => s.combat)
-  const [previewCard, setPreviewCard] = useState<CardView | null>(null)
   const [rightTab, setRightTab] = useState<'log' | 'chat'>('log')
   const [busy, setBusy] = useState(false)
 
@@ -126,7 +123,6 @@ export default function GameScreen() {
             targetSourceId={targetSourceId}
             playableIds={playableIds}
             onPlayableClick={onPlayableClick}
-            onCardHover={setPreviewCard}
             combatSelectable={combat?.selectable ?? []}
             combatMode={combat?.mode ?? null}
             combatChosen={combat?.chosen ?? []}
@@ -137,8 +133,6 @@ export default function GameScreen() {
           />
         </div>
         <div className="game-right-panel">
-          <CardPreview card={previewCard} />
-
           <div className="right-panel-tabs">
             <button
               type="button"
@@ -158,7 +152,7 @@ export default function GameScreen() {
 
           <div className="right-panel-content">
             {rightTab === 'log' ? (
-              <ActionFeed onHover={setPreviewCard} />
+              <ActionFeed />
             ) : (
               <GameChat />
             )}
