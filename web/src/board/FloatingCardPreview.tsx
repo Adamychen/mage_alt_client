@@ -111,8 +111,8 @@ export default function FloatingCardPreview({
           </div>
         )}
 
-        {/* P/T Badge */}
-        {perm.power !== undefined && perm.toughness !== undefined && (
+        {/* P/T Badge (Creatures only) */}
+        {card.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && perm.power && perm.toughness && (
           <div className="floating-card-pt">
             {perm.power}/{perm.toughness}
           </div>

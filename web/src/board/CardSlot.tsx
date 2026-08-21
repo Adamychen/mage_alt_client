@@ -52,8 +52,14 @@ export default function CardSlot({
   const perm = card as PermanentView
   const counters = card.counters ?? []
   const totalCounters = counters.reduce((a, c) => a + c.count, 0)
-  const isCreature = (perm.cardTypes ?? []).some((t) => t === 'Creature' || t.toLowerCase() === 'creature') || (perm.power != null && perm.toughness != null)
-  const hasSummoningSickness = isCreature && !tapped && perm.summoningSickness === true
+
+  // Strict Creature Check
+  const types = (card.cardTypes ?? []).map((t) => String(t).toLowerCase())
+  const isCreature = types.includes('creature') || String(card.mageObjectType ?? '').toUpperCase().includes('CREATURE')
+  const isLand = types.includes('land')
+  const isRealCreature = isCreature && (!isLand || types.includes('creature'))
+
+  const hasSummoningSickness = isRealCreature && !tapped && perm.summoningSickness === true
 
   return (
     <div
@@ -88,8 +94,8 @@ export default function CardSlot({
         </div>
       )}
 
-      {/* Creature Power / Toughness Badge */}
-      {showPt && perm.power && perm.toughness && (
+      {/* Creature Power / Toughness Badge (Creatures only) */}
+      {showPt && isRealCreature && perm.power && perm.toughness && (
         <div className="pt-badge">{perm.power}/{perm.toughness}</div>
       )}
 
@@ -114,12 +120,12 @@ export default function CardSlot({
         <div className="counter-badge">+{totalCounters}</div>
       )}
 
-      {/* Accumulated Combat Damage */}
-      {showDamage && perm.damage && perm.damage > 0 && (
+      {/* Accumulated Combat Damage (Creatures & Planeswalkers only) */}
+      {showDamage && isRealCreature && perm.damage && perm.damage > 0 && (
         <div className="damage-badge">{perm.damage}</div>
       )}
 
-      {/* Summoning Sickness indicator */}
+      {/* Summoning Sickness indicator (Creatures only) */}
       {hasSummoningSickness && (
         <div className="sickness-badge" title="Mareo de invocación (No puede atacar ni girarse este turno)">
           🌀

@@ -115,7 +115,7 @@ export default function CardPreview({ card, onClose }: Props) {
           <div className="card-preview-text">{activeCard.rules.join('\n')}</div>
         ) : null}
 
-        {activeCard.power !== undefined && activeCard.toughness !== undefined && (
+        {activeCard.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && activeCard.power && activeCard.toughness && (
           <div className="card-preview-pt">
             {activeCard.power}/{activeCard.toughness}
           </div>
