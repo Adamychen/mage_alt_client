@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName } from '../cards/cardImages'
-import { getFallbackSourceRect, getPreviousCardPosition, recordCardPosition } from './cardPositionRegistry'
+import { getPreviousCardPosition, recordCardPosition } from './cardPositionRegistry'
 import './CardSlot.css'
 
 const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
@@ -53,7 +53,7 @@ export default function CardSlot({
       isFirstMountRef.current = false
       const lastRect = el.getBoundingClientRect()
       if (lastRect.width > 0 && lastRect.height > 0) {
-        const prevRect = getPreviousCardPosition(effectiveId) || getFallbackSourceRect(el)
+        const prevRect = getPreviousCardPosition(effectiveId)
         if (prevRect && prevRect.width > 0) {
           const dx = prevRect.left + prevRect.width / 2 - (lastRect.left + lastRect.width / 2)
           const dy = prevRect.top + prevRect.height / 2 - (lastRect.top + lastRect.height / 2)

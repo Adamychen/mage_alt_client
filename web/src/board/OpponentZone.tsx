@@ -50,7 +50,7 @@ export default function OpponentZone({
 
   // 2. Add remaining unknown face-down cards
   for (let i = 0; i < unknownCount; i++) {
-    const id = `opp-unknown-${i}`
+    const id = `opp-${player.playerId}-unknown-${i}`
     handCards[id] = {
       id,
       name: '?',
