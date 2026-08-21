@@ -19,7 +19,7 @@ export default function AvatarImage({
 }: AvatarImageProps) {
   const [errored, setErrored] = useState(false)
   const initial = username.trim().charAt(0).toUpperCase() || 'M'
-  const path = resolveAvatarPath(avatarId)
+  const path = resolveAvatarPath(avatarId, username)
 
   if (errored) {
     return (

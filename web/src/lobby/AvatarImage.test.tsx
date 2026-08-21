@@ -17,6 +17,15 @@ describe('Avatar System', () => {
     expect(resolveAvatarPath(undefined)).toBe('/avatars/10.jpg')
   })
 
+  it('assigns unique deterministic avatars when avatarId is absent', () => {
+    const avatarA = resolveAvatarPath(undefined, 'Alice')
+    const avatarB = resolveAvatarPath(undefined, 'Bob')
+    expect(avatarA).toContain('/avatars/')
+    expect(avatarB).toContain('/avatars/')
+    // Deterministic: same username gives same avatar
+    expect(resolveAvatarPath(undefined, 'Alice')).toBe(avatarA)
+  })
+
   it('renders AvatarImage with correct src', () => {
     render(<AvatarImage avatarId={12} username="Liliana" size="medium" />)
     const img = screen.getByRole('img') as HTMLImageElement

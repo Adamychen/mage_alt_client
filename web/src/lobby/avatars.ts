@@ -45,23 +45,42 @@ export const OFFICIAL_AVATARS: AvatarDefinition[] = [
   { id: 1021, name: 'Animado: Cristal Cósmico', path: '/avatars/special/21.gif', isSpecial: true },
 ]
 
-export function resolveAvatarPath(avatarId?: number | null): string {
-  if (avatarId === undefined || avatarId === null || avatarId <= 0) {
-    return '/avatars/10.jpg' // Default Jace
+/** Genera un ID de avatar temático determinista a partir del nombre de usuario cuando el servidor no emite avatarId. */
+export function getDeterministicAvatarId(username?: string): number {
+  if (!username || !username.trim()) return 10
+  let hash = 0
+  const clean = username.trim().toLowerCase()
+  for (let i = 0; i < clean.length; i++) {
+    hash = (hash << 5) - hash + clean.charCodeAt(i)
+    hash |= 0
   }
+  const absHash = Math.abs(hash)
+  // Mapear sobre el rango de los 23 avatares principales (IDs 10 a 32)
+  const availableIds = [
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+  ]
+  return availableIds[absHash % availableIds.length]
+}
+
+export function resolveAvatarPath(avatarId?: number | null, username?: string): string {
+  const effectiveId =
+    avatarId !== undefined && avatarId !== null && avatarId > 0
+      ? avatarId
+      : getDeterministicAvatarId(username)
 
   // Check in curated list
-  const found = OFFICIAL_AVATARS.find((a) => a.id === avatarId)
+  const found = OFFICIAL_AVATARS.find((a) => a.id === effectiveId)
   if (found) return found.path
 
   // Fallback for custom or special IDs
-  if (avatarId >= 1000) {
-    return `/avatars/special/${avatarId - 1000}.gif`
+  if (effectiveId >= 1000) {
+    return `/avatars/special/${effectiveId - 1000}.gif`
   }
 
-  if (avatarId === 64) {
+  if (effectiveId === 64) {
     return '/avatars/i64.jpg'
   }
 
-  return `/avatars/${avatarId}.jpg`
+  return `/avatars/${effectiveId}.jpg`
 }
+
