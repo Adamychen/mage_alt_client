@@ -1,0 +1,96 @@
+.command-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  background: rgba(18, 22, 45, 0.6);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 208, 112, 0.4);
+  flex-shrink: 0;
+  max-height: 100%;
+}
+
+.command-zone.opp {
+  border-color: rgba(255, 170, 70, 0.35);
+}
+
+.commander-card-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.commander-slot {
+  box-shadow: 0 0 12px rgba(255, 208, 112, 0.3);
+}
+
+.commander-badge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd070, #f59e0b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.commander-tax-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Emblems Stack */
+.emblems-wrap {
+  position: relative;
+  width: var(--card-w, 116px);
+  height: calc(var(--card-w, 116px) * 1.4);
+  flex-shrink: 0;
+}
+
+.emblem-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+
+.emblems-count-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #a855f7;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  z-index: 20;
+}

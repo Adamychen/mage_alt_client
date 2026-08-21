@@ -150,6 +150,7 @@ export default function GameBoard({
         combatChosen={combatChosen}
         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
         onPlayCrossZone={onPlayCrossZone}
+        helperEmblems={game?.myHelperEmblems}
       />
       <StackZone
         stack={game?.stack ?? null}

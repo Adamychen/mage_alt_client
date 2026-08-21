@@ -3,6 +3,7 @@ import CardSlot from './CardSlot'
 import HandZone from './HandZone'
 import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
+import CommandZone from './CommandZone'
 import './OpponentZone.css'
 
 interface OpponentZoneProps {
@@ -102,7 +103,15 @@ export default function OpponentZone({
 
       {/* Row 3: Commander + Creatures (at bottom) */}
       <div className="oz-row oz-creatures-row">
-        <div className="oz-commander" />
+        <div className="oz-commander">
+          <CommandZone
+            player={player}
+            side="opp"
+            onCardClick={onCardClick}
+            onHover={onCardHover}
+            targetIds={targetIds}
+          />
+        </div>
         <div className="oz-band creatures-band">
           {creatures.map(([id, perm]) => {
             const attachments = perm.attachments ?? []

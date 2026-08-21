@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import type { CardsView, PermanentView, PlayerView } from '../net/types'
+import type { CardView, CardsView, PermanentView, PlayerView } from '../net/types'
 import CardSlot from './CardSlot'
 import HandZone from './HandZone'
 import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
+import CommandZone from './CommandZone'
 import type { CrossZonePlayable } from './crossZone'
 import './PlayerZone.css'
 
@@ -19,6 +20,7 @@ interface PlayerZoneProps {
   combatChosen?: string[]
   crossZonePlayables?: CrossZonePlayable[]
   onPlayCrossZone?: (id: string) => void
+  helperEmblems?: Record<string, CardView>
 }
 
 function permanentKind(perm: PermanentView): 'creatures' | 'lands' | 'other' {
@@ -40,6 +42,7 @@ export default function PlayerZone({
   combatChosen = [],
   crossZonePlayables,
   onPlayCrossZone,
+  helperEmblems,
 }: PlayerZoneProps) {
   if (!player) return <div className="player-zone empty" />
 
@@ -65,7 +68,17 @@ export default function PlayerZone({
     <div className="player-zone">
       {/* Row 1: Commander + Creatures */}
       <div className="pz-row pz-creatures-row">
-        <div className="pz-commander" />
+        <div className="pz-commander">
+          <CommandZone
+            player={player}
+            side="my"
+            onCardClick={onCardClick}
+            onHover={onCardHover}
+            playableIds={playableIds}
+            targetIds={targetIds}
+            helperEmblems={helperEmblems}
+          />
+        </div>
         <div className="pz-band creatures-band">
           {creatures.map(([id, perm]) => {
             const isSelectable = combatSelectableSet.has(id)
