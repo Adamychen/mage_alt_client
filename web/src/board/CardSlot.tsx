@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName } from '../cards/cardImages'
-import { getPreviousCardPosition, recordCardPosition } from './cardPositionRegistry'
+import { getPreviousCardPosition, getPreviousCardZone, recordCardPosition } from './cardPositionRegistry'
 import './CardSlot.css'
 
 const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
@@ -55,6 +55,12 @@ export default function CardSlot({
       if (lastRect.width > 0 && lastRect.height > 0) {
         const prevRect = getPreviousCardPosition(effectiveId)
         if (prevRect && prevRect.width > 0) {
+          const prevZone = getPreviousCardZone(effectiveId)
+          const curZone = el.closest('.opponent-zone, .player-zone, .stack-zone, .hand-zone')
+          const curZoneClass = curZone ? curZone.className.split(' ')[0] : ''
+          if (prevZone && curZoneClass && prevZone === curZoneClass) {
+            return
+          }
           const dx = prevRect.left + prevRect.width / 2 - (lastRect.left + lastRect.width / 2)
           const dy = prevRect.top + prevRect.height / 2 - (lastRect.top + lastRect.height / 2)
 
@@ -90,7 +96,9 @@ export default function CardSlot({
 
     return () => {
       if (el && effectiveId) {
-        recordCardPosition(effectiveId, el.getBoundingClientRect())
+        const zone = el.closest('.opponent-zone, .player-zone, .stack-zone, .hand-zone')
+        const zoneClass = zone ? zone.className.split(' ')[0] : ''
+        recordCardPosition(effectiveId, el.getBoundingClientRect(), zoneClass)
       }
     }
   }, [effectiveId])

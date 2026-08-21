@@ -28,10 +28,11 @@ export default function HandZone({
   const entries = Object.entries(cards)
   const zoneRef = useRef<HTMLDivElement>(null)
   const [cardW, setCardW] = useState(MAX_CARD_W)
+  const [overlap, setOverlap] = useState(-4)
 
   useEffect(() => {
     const el = zoneRef.current
-    if (!el || !compact) return
+    if (!el) return
 
     const measure = () => {
       const availW = el.getBoundingClientRect().width
@@ -39,12 +40,24 @@ export default function HandZone({
       const count = entries.length
       if (count === 0 || availW <= 0) return
 
-      const overlap = 0.35
-      const wByWidth = availW / (count * (1 - overlap) + overlap)
-      const maxH = availH > 20 ? availH - 4 : MAX_CARD_W * 1.4
-      const wByHeight = maxH / 1.4
-      const w = Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, Math.min(wByWidth, wByHeight)))
-      setCardW(w)
+      let baseW = compact ? MAX_CARD_W : 116
+      
+      if (compact) {
+        const maxH = availH > 20 ? availH - 4 : MAX_CARD_W * 1.4
+        const wByHeight = maxH / 1.4
+        baseW = Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, wByHeight))
+      }
+
+      let computedOverlap = -4
+      if (count > 1) {
+        const usableW = availW - 20 // account for padding
+        const maxOverlapMargin = (usableW - baseW) / (count - 1) - baseW
+        // Capped at -4px (min overlap). Bounded at -(baseW - 16)px (at least 16px visible)
+        computedOverlap = Math.max(-(baseW - 16), Math.min(-4, maxOverlapMargin))
+      }
+
+      setCardW(baseW)
+      setOverlap(computedOverlap)
     }
 
     measure()
@@ -58,15 +71,14 @@ export default function HandZone({
     <div
       ref={zoneRef}
       className={`hand-zone ${faceDown ? 'face-down' : ''} ${compact ? 'compact' : ''}`}
-      style={compact ? { '--card-w': `${cardW}px` } as React.CSSProperties : undefined}
+      style={{ '--card-w': `${cardW}px`, '--overlap': `${overlap}px` } as React.CSSProperties}
     >
-      {entries.map(([id, card], i) => {
+      {entries.map(([id, card]) => {
         const isCardFaceDown = faceDown || card.faceDown === true
         return (
           <div
             key={id}
             className="hand-card-slot"
-            style={{ zIndex: i } as React.CSSProperties}
             onMouseEnter={!isCardFaceDown && onHover ? (e) => onHover(card, e.currentTarget.getBoundingClientRect()) : undefined}
             onMouseLeave={!isCardFaceDown && onHover ? () => onHover(null) : undefined}
           >

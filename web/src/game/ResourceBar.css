@@ -4,6 +4,7 @@
   gap: 8px;
   padding: 4px 8px;
   pointer-events: auto;
+  flex-shrink: 0;
 }
 
 /* Opponent mode — aligned to top edge */

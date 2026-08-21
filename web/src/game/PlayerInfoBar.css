@@ -11,6 +11,7 @@
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  flex-shrink: 0;
 }
 
 .player-info-bar.has-priority {

@@ -5,6 +5,7 @@ import HandZone from './HandZone'
 import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
 import CommandZone from './CommandZone'
+import { useZoneScale } from './useZoneScale'
 import type { CrossZonePlayable } from './crossZone'
 import './PlayerZone.css'
 
@@ -91,8 +92,14 @@ export default function PlayerZone({
     return {}
   }, [hand, handCount, givenHand.length])
 
+  const { cardW, ref: zoneRef } = useZoneScale()
+
   return (
-    <div className="player-zone">
+    <div
+      className="player-zone"
+      ref={zoneRef}
+      style={{ '--card-w': `${cardW}px` } as React.CSSProperties}
+    >
       {/* Row 1: Commander + Creatures */}
       <div className="pz-row pz-creatures-row">
         <div className="pz-commander">

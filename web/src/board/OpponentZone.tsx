@@ -4,6 +4,7 @@ import HandZone from './HandZone'
 import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
 import CommandZone from './CommandZone'
+import { useZoneScale } from './useZoneScale'
 import './OpponentZone.css'
 
 interface OpponentZoneProps {
@@ -76,8 +77,14 @@ export default function OpponentZone({
   const others = permanents.filter(([id, p]) => permanentKind(p) === 'other' && !attachedIds.has(id))
   const lands = permanents.filter(([id, p]) => permanentKind(p) === 'lands' && !attachedIds.has(id))
 
+  const { cardW, ref: zoneRef } = useZoneScale()
+
   return (
-    <div className={`opponent-zone ${compactPod ? 'compact-pod' : ''}`}>
+    <div
+      className={`opponent-zone ${compactPod ? 'compact-pod' : ''}`}
+      ref={zoneRef}
+      style={{ '--card-w': `${cardW}px` } as React.CSSProperties}
+    >
       {/* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */}
       <div className="oz-row oz-top-row">
         <PlayerInfoBar

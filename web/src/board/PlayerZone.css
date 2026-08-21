@@ -1,15 +1,16 @@
 .player-zone {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+  display: grid;
+  grid-template-rows: 1.2fr 1fr 1fr;
+  width: 100%;
+  height: 100%;
   min-height: 0;
   padding: 2px 14px 4px 14px;
   gap: 4px;
   overflow: hidden;
-  justify-content: space-between;
 }
 
 .player-zone.empty {
+  display: flex;
   flex: 1;
 }
 
@@ -17,47 +18,47 @@
   display: flex;
   gap: 8px;
   min-height: 0;
+  min-width: 0;
   width: 100%;
 }
 
-/* Row 1: Creatures (Combat zone adjacent to the center divider) */
 .pz-creatures-row {
-  flex: 1.1;
-  min-height: 0;
   align-items: center;
 }
 
-/* Row 2: Lands + Others (Backline) */
 .pz-permanents-row {
-  flex: 1;
-  min-height: 0;
   align-items: center;
 }
 
-/* Row 3: Unified bottom row [Life | Hand | Mana | Deck | Grave | Exile] (at bottom edge) */
 .pz-bottom-row {
-  flex: 1.1;
-  min-height: 70px;
-  max-height: 120px;
   align-items: flex-end;
   justify-content: space-between;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
 }
 
-/* Commander zone (1 card width) */
+.pz-bottom-row > .player-info-bar {
+  flex-shrink: 0;
+}
+
+.pz-bottom-row > .resource-bar {
+  flex-shrink: 0;
+}
+
 .pz-commander {
-  width: var(--card-w, 110px);
+  width: var(--card-w, 100px);
   flex-shrink: 0;
   border-radius: 8px;
   border: none;
 }
 
-/* Band containers */
 .pz-band {
   flex: 1;
   height: 100%;
   display: flex;
   flex-wrap: nowrap;
-  gap: 10px;
+  gap: 6px;
   padding: 2px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -67,7 +68,8 @@
   justify-content: center;
   min-width: 0;
   min-height: 0;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 255, 0.3) transparent;
 }
 
 .pz-band.creatures-band,

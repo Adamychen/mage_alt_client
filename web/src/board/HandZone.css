@@ -4,6 +4,7 @@
   gap: 0;
   padding: 0 8px;
   min-height: 0;
+  min-width: 0;
   height: 100%;
   position: relative;
   z-index: 10;
@@ -21,25 +22,31 @@
   overflow: visible;
 }
 
-/* Static, stable slot container that never moves on hover */
 .hand-card-slot {
   position: relative;
   height: 100%;
   display: flex;
   align-items: flex-end;
-  margin: 0 -4px;
+  margin-left: var(--overlap, -4px);
   overflow: visible;
 }
 
+.hand-card-slot:first-child {
+  margin-left: 0;
+}
+
 .hand-card-slot .hand-card {
-  width: var(--card-w, 116px);
-  height: calc(var(--card-w, 116px) * 1.4);
+  width: var(--card-w, 100px);
+  height: calc(var(--card-w, 100px) * 1.4);
   transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
   transform-origin: bottom center;
 }
 
+.hand-card-slot:hover {
+  z-index: 50;
+}
+
 .hand-card-slot:hover .hand-card {
   transform: translateY(-24px) scale(1.06);
-  z-index: 50;
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.9), 0 0 0 2px rgba(255, 208, 112, 0.95);
 }

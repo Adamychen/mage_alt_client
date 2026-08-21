@@ -1,6 +1,6 @@
 .card-slot {
-  width: var(--card-w, 116px);
-  height: calc(var(--card-w, 116px) * 1.4);
+  width: var(--card-w, 100px);
+  height: calc(var(--card-w, 100px) * 1.4);
   position: relative;
   border-radius: 7px;
   overflow: hidden;
@@ -29,7 +29,7 @@
 
 .card-slot.tapped {
   transform: rotate(90deg);
-  margin: 0 calc(var(--card-w, 116px) * 0.2);
+  margin: 0 calc(var(--card-w, 100px) * 0.2);
 }
 
 .card-slot.tapped.clickable:hover {
