@@ -186,17 +186,29 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2a3158 0%, #151930 100%);
-  border: 2px solid #ffd070;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.user-avatar-preview:hover {
+  transform: scale(1.06);
+}
+
+.user-avatar-badge-edit {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: rgba(14, 18, 38, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  font-weight: 900;
-  font-family: var(--font-display);
-  color: #ffd070;
-  box-shadow: 0 0 14px rgba(255, 208, 112, 0.35);
-  flex-shrink: 0;
+  font-size: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .user-avatar-flag-pill {
@@ -210,6 +222,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .user-inputs-col {

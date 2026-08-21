@@ -8,6 +8,7 @@ import ChatBox from './ChatBox'
 import DeckManager from './DeckManager'
 import CountryFlag from './CountryFlag'
 import RankBadge from './RankBadge'
+import AvatarImage from './AvatarImage'
 import LeaderboardModal from './LeaderboardModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
@@ -246,8 +247,6 @@ export default function LobbyScreen() {
     }
   }
 
-  const userInitial = conn?.username?.charAt(0).toUpperCase() || 'P'
-
   return (
     <div className="lobby">
       {/* Top Arena Navigation Bar */}
@@ -307,7 +306,7 @@ export default function LobbyScreen() {
             onClick={() => setShowLeaderboard(true)}
             title="Haz clic para ver tu perfil competitivo y clasificación"
           >
-            <div className="lobby-avatar-pill">{userInitial}</div>
+            <AvatarImage avatarId={conn?.avatarId ?? 10} username={conn?.username} size="medium" />
             <div className="lobby-user-col">
               <span className="lobby-username">{conn?.username}</span>
               <RankBadge elo={myUser?.constructedRating ?? 1500} compact />
@@ -594,6 +593,7 @@ export default function LobbyScreen() {
                 {users.map((u) => (
                   <li key={u.userName} className="user-list-item">
                     <span className={`dot ${u.infoGames ? 'playing' : 'online'}`} />
+                    <AvatarImage avatarId={u.avatarId} username={u.userName} size="medium" />
                     <div className="user-info-col">
                       <div className="user-name-row">
                         {u.flagName && <CountryFlag flagName={u.flagName} className="user-list-flag" showTextFallback />}

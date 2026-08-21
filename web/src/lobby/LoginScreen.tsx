@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { clearError, doConnect, useStore, loadConn, clearActiveGame } from '../state/store'
 import CountryFlag from './CountryFlag'
+import AvatarImage from './AvatarImage'
+import AvatarPickerModal from './AvatarPickerModal'
 import './LoginScreen.css'
 
 function urlProxyPort(): number | null {
@@ -38,6 +40,8 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('player1')
   const [password, setPassword] = useState('password')
   const [flagName, setFlagName] = useState('es')
+  const [avatarId, setAvatarId] = useState(10)
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false)
   const [preset, setPreset] = useState<ServerPreset>('local')
 
   useEffect(() => {
@@ -51,6 +55,7 @@ export default function LoginScreen() {
       setUsername(saved.username)
       setPassword(saved.password)
       if (saved.flagName) setFlagName(saved.flagName)
+      if (saved.avatarId) setAvatarId(saved.avatarId)
 
       if (saved.serverHost === 'beta.xmage.today') {
         setPreset('official')
@@ -91,10 +96,9 @@ export default function LoginScreen() {
       username.trim(),
       password,
       flagName,
+      avatarId,
     )
   }
-
-  const userInitial = username.trim().charAt(0).toUpperCase() || 'M'
 
   return (
     <div className="login-wrap">
@@ -140,11 +144,17 @@ export default function LoginScreen() {
 
         {/* User Identity Section */}
         <div className="login-user-section">
-          <div className="user-avatar-preview">
-            <span>{userInitial}</span>
+          <div
+            className="user-avatar-preview"
+            onClick={() => setShowAvatarPicker(true)}
+            title="Haz clic para elegir tu Avatar de Magic"
+            style={{ cursor: 'pointer' }}
+          >
+            <AvatarImage avatarId={avatarId} username={username} size="large" />
             <div className="user-avatar-flag-pill">
               <CountryFlag flagName={flagName} />
             </div>
+            <span className="user-avatar-badge-edit">✏️</span>
           </div>
           <div className="user-inputs-col">
             <div className="user-name-and-flag-grid">
@@ -247,6 +257,14 @@ export default function LoginScreen() {
           )}
         </button>
       </form>
+
+      {showAvatarPicker && (
+        <AvatarPickerModal
+          selectedAvatarId={avatarId}
+          onSelect={(id) => setAvatarId(id)}
+          onClose={() => setShowAvatarPicker(false)}
+        />
+      )}
     </div>
   )
 }

@@ -250,6 +250,7 @@ export interface RoomUsersView {
 export interface UsersView {
   flagName: string
   userName: string
+  avatarId?: number
   matchHistory: string
   matchQuitRatio: number
   tourneyHistory: string

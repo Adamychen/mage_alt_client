@@ -3,6 +3,7 @@ import type { UsersView } from '../net/types'
 import { getRankInfo, RANK_TIERS_CONFIG } from './ranking'
 import RankBadge from './RankBadge'
 import CountryFlag from './CountryFlag'
+import AvatarImage from './AvatarImage'
 import './LeaderboardModal.css'
 
 interface LeaderboardModalProps {
@@ -140,6 +141,7 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
                           </td>
                           <td className="user-cell">
                             <div className="user-cell-wrap">
+                              <AvatarImage avatarId={u.avatarId} username={u.userName} size="small" />
                               <CountryFlag flagName={u.flagName} />
                               <span className="leaderboard-user-name">
                                 {u.userName}
@@ -191,12 +193,7 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
             <div className="leaderboard-tab-content profile-tab-content">
               <div className="profile-rank-card" style={{ borderColor: myRank.border }}>
                 <div className="profile-rank-header">
-                  <div
-                    className="profile-rank-emblem"
-                    style={{ backgroundColor: myRank.bg, borderColor: myRank.border }}
-                  >
-                    <span className="rank-emblem-icon">{myRank.icon}</span>
-                  </div>
+                  <AvatarImage avatarId={currentUser?.avatarId ?? 10} username={currentUsername} size="huge" />
                   <div className="profile-rank-title-col">
                     <span className="profile-rank-tier" style={{ color: myRank.color }}>
                       {myRank.label}
