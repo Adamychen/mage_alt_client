@@ -191,11 +191,11 @@ export default function SpectatorStagingScreen({
           </div>
         </div>
 
-        {/* Embedded Table / Room Chat */}
+        {/* Embedded Global Chat */}
         <div className="staging-chat-card panel">
           <div className="staging-chat-header">
-            <h3>💬 Chat de la Sala</h3>
-            <span className="chat-hint">Comunícate mientras esperas</span>
+            <h3>💬 Chat Global del Servidor</h3>
+            <span className="chat-hint">Canal general del servidor</span>
           </div>
           <div className="staging-chat-body">
             <ChatBox />

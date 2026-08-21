@@ -1,15 +1,55 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as cmds from '../net/commands'
 import { useStore } from '../state/store'
 import FormattedText from '../game/FormattedText'
 import FloatingCardPreview from '../board/FloatingCardPreview'
-import type { CardView } from '../net/types'
+import type { CardView, ChatMessageEvent } from '../net/types'
 import './ChatBox.css'
+
+function parseSystemEvent(text: string): { icon: string; text: string } {
+  if (text.includes('has joined')) {
+    const user = text.replace(/\s+has joined.*$/i, '').trim()
+    return { icon: '🟢', text: `${user} se ha conectado` }
+  }
+  if (text.includes('has lost connection')) {
+    const user = text.replace(/\s+has lost connection.*$/i, '').trim()
+    return { icon: '🔌', text: `${user} ha perdido la conexión` }
+  }
+  if (text.includes('has disconnected')) {
+    const user = text.replace(/\s+has disconnected.*$/i, '').trim()
+    return { icon: '🚪', text: `${user} se ha desconectado` }
+  }
+  if (text.includes('has left')) {
+    const user = text.replace(/\s+has left.*$/i, '').trim()
+    return { icon: '🚪', text: `${user} ha salido` }
+  }
+  return { icon: 'ℹ️', text }
+}
+
+function isSystemMessage(m: ChatMessageEvent): boolean {
+  if (!m.username || m.username === 'server' || m.messageType === 'SYSTEM') return true
+  return (
+    m.message.includes('has joined') ||
+    m.message.includes('has lost connection') ||
+    m.message.includes('has disconnected') ||
+    m.message.includes('has left')
+  )
+}
+
+function isConnectionEvent(text: string): boolean {
+  return (
+    text.includes('has joined') ||
+    text.includes('has lost connection') ||
+    text.includes('has disconnected') ||
+    text.includes('has left')
+  )
+}
 
 export default function ChatBox() {
   const chatId = useStore((s) => s.roomChatId)
   const messages = useStore((s) => s.chatMessages)
   const [text, setText] = useState('')
+  const [hideConnections, setHideConnections] = useState(false)
   const [hoverCard, setHoverCard] = useState<CardView | null>(null)
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -19,9 +59,16 @@ export default function ChatBox() {
     setHoverRect(rect ?? null)
   }, [])
 
+  const filteredMessages = useMemo(() => {
+    if (!hideConnections) return messages
+    return messages.filter((m) => !isConnectionEvent(m.message))
+  }, [messages, hideConnections])
+
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
-  }, [messages])
+    if (listRef.current && typeof listRef.current.scrollTo === 'function') {
+      listRef.current.scrollTo({ top: listRef.current.scrollHeight })
+    }
+  }, [filteredMessages])
 
   const send = (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,13 +79,39 @@ export default function ChatBox() {
 
   return (
     <div className="chat">
+      <div className="chat-toolbar">
+        <button
+          type="button"
+          className={`chat-toggle-btn ${hideConnections ? 'active' : ''}`}
+          onClick={() => setHideConnections(!hideConnections)}
+          title={hideConnections ? 'Mostrar avisos de conexión/desconexión' : 'Ocultar avisos de conexión/desconexión'}
+        >
+          {hideConnections ? '🔇 Avisos ocultos' : '👁️ Avisos visibles'}
+        </button>
+      </div>
+
       <div className="chat-list" ref={listRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={`chat-msg ${m.username === 'server' ? 'system' : ''}`}>
-            <span className="chat-from">{m.username}:</span> <FormattedText text={m.message} onHover={handleHover} />
-          </div>
-        ))}
-        {messages.length === 0 && <p className="empty">Sin mensajes</p>}
+        {filteredMessages.map((m, i) => {
+          const sys = isSystemMessage(m)
+          if (sys) {
+            const parsed = parseSystemEvent(m.message)
+            return (
+              <div key={i} className="chat-msg system-msg">
+                <span className="sys-icon">{parsed.icon}</span>
+                <span className="sys-text">
+                  <FormattedText text={parsed.text} onHover={handleHover} />
+                </span>
+              </div>
+            )
+          }
+          return (
+            <div key={i} className="chat-msg user-msg">
+              <span className="chat-from">{m.username}:</span>{' '}
+              <FormattedText text={m.message} onHover={handleHover} />
+            </div>
+          )
+        })}
+        {filteredMessages.length === 0 && <p className="empty">Sin mensajes</p>}
       </div>
 
       <FloatingCardPreview
@@ -48,7 +121,7 @@ export default function ChatBox() {
       />
 
       <form className="chat-input" onSubmit={send}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mensaje…" />
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mensaje al chat global…" />
         <button className="primary" disabled={!chatId} type="submit">
           Enviar
         </button>
