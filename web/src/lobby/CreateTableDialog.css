@@ -319,10 +319,6 @@
   text-transform: none;
   letter-spacing: normal;
 }
-  text-transform: uppercase;
-  color: #c4b5fd;
-  letter-spacing: 0.04em;
-}
 
 /* Seats Section */
 .create-seats-section {

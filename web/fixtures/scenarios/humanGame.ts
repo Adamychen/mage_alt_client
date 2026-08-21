@@ -44,10 +44,10 @@ export class HumanGame {
   private started = false
   private simPaused = false
   private blockingId: string | null = null
-  private discarding = false
   private gameIds: string[] = []
-  private matchGame = 0
+  private matchGame = 1
   private wins = 0
+  private loses = 0
   private waitingSideboard = false
   private gameIndex = 1
 
@@ -384,20 +384,30 @@ export class HumanGame {
     if (this.options.match) {
       if (this.simWinsCurrentGame()) {
         if (this.turn >= 4) this.endGame()
-        else { this.turn++; this.emitSelect() }
+        else { this.advanceTurn(); this.emitSelect() }
         return
       }
       if (this.simLife <= 0) { this.endGame(); return }
     }
     if (this.hand.length > 7) { this.requestDiscard(); return }
     if (this.waitingSideboard) {
-      this.turn++
+      this.advanceTurn()
       if (this.simWinsCurrentGame() && this.turn >= 4) { this.endGame() }
       else { this.emitSelect() }
       return
     }
-    this.turn++
+    this.advanceTurn()
     this.emitSelect()
+  }
+
+  private untapAll(): void {
+    for (const p of this.myBattle) p.tapped = false
+    for (const p of this.simBattle) p.tapped = false
+  }
+
+  private advanceTurn(): void {
+    this.turn++
+    this.untapAll()
   }
 
   private simWinsCurrentGame(): boolean {
@@ -424,7 +434,7 @@ export class HumanGame {
     this.hand = this.hand.filter((c) => c.id !== cardId)
     this.discarding = false
     this.stage = 'main'
-    this.turn++
+    this.advanceTurn()
     this.emitUpdateAndSelect()
   }
 
@@ -434,26 +444,29 @@ export class HumanGame {
     this.stage = 'end'
     const simWins = this.simWinsCurrentGame()
     if (!simWins) this.wins++
+    else this.loses++
     const winsNeeded = this.options.match?.winsNeeded ?? 1
-    const matchOver = !simWins && this.wins >= winsNeeded
+    const matchOver = this.wins >= winsNeeded || this.loses >= winsNeeded
     this.emit('GAME_OVER', {
       gameId: this.gameId,
       message: simWins ? `${this.simName} won the game` : `${HUMAN_NAME} won the game`,
     })
     this.emit('END_GAME_INFO', {
-      gameInfo: simWins ? `The opponent won the game on turn ${this.turn}.` : `You won the game on turn ${this.turn}.`,
-      matchInfo: simWins ? 'You lost the match.' : matchOver ? 'You won the match!' : 'You need one more win to win the match.',
+      gameInfo: simWins ? `You lost the game on turn ${this.turn}.` : `You won the game on turn ${this.turn}.`,
+      matchInfo: matchOver
+        ? (simWins ? `${this.simName} won the match!` : 'You won the match!')
+        : `You need ${winsNeeded - this.wins === 1 ? 'one more win' : `${winsNeeded - this.wins} more wins`} to win the match.`,
       won: !simWins,
       wins: this.wins,
-      loses: simWins ? 1 : 0,
+      loses: this.loses,
       winsNeeded,
       matchView: {
-        result: simWins ? `0-${this.gameIds.length}` : `${this.wins}-0`,
+        result: `${this.wins}-${this.loses}`,
         games: [...this.gameIds],
-        endTime: matchOver || simWins ? 'end' : null,
+        endTime: matchOver ? 'end' : null,
       },
     })
-    if (matchOver || simWins) return
+    if (matchOver) return
     this.waitingSideboard = true
     this.emit('SIDEBOARD', {
       deck: { name: this.tableName, cards: {}, sideboard: {} },
@@ -461,6 +474,17 @@ export class HumanGame {
       time: 180,
       flag: false,
     })
+  }
+
+  private start(): void {
+    if (this.started) return
+    this.started = true
+    this.stage = 'main'
+    this.gameId = `${GAME_ID}-${this.gameIndex}`
+    this.gameIds.push(this.gameId)
+    this.emit('START_GAME', { gameId: this.gameId, tableName: this.tableName })
+    this.emit('GAME_INIT', { gameView: this.view() })
+    this.emitSelect()
   }
 
   private startGame2(): void {
@@ -602,7 +626,7 @@ export class HumanGame {
     this.stage = 'main'
     this.active = 'human'
     this.priority = 'human'
-    this.turn++
+    this.advanceTurn()
     this.emitUpdateAndSelect()
   }
 
@@ -639,7 +663,7 @@ export class HumanGame {
           this.stage = 'main'
           this.active = 'human'
           this.priority = 'human'
-          this.turn++
+          this.advanceTurn()
           this.emitSelect()
           return
         default:

@@ -244,6 +244,27 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         }
         setState({ sideboardScreen: screen })
         addLog('partida', `Sideboard: ${maindeck.length} main / ${sideboard.length} side — tienes ${time}s para ajustar`)
+        if (s.settings.autoKeepMulligan) {
+          const group = (cards: SideboardCard[]) => {
+            const map = new Map<string, { cardName: string; setCode: string; cardNumber: string; amount: number }>()
+            for (const c of cards) {
+              const key = `${c.name}|${c.setCode}|${c.cardNumber}`
+              const existing = map.get(key)
+              if (existing) {
+                existing.amount++
+              } else {
+                map.set(key, { cardName: c.name, setCode: c.setCode, cardNumber: c.cardNumber, amount: 1 })
+              }
+            }
+            return Array.from(map.values())
+          }
+          const deck = {
+            name: deckName,
+            cards: group(maindeck),
+            sideboard: group(sideboard),
+          }
+          void cmds.submitDeck(tableId, deck)
+        }
       })
       break
     }

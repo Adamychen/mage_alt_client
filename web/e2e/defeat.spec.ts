@@ -1,12 +1,13 @@
 /**
  * Derrota del humano (el Sim gana 2-0): el humano lanza Bolts pero no hacen
  * daño (simWinsGame: [1, 2]), el match termina 0-2 y el diálogo dice
- * "You lost the match". Verifica que el flujo de derrota también vuelve
- * al lobby correctamente.
+ * "<sim> won the match!" (contrato real de GameEndView). Verifica que el flujo
+ * de derrota también vuelve al lobby correctamente.
  */
 
 import { test, expect } from './fixtures'
 import { humanLosesScenario } from '../fixtures/scenarios/humanLosesGame2'
+import { SIM_NAME } from '../fixtures/scenarios/humanGame'
 import { withFakeServer } from './support/fake-backend'
 import { startGame } from './support/start-game'
 import { framesOf, lastGameView, nextManaSource, opponentPlayer, parseFrames, parsedLen, parseSent, sentOf, waitFrame, waitFrameAt } from './support/frames'
@@ -72,7 +73,7 @@ async function payManaFast(page: import('@playwright/test').Page, helper: HumanH
   throw new Error('no se pudo pagar el maná del Bolt')
 }
 
-test('derrota: el Sim gana 2-0 y el match termina con "You lost the match"', { tag: '@fullflow' }, async ({ page }) => {
+test('derrota: el Sim gana 2-0 y el match termina con "won the match"', { tag: '@fullflow' }, async ({ page }) => {
   await withFakeServer(() => humanLosesScenario(), async () => {
     const { helper, pageErrors } = await startGame(page, {
       prefix: 'defeat',
@@ -89,10 +90,11 @@ test('derrota: el Sim gana 2-0 y el match termina con "You lost the match"', { t
     await waitGameToEnd(page, helper, game1Id!)
     const end1 = await waitFrame(
       page,
-      (f) => f.method === 'END_GAME_INFO' && /lost/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
-      'END_GAME_INFO tras game 1 (el humano perdió)',
+      (f) => f.method === 'END_GAME_INFO' && /to win the match/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
+      'END_GAME_INFO tras game 1 (el humano perdió, el match continúa)',
       20_000,
     )
+    expect((end1.data as { wins?: number } | null)?.wins, 'wins=0 tras game 1').toBe(0)
     expect((end1.data as { loses?: number } | null)?.loses, 'loses=1 tras game 1').toBe(1)
 
     // el match continúa (winsNeeded=2, humano tiene 0 wins)
@@ -105,10 +107,10 @@ test('derrota: el Sim gana 2-0 y el match termina con "You lost the match"', { t
     const start2 = await waitFrameAt(page, (f) => f.method === 'START_GAME', 'START_GAME game 2', 30_000, sideboard1.index + 1)
     await waitGameToEnd(page, helper, start2.frame.objectId ?? '')
 
-    await expect(page.locator('.end-dialog')).toContainText('You lost the match!', { timeout: 20_000 })
+    await expect(page.locator('.end-dialog')).toContainText(`${SIM_NAME} won the match!`, { timeout: 20_000 })
     const end2 = [...parseFrames(framesOf(page))].reverse().find((f) => f.method === 'END_GAME_INFO')
     expect((end2?.data as { loses?: number } | null)?.loses, 'loses=2 al perder el match').toBe(2)
-    expect((end2?.data as { matchInfo?: string } | null)?.matchInfo ?? '', 'matchInfo marca derrota').toMatch(/lost/i)
+    expect((end2?.data as { matchInfo?: string } | null)?.matchInfo ?? '', 'matchInfo marca derrota').toMatch(/won the match/i)
 
     await page.getByRole('button', { name: 'Volver al lobby' }).click()
     await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })

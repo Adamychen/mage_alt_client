@@ -96,23 +96,49 @@ export interface CreateTableOptions {
 }
 
 export async function createTable(page: Page, tableName: string, opts: CreateTableOptions = {}): Promise<void> {
-  await page.getByRole('button', { name: 'Nueva mesa' }).click()
-  await expect(page.getByRole('heading', { name: 'Nueva mesa' })).toBeVisible()
-  await page.getByLabel('Nombre').fill(tableName)
-  if (opts.deck) await page.getByLabel('Tu mazo').selectOption(opts.deck)
-  // partida determinista: sin barajar, la mano/robos son el orden exacto del mazo
-  if (opts.skipShuffle ?? true) await page.getByLabel('No barajar el mazo inicial (modo test)').check()
-  // partida determinista: sin sorteo aleatorio de starting player (el primer
-  // jugador de la mesa empieza; no llega ningún GAME_TARGET de sorteo)
-  if (opts.skipStartingPlayer ?? true) await page.getByLabel('Sin sorteo de jugador inicial (modo test)').check()
-  // oponente simulado determinista: el proxy une el asiento SIM con su propia
-  // sesión (mazo por defecto = solo tierras) y juega sin tiempos de IA
-  if (opts.sim ?? true) await page.getByRole('button', { name: 'SIM' }).click()
-  if (opts.simDeck) await page.getByLabel('Mazo del Sim').selectOption(opts.simDeck)
+  await page.getByRole('button', { name: /Nueva mesa/i }).click()
+  await expect(page.getByRole('heading', { name: /Nueva mesa/i })).toBeVisible()
+  await page.getByLabel(/Nombre/i).fill(tableName)
+
   if (opts.winsNeeded && opts.winsNeeded > 1) {
-    await page.getByLabel('Victorias necesarias').selectOption(String(opts.winsNeeded))
+    if (opts.winsNeeded === 2) {
+      await page.getByRole('button', { name: /Bo3/i }).click()
+    } else if (opts.winsNeeded === 3) {
+      await page.getByRole('button', { name: /Bo5/i }).click()
+    }
   }
-  await page.getByRole('button', { name: 'Crear mesa' }).click()
+
+  if (opts.deck || opts.simDeck) {
+    await page.getByRole('button', { name: /Asientos/i }).click()
+    if (opts.deck) {
+      try {
+        await page.getByLabel(/Mazo para jugar/i).selectOption({ label: new RegExp(opts.deck, 'i') })
+      } catch {
+        await page.getByLabel(/Mazo para jugar/i).selectOption(opts.deck)
+      }
+    }
+    if (opts.simDeck) {
+      try {
+        await page.getByLabel(/Mazo del Bot SIM/i).selectOption({ label: new RegExp(opts.simDeck, 'i') })
+      } catch {
+        await page.getByLabel(/Mazo del Bot SIM/i).selectOption(opts.simDeck)
+      }
+    }
+  }
+
+  if ((opts.skipShuffle ?? true) || (opts.skipStartingPlayer ?? true)) {
+    await page.getByRole('button', { name: /Pruebas \/ Dev/i }).click()
+    if (opts.skipShuffle ?? true) {
+      const shuffle = page.getByRole('checkbox', { name: /No barajar el mazo inicial/i })
+      if (!(await shuffle.isChecked())) await shuffle.check()
+    }
+    if (opts.skipStartingPlayer ?? true) {
+      const starting = page.getByRole('checkbox', { name: /Sin sorteo de jugador inicial/i })
+      if (!(await starting.isChecked())) await starting.check()
+    }
+  }
+
+  await page.getByRole('button', { name: /Crear Mesa/i }).click()
 }
 
 /** Espera a que la mesa del usuario esté lista (asiento SIM unido, botón Empezar). */

@@ -289,20 +289,20 @@ export default function LobbyScreen() {
         <nav className="lobby-nav-tabs">
           <button
             type="button"
+            className="nav-tab-btn hero-create-btn"
+            onClick={() => setShowCreate(true)}
+            title="Crear una nueva partida o torneo"
+          >
+            <span className="tab-icon">➕</span>
+            <span>Nueva mesa</span>
+          </button>
+          <button
+            type="button"
             className={`nav-tab-btn ${activeTab === 'tables' ? 'active' : ''}`}
             onClick={() => setActiveTab('tables')}
           >
             <span className="tab-icon">⚔️</span>
             <span>Mesas ({tables.length})</span>
-          </button>
-          <button
-            type="button"
-            className="nav-create-table-btn hero-create-btn"
-            onClick={() => setShowCreate(true)}
-            title="Crear una nueva partida o torneo"
-          >
-            <span className="btn-icon">➕</span>
-            <span>Nueva mesa</span>
           </button>
           <button
             type="button"

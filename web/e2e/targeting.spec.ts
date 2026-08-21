@@ -118,7 +118,7 @@ test('targeting visual: humano lanza Lightning Bolt y el tablero resalta objetiv
       15_000,
       cursor,
     )
-    await expect(page.locator('.feedback-dialog')).toContainText(/Pagar maná/, { timeout: 10_000 })
+    await expect(page.locator('.feedback-dialog, .mana-prompt-bar')).toContainText(/Pagar maná/, { timeout: 10_000 })
     cursor = manaIndex + 1
     // la vista del ask puede ir stale (fuentes tapadas en frames viejos): reintentar
     // la lectura hasta ver una fuente sin girar (el pago del ask anterior se propaga)

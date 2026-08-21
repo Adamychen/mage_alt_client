@@ -101,11 +101,17 @@ export async function playableInScene(page: Page, id: string | null): Promise<bo
   return Array.isArray(scene?.playable) && scene.playable.includes(id)
 }
 
-/** ¿La carta (por UUID) es jugable desde otra zona (ray) según el estado REAL de la app? */
+/** ¿La carta (por UUID) es jugable desde otra zona (ray) según el estado REAL
+ *  de la app? La app puede ir un render por detrás de los frames: reintentar
+ *  durante una ventana corta antes de dar un no definitivo. */
 export async function crossZoneInScene(page: Page, id: string | null): Promise<boolean> {
   if (!id) return false
-  const scene = await sceneState(page)
-  return Array.isArray(scene?.crossZone) && scene.crossZone.includes(id)
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const scene = await sceneState(page)
+    if (Array.isArray(scene?.crossZone) && scene.crossZone.includes(id)) return true
+    await page.waitForTimeout(200)
+  }
+  return false
 }
 
 /** Id de la carta por nombre si está en la lista de jugables EN VIVO de la app. */

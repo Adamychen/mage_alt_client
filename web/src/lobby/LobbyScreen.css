@@ -243,33 +243,7 @@
   min-height: 0;
 }
 
-/* Nav Create Table Button (in top bar next to Mesas) */
-.nav-create-table-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #1c6b50 0%, #17543f 100%);
-  border: 1.5px solid rgba(99, 230, 190, 0.6);
-  color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(28, 107, 80, 0.4);
-  transition: all 0.18s ease;
-  margin: 0 6px 0 2px;
-}
 
-.nav-create-table-btn:hover {
-  background: linear-gradient(135deg, #248262 0%, #1e6d52 100%);
-  box-shadow: 0 4px 14px rgba(99, 230, 190, 0.5);
-  transform: translateY(-1px);
-}
-
-.btn-icon {
-  font-size: 13px;
-}
 
 .hero-deck-badge {
   display: flex;

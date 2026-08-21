@@ -30,7 +30,7 @@ import {
 import { parsedLen } from './frames'
 
 export function feedbackDialog(page: Page) {
-  return page.locator('.feedback-dialog, .targeting-bar')
+  return page.locator('.feedback-dialog, .targeting-bar, .mana-prompt-bar')
 }
 
 export async function expectFeedbackDialog(page: Page, title: string, timeoutMs = 15_000): Promise<void> {

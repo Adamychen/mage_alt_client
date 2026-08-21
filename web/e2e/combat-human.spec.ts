@@ -64,7 +64,7 @@ async function confirmMyAttackWindows(page: Page): Promise<SceneCombat> {
   for (let i = 0; i < 4; i++) {
     const combat = await waitSceneCombat(page, (c) => c.active, `ventana de combate (${i})`, 25_000)
     if (combat.mode !== 'attack') return combat
-    await page.getByRole('button', { name: 'Confirmar atacantes' }).click()
+    await page.getByRole('button', { name: 'Confirmar atacantes', exact: true }).click()
   }
   throw new Error('demasiadas ventanas de ataque sin llegar al bloqueo')
 }
@@ -101,7 +101,7 @@ test('combate humano: el humano declara atacantes por la UI y el daño baja la v
     await waitSceneCombat(page, (c) => c.chosen.includes(goblinId), 'atacante declarado')
 
     // confirmar el paso de combate
-    await page.getByRole('button', { name: 'Confirmar atacantes' }).click()
+    await page.getByRole('button', { name: 'Confirmar atacantes', exact: true }).click()
     expect(
       parseSent(sentOf(page)).some((s) => s.action === 'sendPlayerUUID' && String(s.args?.value) === goblinId),
       'el UUID del atacante debería haberse enviado al proxy',
@@ -157,7 +157,7 @@ test('combate humano: el humano bloquea por la UI y el ataque del Sim no hace da
     ).toBeTruthy()
     // en fake la ventana persiste (posibleBlockers sigue listando al bloqueador):
     // confirmarla con el botón; en real el helper ya confirmó el re-select vacío
-    const confirmButton = page.getByRole('button', { name: 'Confirmar bloqueadores' })
+    const confirmButton = page.getByRole('button', { name: 'Confirmar bloqueadores', exact: true })
     if (await confirmButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
       await confirmButton.click()
     }

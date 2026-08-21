@@ -113,18 +113,20 @@ test('best-of-3: el match se decide en game 3 (1-1 antes)', { tag: '@fullflow' }
       .poll(() => parseSent(sentOf(page)).some((s) => s.action === 'submitDeck'), { timeout: 10_000 })
       .toBeTruthy()
 
-    // ── partida 2 ────────────────────────────────────────────────────────────
+    // ── partida 2: el Sim gana (1-1) ──────────────────────────────────────────
     const start2 = await waitFrameAt(page, (f) => f.method === 'START_GAME', 'START_GAME game 2', 30_000, sideboard1.index + 1)
     await winGameWithBolts(page, helper, start2.frame.objectId ?? '')
-    const end2 = await waitFrame(
+    const end2 = await waitFrameAt(
       page,
       (f) => f.method === 'END_GAME_INFO' && /one more win/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
       'END_GAME_INFO tras game 2 (1-1, falta game 3)',
       20_000,
+      start2.index + 1,
     )
-    expect((end2.data as { wins?: number } | null)?.wins, 'wins=1 tras game 2 (el humano perdió)').toBe(1)
+    expect((end2.frame.data as { wins?: number } | null)?.wins, 'wins=1 tras game 2 (el humano perdió)').toBe(1)
+    expect((end2.frame.data as { loses?: number } | null)?.loses, 'loses=1 tras game 2 (el Sim ganó)').toBe(1)
 
-    const sideboard2 = await waitFrameAt(page, (f) => f.method === 'SIDEBOARD', 'SIDEBOARD tras game 2')
+    const sideboard2 = await waitFrameAt(page, (f) => f.method === 'SIDEBOARD', 'SIDEBOARD tras game 2', 30_000, end2.index + 1)
     await expect
       .poll(() => parseSent(sentOf(page)).some((s) => s.action === 'submitDeck'), { timeout: 10_000 })
       .toBeTruthy()

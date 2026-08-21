@@ -102,7 +102,7 @@ test('best-of-5: sweep 3-0, match terminado en game 3 sin SIDEBOARD extra', { ta
     await winGameWithBolts(page, helper, game1Id!)
     const end1 = await waitFrame(
       page,
-      (f) => f.method === 'END_GAME_INFO' && /one more win/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
+      (f) => f.method === 'END_GAME_INFO' && /more win/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
       'END_GAME_INFO tras game 1 (match continúa)',
       20_000,
     )
@@ -117,15 +117,16 @@ test('best-of-5: sweep 3-0, match terminado en game 3 sin SIDEBOARD extra', { ta
     // ── game 2: humano gana → 2-0 (un win más para el match) ────────────────
     const start2 = await waitFrameAt(page, (f) => f.method === 'START_GAME', 'START_GAME game 2', 30_000, sideboard1.index + 1)
     await winGameWithBolts(page, helper, start2.frame.objectId ?? '')
-    const end2 = await waitFrame(
+    const end2 = await waitFrameAt(
       page,
-      (f) => f.method === 'END_GAME_INFO' && /one more win/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
+      (f) => f.method === 'END_GAME_INFO' && /more win/i.test(String((f.data as { matchInfo?: string } | null)?.matchInfo ?? '')),
       'END_GAME_INFO tras game 2 (match point)',
       20_000,
+      start2.index + 1,
     )
-    expect((end2.data as { wins?: number } | null)?.wins, 'wins=2 tras game 2').toBe(2)
+    expect((end2.frame.data as { wins?: number } | null)?.wins, 'wins=2 tras game 2').toBe(2)
 
-    const sideboard2 = await waitFrameAt(page, (f) => f.method === 'SIDEBOARD', 'SIDEBOARD tras game 2')
+    const sideboard2 = await waitFrameAt(page, (f) => f.method === 'SIDEBOARD', 'SIDEBOARD tras game 2', 30_000, end2.index + 1)
     await expect
       .poll(() => parseSent(sentOf(page)).some((s) => s.action === 'submitDeck'), { timeout: 10_000 })
       .toBeTruthy()
