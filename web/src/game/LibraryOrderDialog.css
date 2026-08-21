@@ -1,0 +1,233 @@
+.library-order-overlay {
+  z-index: 90;
+}
+
+.library-order-dialog {
+  max-width: 900px !important;
+  width: 90vw !important;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(14, 18, 38, 0.95);
+  border: 1.5px solid rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 32px rgba(168, 85, 247, 0.25), 0 16px 48px rgba(0, 0, 0, 0.8);
+  border-radius: 14px;
+}
+
+.dialog-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffd070;
+  font-family: var(--font-display);
+}
+
+.library-order-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.order-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(22, 28, 58, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.order-zone.top-zone {
+  border-color: rgba(99, 230, 190, 0.4);
+  background: rgba(16, 36, 40, 0.6);
+}
+
+.order-zone.bottom-zone {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(36, 16, 24, 0.6);
+}
+
+.order-zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.zone-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e4e8f8;
+}
+
+.top-zone .zone-name {
+  color: #63e6be;
+}
+
+.bottom-zone .zone-name {
+  color: #f87171;
+}
+
+.zone-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.order-cards-list {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  min-height: 180px;
+}
+
+.empty-zone-placeholder {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+  min-height: 120px;
+}
+
+.order-card-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.order-position-tag {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #63e6be;
+  font-size: 11px;
+  font-weight: 800;
+  z-index: 10;
+  border: 1px solid rgba(99, 230, 190, 0.6);
+}
+
+.order-card-slot {
+  width: 110px !important;
+  height: 154px !important;
+}
+
+.order-card-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.order-arrows {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.btn-arrow {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 12px;
+  background: rgba(40, 50, 90, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-arrow:hover:not(:disabled) {
+  background: rgba(99, 230, 190, 0.4);
+  border-color: #63e6be;
+}
+
+.btn-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-switch-zone {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-to-bottom {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.btn-to-bottom:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: #ef4444;
+}
+
+.btn-to-top {
+  background: rgba(99, 230, 190, 0.2);
+  border: 1px solid rgba(99, 230, 190, 0.5);
+  color: #63e6be;
+}
+
+.btn-to-top:hover:not(:disabled) {
+  background: rgba(99, 230, 190, 0.4);
+  border-color: #63e6be;
+}
+
+.library-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-actions button {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: rgba(30, 36, 70, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.quick-actions button:hover:not(:disabled) {
+  background: rgba(50, 60, 110, 0.9);
+  color: #ffffff;
+}
+
+.dialog-confirm-actions {
+  display: flex;
+  gap: 8px;
+}

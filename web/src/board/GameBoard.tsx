@@ -38,6 +38,30 @@ function toCardsView(simple: Record<string, { id: string; name?: string }> | und
   return out
 }
 
+function getOpponentRevealedCards(game: GameView | null | undefined, oppPlayerId?: string): Record<string, CardView> {
+  if (!game) return {}
+  const res: Record<string, CardView> = {}
+
+  if (Array.isArray(game.revealed)) {
+    game.revealed.forEach((rev) => {
+      if (rev.cards && typeof rev.cards === 'object') {
+        Object.entries(rev.cards).forEach(([id, c]) => {
+          res[id] = c as CardView
+        })
+      }
+    })
+  }
+
+  if (oppPlayerId && game.opponentHands?.[oppPlayerId]) {
+    const oppHand = game.opponentHands[oppPlayerId]
+    Object.entries(oppHand).forEach(([id, c]) => {
+      res[id] = c as CardView
+    })
+  }
+
+  return res
+}
+
 export default function GameBoard({
   game,
   targetIds = [],
@@ -63,6 +87,7 @@ export default function GameBoard({
 
   const targetIdSet = useMemo(() => new Set(targetIds), [targetIds])
   const playableIdSet = useMemo(() => new Set(playableIds), [playableIds])
+  const oppRevealed = useMemo(() => getOpponentRevealedCards(game, opp0?.playerId), [game, opp0?.playerId])
 
   const boardRef = useRef<HTMLDivElement>(null)
   const [floatingCard, setFloatingCard] = useState<CardView | PermanentView | null>(null)
@@ -132,6 +157,7 @@ export default function GameBoard({
         onCardClick={onTargetClick}
         onCardHover={handleCardHover}
         targetIds={targetIdSet}
+        revealedCards={oppRevealed}
       />
       <div className="board-divider" />
       <PlayerZone

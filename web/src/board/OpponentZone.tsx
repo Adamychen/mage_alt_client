@@ -11,6 +11,7 @@ interface OpponentZoneProps {
   onCardClick?: (id: string) => void
   onCardHover?: (card: any, rect?: DOMRect) => void
   targetIds?: Set<string>
+  revealedCards?: Record<string, CardView>
 }
 
 function permanentKind(perm: PermanentView): 'creatures' | 'lands' | 'other' {
@@ -25,16 +26,38 @@ export default function OpponentZone({
   onCardClick,
   onCardHover,
   targetIds = new Set(),
+  revealedCards,
 }: OpponentZoneProps) {
   if (!player) return <div className="opponent-zone empty" />
 
   const handCount = player.handCount ?? 0
-  const handCards: Record<string, CardView> = Object.fromEntries(
-    Array.from({ length: handCount }, (_, i) => [
-      `opp-hand-${i}`,
-      { name: '?', manaValue: 0, expansionSetCode: '', cardNumber: '0', id: `opp-hand-${i}` },
-    ])
-  )
+  const knownCards = Object.entries(revealedCards ?? {})
+  const knownCount = Math.min(handCount, knownCards.length)
+  const unknownCount = Math.max(0, handCount - knownCount)
+
+  const handCards: Record<string, CardView> = {}
+
+  // 1. Add known revealed cards (rendered face up with full art)
+  knownCards.slice(0, knownCount).forEach(([id, card]) => {
+    handCards[id] = {
+      ...card,
+      id,
+      faceDown: false,
+    }
+  })
+
+  // 2. Add remaining unknown face-down cards
+  for (let i = 0; i < unknownCount; i++) {
+    const id = `opp-unknown-${i}`
+    handCards[id] = {
+      id,
+      name: '?',
+      manaValue: 0,
+      expansionSetCode: '',
+      cardNumber: '0',
+      faceDown: true,
+    }
+  }
 
   const battlefield = player.battlefield ?? {}
   const permanents = Object.entries(battlefield)
@@ -62,8 +85,10 @@ export default function OpponentZone({
           isTarget={targetIds.has(player.playerId)}
         />
         <HandZone
-          cards={handCards as any}
-          faceDown
+          cards={handCards}
+          onCardClick={onCardClick}
+          onHover={onCardHover}
+          targetIds={targetIds}
           compact
         />
         <ResourceBar player={player} side="opp" compact />
