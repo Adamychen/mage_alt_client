@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import LeaderboardModal from './LeaderboardModal'
+import { addIgnoredUser, resetIgnoredUsersForTest } from './ignoreList'
 import type { UsersView } from '../net/types'
 
 const mockUsers: UsersView[] = [
@@ -46,6 +47,10 @@ const mockUsers: UsersView[] = [
 ]
 
 describe('LeaderboardModal Component', () => {
+  beforeEach(() => {
+    resetIgnoredUsersForTest()
+  })
+
   afterEach(() => {
     cleanup()
   })
@@ -104,5 +109,25 @@ describe('LeaderboardModal Component', () => {
     expect(screen.getAllByText('mythic_player').length).toBeGreaterThan(0)
     expect(screen.getByText(/⭐ 2050 ELO/i)).toBeDefined()
     expect(screen.getByText('Mítico')).toBeDefined()
+  })
+
+  it('renders ignored users in my profile and allows unignoring', () => {
+    addIgnoredUser('annoying_guy')
+    const onClose = vi.fn()
+    render(
+      <LeaderboardModal
+        users={mockUsers}
+        currentUsername="player1"
+        initialTab="profile"
+        onClose={onClose}
+      />,
+    )
+
+    expect(screen.getByText(/Jugadores Ignorados & Silenciados \(1\)/i)).toBeDefined()
+    expect(screen.getByText(/annoying_guy/i)).toBeDefined()
+
+    // Click unlock / unignore
+    fireEvent.click(screen.getByText('🔓 Desbloquear'))
+    expect(screen.getByText(/No tienes a ningún jugador en tu lista/i)).toBeDefined()
   })
 })

@@ -434,6 +434,83 @@
   letter-spacing: 0.04em;
 }
 
+/* Ignored Users Panel in Profile */
+.profile-ignored-box {
+  background: rgba(14, 18, 38, 0.7);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profile-ignored-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-ignored-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ff7675;
+}
+
+.profile-ignored-hint {
+  font-size: 11px;
+  color: #8c96c0;
+}
+
+.profile-ignored-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-ignored-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.35);
+  padding: 5px 10px;
+  border-radius: 8px;
+}
+
+.ignored-item-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffcdd2;
+  font-family: var(--font-mono, monospace);
+}
+
+.unignore-action-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.unignore-action-btn:hover {
+  background: rgba(99, 230, 190, 0.3);
+  border-color: #63e6be;
+  color: #63e6be;
+}
+
+.profile-ignored-empty {
+  margin: 0;
+  font-size: 11.5px;
+  color: #8c96c0;
+  font-style: italic;
+}
+
 /* Tiers Ladder Grid */
 .tiers-ladder-grid {
   display: grid;

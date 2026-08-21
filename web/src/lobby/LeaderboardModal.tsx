@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import type { UsersView } from '../net/types'
 import { getRankInfo, RANK_TIERS_CONFIG } from './ranking'
+import { getIgnoredUsers, removeIgnoredUser } from './ignoreList'
+import { appendLocalChatMessage } from '../state/store'
 import RankBadge from './RankBadge'
 import CountryFlag from './CountryFlag'
 import AvatarImage from './AvatarImage'
@@ -26,6 +28,13 @@ export default function LeaderboardModal({
   const [activeTab, setActiveTab] = useState<LeaderboardTab>(initialTab)
   const [searchQuery, setSearchQuery] = useState('')
   const [targetUsername, setTargetUsername] = useState<string>(initialTargetUsername ?? currentUsername)
+  const [ignoredList, setIgnoredList] = useState<string[]>(() => getIgnoredUsers())
+
+  const handleUnignoreFromProfile = (username: string) => {
+    const res = removeIgnoredUser(username)
+    setIgnoredList(getIgnoredUsers())
+    appendLocalChatMessage(res.message)
+  }
 
   // Current user's stats
   const currentUser = useMemo(() => {
@@ -344,6 +353,39 @@ export default function LeaderboardModal({
                   <span className="stat-label">Tasa de Victoria</span>
                 </div>
               </div>
+
+              {/* Ignored Users Management (My Profile Only) */}
+              {isMyProfile && (
+                <div className="profile-ignored-box">
+                  <div className="profile-ignored-header">
+                    <h4>🚫 Jugadores Ignorados & Silenciados ({ignoredList.length})</h4>
+                    <span className="profile-ignored-hint">
+                      Los jugadores ignorados no pueden enviarte mensajes ni unirse a tus mesas.
+                    </span>
+                  </div>
+                  {ignoredList.length > 0 ? (
+                    <div className="profile-ignored-list">
+                      {ignoredList.map((name) => (
+                        <div key={name} className="profile-ignored-item">
+                          <span className="ignored-item-name">🚫 {name}</span>
+                          <button
+                            type="button"
+                            className="unignore-action-btn"
+                            onClick={() => handleUnignoreFromProfile(name)}
+                            title={`Desbloquear a ${name}`}
+                          >
+                            🔓 Desbloquear
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="profile-ignored-empty">
+                      No tienes a ningún jugador en tu lista de ignorados.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
