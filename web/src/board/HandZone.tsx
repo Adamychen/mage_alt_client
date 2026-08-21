@@ -48,6 +48,7 @@ export default function HandZone({
     }
 
     measure()
+    if (typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(measure)
     ro.observe(el)
     return () => ro.disconnect()
@@ -59,25 +60,28 @@ export default function HandZone({
       className={`hand-zone ${faceDown ? 'face-down' : ''} ${compact ? 'compact' : ''}`}
       style={compact ? { '--card-w': `${cardW}px` } as React.CSSProperties : undefined}
     >
-      {entries.map(([id, card], i) => (
-        <div
-          key={id}
-          className="hand-card-slot"
-          style={{ zIndex: i } as React.CSSProperties}
-          onMouseEnter={!faceDown && onHover ? (e) => onHover(card, e.currentTarget.getBoundingClientRect()) : undefined}
-          onMouseLeave={!faceDown && onHover ? () => onHover(null) : undefined}
-        >
-          <CardSlot
-            cardId={id}
-            card={card}
-            onClick={onCardClick ? () => onCardClick(id) : undefined}
-            isPlayable={playableIds.has(id)}
-            isTarget={targetIds.has(id)}
-            faceDown={faceDown}
-            className="hand-card"
-          />
-        </div>
-      ))}
+      {entries.map(([id, card], i) => {
+        const isCardFaceDown = faceDown || card.faceDown === true
+        return (
+          <div
+            key={id}
+            className="hand-card-slot"
+            style={{ zIndex: i } as React.CSSProperties}
+            onMouseEnter={!isCardFaceDown && onHover ? (e) => onHover(card, e.currentTarget.getBoundingClientRect()) : undefined}
+            onMouseLeave={!isCardFaceDown && onHover ? () => onHover(null) : undefined}
+          >
+            <CardSlot
+              cardId={id}
+              card={card}
+              onClick={onCardClick ? () => onCardClick(id) : undefined}
+              isPlayable={playableIds.has(id)}
+              isTarget={targetIds.has(id)}
+              faceDown={isCardFaceDown}
+              className="hand-card"
+            />
+          </div>
+        )
+      })}
     </div>
   )
 }

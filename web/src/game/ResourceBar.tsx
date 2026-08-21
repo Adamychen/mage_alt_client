@@ -29,7 +29,7 @@ interface ResourceBarProps {
 export default function ResourceBar({ player, side, compact = false, crossZonePlayables, onPlayCrossZone }: ResourceBarProps) {
   const [manaOpen, setManaOpen] = useState(false)
   const [openPile, setOpenPile] = useState<'graveyard' | 'exile' | 'crosszone' | null>(null)
-  const pool = player.manaPool
+  const pool = player.manaPool ?? {}
   const manaTotal = MANA_COLORS.reduce((sum, c) => sum + (pool[c.key] ?? 0), 0)
   const graveyardCount = Object.keys(player.graveyard ?? {}).length
   const exileCount = Object.keys(player.exile ?? {}).length

@@ -278,13 +278,13 @@ function cardOptions(value: unknown): FeedbackOption[] {
     return value.map((item, index) => {
       const card = asRecord(item)
       const id = stringValue(card.id) ?? stringValue(card.parentId) ?? String(index)
-      return { id, label: stringValue(card.displayName) ?? stringValue(card.name) ?? id, value: id }
+      return { id, label: stringValue(card.displayName) ?? stringValue(card.name) ?? stringValue(item) ?? id, value: id }
     })
   }
   return Object.entries(asRecord(value)).map(([id, item]) => {
     const card = asRecord(item)
     const actualId = stringValue(card.id) ?? id
-    return { id: actualId, label: stringValue(card.displayName) ?? stringValue(card.name) ?? actualId, value: actualId }
+    return { id: actualId, label: stringValue(card.displayName) ?? stringValue(card.name) ?? stringValue(item) ?? actualId, value: actualId }
   })
 }
 
