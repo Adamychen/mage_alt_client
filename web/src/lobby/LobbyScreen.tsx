@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { reset, useLobby, useStore, setWatchingTable } from '../state/store'
 import * as cmds from '../net/commands'
 import type { TableView, UsersView } from '../net/types'
+import { cacheAvatar } from './avatarCache'
 import CreateTableDialog from './CreateTableDialog'
 import JoinTableDialog from './JoinTableDialog'
 import ChatBox from './ChatBox'
@@ -122,6 +123,13 @@ export default function LobbyScreen() {
   const filteredTables = useMemo(() => {
     return filterTables(tables, filters)
   }, [tables, filters])
+
+  // Cachear automáticamente el avatar real del usuario conectado
+  useEffect(() => {
+    if (conn?.username && conn?.avatarId && conn.avatarId > 0) {
+      cacheAvatar(conn.username, conn.avatarId)
+    }
+  }, [conn?.username, conn?.avatarId])
 
   const runDemo = async () => {
     setBusyTable('demo')

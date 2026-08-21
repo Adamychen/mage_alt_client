@@ -1,3 +1,5 @@
+import { getCachedAvatar, cacheAvatar } from './avatarCache'
+
 export interface AvatarDefinition {
   id: number
   name: string
@@ -63,10 +65,14 @@ export function getDeterministicAvatarId(username?: string): number {
 }
 
 export function resolveAvatarPath(avatarId?: number | null, username?: string): string {
+  if (avatarId !== undefined && avatarId !== null && avatarId > 0 && username) {
+    cacheAvatar(username, avatarId)
+  }
+
   const effectiveId =
     avatarId !== undefined && avatarId !== null && avatarId > 0
       ? avatarId
-      : getDeterministicAvatarId(username)
+      : (getCachedAvatar(username) ?? getDeterministicAvatarId(username))
 
   // Check in curated list
   const found = OFFICIAL_AVATARS.find((a) => a.id === effectiveId)
