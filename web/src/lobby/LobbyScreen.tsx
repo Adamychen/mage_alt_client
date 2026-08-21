@@ -15,11 +15,8 @@ import LeaderboardModal from './LeaderboardModal'
 import UserActionModal from './UserActionModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import FinishedMatchesPanel from './FinishedMatchesPanel'
-import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
+import { AI_OPPONENT_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
-
-/** Asiento de oponente simulado: lo une el proxy con su propia sesión (determinista). */
-const SIM_PLAYER = 'SIM'
 
 /** Las promesas del proxy no deben colgar la UI: todo con timeout explícito. */
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -171,42 +168,6 @@ export default function LobbyScreen() {
       cacheAvatar(conn.username, conn.avatarId)
     }
   }, [conn?.username, conn?.avatarId])
-
-  const runDemo = async () => {
-    setBusyTable('demo')
-    setNotice('Creando mesa IA vs IA…')
-    try {
-      const table = await withTimeout(
-        cmds.createTable({
-          name: 'Demo IA vs IA',
-          gameType: 'Two Player Duel',
-          deckType: 'Constructed - Modern',
-          winsNeeded: 1,
-          playerTypes: [SIM_PLAYER, SIM_PLAYER],
-          simDecks: [STABLE_DECK, STABLE_DECK],
-        }),
-        15000,
-        'createTable demo',
-      )
-      if (!table.ok) {
-        setNotice(`createTable demo falló: ${table.error ?? 'error desconocido'}`)
-        return
-      }
-      const data = table.data as { tableId?: string; TableId?: string } | undefined
-      const tableId = data?.tableId ?? data?.TableId
-      if (!tableId) {
-        setNotice('createTable demo ok pero sin tableId en respuesta')
-        return
-      }
-      setNotice('Conectando como espectador a la demo…')
-      const watched = await withTimeout(cmds.watchTable(tableId), 15000, 'watchTable')
-      setNotice(watched.ok ? 'Conectado como espectador' : `watchTable falló: ${watched.error}`)
-    } catch (e) {
-      setNotice((e as Error).message)
-    } finally {
-      setBusyTable(null)
-    }
-  }
 
   const joinHuman = (t: TableView) => {
     setNotice(null)
@@ -405,15 +366,6 @@ export default function LobbyScreen() {
                 <button className="primary hero-create-btn" onClick={() => setShowCreate(true)}>
                   <span className="btn-icon">➕</span>
                   <span>Nueva mesa</span>
-                </button>
-                <button
-                  className="hero-demo-btn"
-                  disabled={busyTable === 'demo'}
-                  onClick={runDemo}
-                  title="Inicia una partida de prueba IA vs IA y conéctate como espectador"
-                >
-                  <span className="btn-icon">▶</span>
-                  <span>{busyTable === 'demo' ? 'Iniciando demo…' : 'Demo IA vs IA (espectador)'}</span>
                 </button>
               </div>
 

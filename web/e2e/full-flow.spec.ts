@@ -56,8 +56,10 @@ test('flujo completo: login -> lobby -> demo IA vs IA (espectador) -> tablero av
   await expect(page.getByRole('heading', { name: /Lobby|XMage Nexus/i })).toBeVisible({ timeout: 15_000 })
   await expect(page.getByRole('heading', { name: /Mesas/ })).toBeVisible({ timeout: 15_000 })
 
-  // (e) crear mesa IA vs IA y entrar como espectador
-  await page.getByRole('button', { name: /Demo IA vs IA/ }).click()
+  // (e) crear mesa IA vs IA y entrar como espectador desde el modal de creación
+  await page.locator('.hero-create-btn').click()
+  await page.getByRole('button', { name: /Pruebas \/ Dev/i }).click()
+  await page.getByRole('button', { name: /Iniciar Demo IA vs IA/i }).click()
 
    // (f) pantalla de partida + canvas de Pixi montado en .board-wrap
   await expect(page.getByTestId('game-status')).toBeVisible({ timeout: 20_000 })

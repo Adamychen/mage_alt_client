@@ -281,7 +281,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
             className={`create-tab-btn ${activeTab === 'dev' ? 'active' : ''}`}
             onClick={() => setActiveTab('dev')}
           >
-            <span>🛠️ Test</span>
+            <span>🛠️ Pruebas / Dev</span>
           </button>
         </nav>
 
@@ -619,8 +619,46 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
           {activeTab === 'dev' && (
             <div className="create-tab-content">
               <div className="dev-options-notice">
-                <span>⚠️ Las opciones de prueba alteran el comportamiento normal del servidor XMage para pruebas deterministas.</span>
+                <span>⚠️ Opciones para pruebas y desarrollo determinista del motor de reglas.</span>
               </div>
+
+              <div className="dev-demo-box">
+                <h4>Partida de Demostración Rápida</h4>
+                <p>Crea automáticamente una mesa con 2 bots SIM deterministas y entra como espectador.</p>
+                <button
+                  type="button"
+                  className="primary dev-demo-btn"
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      const res = await cmds.createTable({
+                        name: 'Demo IA vs IA',
+                        gameType: 'Two Player Duel',
+                        deckType: 'Constructed - Modern',
+                        winsNeeded: 1,
+                        playerTypes: ['SIM', 'SIM'],
+                        simDecks: [DEFAULT_DECK, DEFAULT_DECK],
+                        skipInitShuffling,
+                        skipStartingPlayerChoice,
+                      })
+                      if (res.ok) {
+                        const data = res.data as { tableId?: string; TableId?: string } | undefined
+                        const tableId = data?.tableId ?? data?.TableId
+                        if (tableId) {
+                          await cmds.watchTable(tableId)
+                        }
+                        onClose()
+                      }
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
+                  disabled={busy}
+                >
+                  ▶ Iniciar Demo IA vs IA (Espectador)
+                </button>
+              </div>
+
               <label className="toggle-label-row">
                 <input
                   type="checkbox"
