@@ -23,6 +23,8 @@ function counterIcon(name: string): string {
   if (n.includes('rad')) return '☢️'
   if (n.includes('experience')) return '🎖️'
   if (n.includes('ticket')) return '🎟️'
+  if (n.includes('acorn')) return '🌰'
+  if (n.includes('commander')) return '👑'
   return '💎'
 }
 
@@ -34,7 +36,10 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
   // Match wins dots (Bo1 / Bo3 / Bo5)
   const winsNeeded = player.winsNeeded ?? (player.wins ? player.wins : 0)
   const wins = player.wins ?? 0
-  const showMatchWins = winsNeeded >= 1 || wins > 0
+  const showMatchWins = winsNeeded > 1 || wins > 0
+
+  // Active Player Counters (> 0 only)
+  const activeCounters = player.counters?.filter((c) => c.count > 0) ?? []
 
   return (
     <div
@@ -56,8 +61,8 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
             {player.name}
           </span>
           {showMatchWins && (
-            <span className="match-wins-dots" title={`Victorias: ${wins}/${winsNeeded}`}>
-              {Array.from({ length: winsNeeded }).map((_, i) => (
+            <span className="match-wins-dots" title={`Victorias en el match: ${wins}/${winsNeeded}`}>
+              {Array.from({ length: Math.max(1, winsNeeded) }).map((_, i) => (
                 <span key={i} className={`win-dot ${i < wins ? 'won' : 'pending'}`}>
                   {i < wins ? '●' : '○'}
                 </span>
@@ -67,24 +72,25 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
         </div>
 
         <div className="player-counters">
+          {/* Life Counter */}
           <span className={`counter life-counter ${player.life <= 5 ? 'life-danger' : ''}`} title="Vida">
             <span className="counter-icon">&#9829;</span>
             <span className="life-value">{player.life}</span>
           </span>
 
-          {/* Player counters: Poison, Energy, Rads, Experience, Tickets */}
-          {player.counters?.map((c) => (
+          {/* Active Player counters (rendered dynamically when > 0) */}
+          {activeCounters.map((c) => (
             <span
               key={c.name}
               className={`counter player-counter-badge counter-${c.name.toLowerCase()}`}
-              title={`${c.name}: ${c.count}`}
+              title={`${c.name}: ${c.count}${c.name.toLowerCase() === 'poison' ? '/10' : ''}`}
             >
               <span className="counter-emoji">{counterIcon(c.name)}</span>
               <span className="counter-val">{c.count}</span>
             </span>
           ))}
 
-          {/* Priority Clock Timer */}
+          {/* Priority Clock Timer (when timed) */}
           {hasTimer && (
             <span
               className={`player-timer-badge ${isTimeLow ? 'timer-low' : ''} ${hasPriority ? 'timer-active' : ''}`}

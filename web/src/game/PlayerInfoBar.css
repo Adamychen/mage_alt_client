@@ -178,9 +178,27 @@
 }
 
 .counter-poison {
-  background: rgba(140, 70, 200, 0.25);
-  border-color: rgba(140, 70, 200, 0.6);
-  color: #c77dff;
+  background: rgba(140, 70, 200, 0.15);
+  border-color: rgba(140, 70, 200, 0.35);
+  color: #a855f7;
+}
+
+.counter-poison.poison-zero {
+  opacity: 0.6;
+}
+
+.counter-poison.has-poison {
+  background: rgba(168, 85, 247, 0.35);
+  border-color: #c084fc;
+  color: #f3e8ff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.7);
+  font-weight: 900;
+}
+
+.counter-hand {
+  background: rgba(45, 55, 95, 0.5);
+  border-color: rgba(140, 160, 220, 0.3);
+  color: #cbd5e1;
 }
 
 .counter-energy {
