@@ -39,9 +39,12 @@
   * 6 official tiers (Bronze 🟤, Silver ⚪, Gold 🟡, Platinum 💠, Diamond 💎, Mythic 🟠).
   * Interactive Leaderboard Modal (`Top Sala`, `Mi Perfil Competitivo`, `Guía de Rangos`).
   * Rank badges with glowing borders and tooltips.
-* [ ] **3.3 Direct User Actions**:
-  * Direct private messaging (Whisper `/msg <user>`).
-  * User ignore / mute toggle.
+* [x] **3.3 Direct User Actions**:
+  * Direct private messaging (Whisper `/w <user> <msg>` or `/whisper`).
+  * Interactive User Action Modal with avatar, flag, ELO, and status.
+  * Direct Spectate Match button for active players.
+  * Leaderboard & Profile link.
+  * Server ignore / mute toggle (`/ignore <user>`, `/unignore <user>`).
 
 ### D. Advanced Table Creation Dialog (`NewTableDialog`)
 * [x] **4.1 Timing & Rules Configuration**:
