@@ -136,8 +136,7 @@
 }
 
 .create-table-dialog input[type="text"],
-.create-table-dialog input[type="password"],
-.create-table-dialog select {
+.create-table-dialog input[type="password"] {
   padding: 8px 12px;
   border-radius: 8px;
   background: rgba(10, 13, 28, 0.85);
@@ -148,6 +147,26 @@
   transition: all 0.15s ease;
   box-sizing: border-box;
   width: 100%;
+}
+
+.create-table-dialog select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(18, 22, 45, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  width: 100%;
+  cursor: pointer;
+}
+
+.create-table-dialog select option {
+  background: #0f132a;
+  color: #ffffff;
+  padding: 8px;
 }
 
 .create-table-dialog input:focus,

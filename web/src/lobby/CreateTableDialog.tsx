@@ -27,6 +27,36 @@ export const BUFFER_TIME_OPTIONS = [
   { label: '30 Segundos', value: 'SEC__30' },
 ]
 
+export const DEFAULT_GAME_TYPES: GameTypeInfo[] = [
+  { name: 'Two Player Duel', minPlayers: 2, maxPlayers: 2 },
+  { name: 'Commander / Free For All', minPlayers: 2, maxPlayers: 4 },
+  { name: 'Free For All', minPlayers: 2, maxPlayers: 8 },
+  { name: 'Canadian Highlander', minPlayers: 2, maxPlayers: 2 },
+  { name: 'Tiny Leaders', minPlayers: 2, maxPlayers: 2 },
+  { name: 'Momir Basic', minPlayers: 2, maxPlayers: 2 },
+]
+
+export const DEFAULT_DECK_TYPES: string[] = [
+  'Constructed - Modern',
+  'Constructed - Standard',
+  'Constructed - Commander',
+  'Constructed - Pioneer',
+  'Constructed - Pauper',
+  'Constructed - Legacy',
+  'Constructed - Vintage',
+  'Constructed - Historic',
+  'Constructed - Explorer',
+  'Constructed - Timeless',
+  'Constructed - Freeform',
+  'Limited',
+]
+
+export const DEFAULT_PLAYER_TYPES: string[] = [
+  'SIM',
+  'COMPUTER_MAD',
+  'COMPUTER_DRAFT',
+]
+
 export const SKILL_LEVEL_OPTIONS = [
   { label: 'Novato', value: 'BEGINNER', icon: '⭐' },
   { label: 'Casual', value: 'CASUAL', icon: '⭐⭐' },
@@ -38,9 +68,9 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const storeDeck = useStore((s) => s.myDeck)
 
   const [activeTab, setActiveTab] = useState<CreateTab>('general')
-  const [gameTypes, setGameTypes] = useState<GameTypeInfo[]>([])
-  const [deckTypes, setDeckTypes] = useState<string[]>([])
-  const [playerTypes, setPlayerTypes] = useState<string[]>([])
+  const [gameTypes, setGameTypes] = useState<GameTypeInfo[]>(DEFAULT_GAME_TYPES)
+  const [deckTypes, setDeckTypes] = useState<string[]>(DEFAULT_DECK_TYPES)
+  const [playerTypes, setPlayerTypes] = useState<string[]>(DEFAULT_PLAYER_TYPES)
 
   // General tab
   const [name, setName] = useState(`${username}'s table`)
@@ -77,14 +107,33 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let active = true
     void (async () => {
-      const [g, d, p] = await Promise.all([cmds.getGameTypes(), cmds.getDeckTypes(), cmds.getPlayerTypes()])
-      setGameTypes(g)
-      setDeckTypes(d)
-      setPlayerTypes(p)
-      if (g.length && !g.some((x) => x.name === gameType)) setGameType(g[0].name)
-      if (d.length && !d.includes(deckType)) setDeckType(d[0])
+      try {
+        const [g, d, p] = await Promise.all([
+          cmds.getGameTypes().catch(() => []),
+          cmds.getDeckTypes().catch(() => []),
+          cmds.getPlayerTypes().catch(() => []),
+        ])
+        if (!active) return
+        if (g && g.length > 0) {
+          setGameTypes(g)
+          if (!g.some((x) => x.name === gameType)) setGameType(g[0].name)
+        }
+        if (d && d.length > 0) {
+          setDeckTypes(d)
+          if (!d.some((x) => x === deckType)) setDeckType(d[0])
+        }
+        if (p && p.length > 0) {
+          setPlayerTypes(p)
+        }
+      } catch (err) {
+        console.warn('Could not fetch server match types, using defaults', err)
+      }
     })()
+    return () => {
+      active = false
+    }
   }, [])
 
   // Auto-adjust free mulligans when switching to Commander/Multiplayer
@@ -99,9 +148,25 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
     setPlayerTypesSel((cur) => (cur.includes(pt) ? cur.filter((x) => x !== pt) : [...cur, pt]))
   }
 
-  const selectedGameTypeInfo = useMemo(() => {
-    return gameTypes.find((g) => g.name === gameType)
+  const effectiveGameTypes = useMemo(() => {
+    const list = [...gameTypes]
+    if (gameType && !list.some((g) => g.name === gameType)) {
+      list.unshift({ name: gameType, minPlayers: 2, maxPlayers: 2 })
+    }
+    return list
   }, [gameTypes, gameType])
+
+  const effectiveDeckTypes = useMemo(() => {
+    const list = [...deckTypes]
+    if (deckType && !list.includes(deckType)) {
+      list.unshift(deckType)
+    }
+    return list
+  }, [deckTypes, deckType])
+
+  const selectedGameTypeInfo = useMemo(() => {
+    return effectiveGameTypes.find((g) => g.name === gameType)
+  }, [effectiveGameTypes, gameType])
 
   const isMultiplayerGame = useMemo(() => {
     return (selectedGameTypeInfo?.maxPlayers ?? 2) > 2 || gameType.toLowerCase().includes('commander')
@@ -231,7 +296,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
                 <label>
                   Tipo de juego
                   <select value={gameType} onChange={(e) => setGameType(e.target.value)}>
-                    {gameTypes.map((g) => (
+                    {effectiveGameTypes.map((g) => (
                       <option key={g.name} value={g.name}>
                         {g.name} ({g.minPlayers}-{g.maxPlayers} jug.)
                       </option>
@@ -241,7 +306,7 @@ export default function CreateTableDialog({ onClose }: { onClose: () => void }) 
                 <label>
                   Formato (Deck Type)
                   <select value={deckType} onChange={(e) => setDeckType(e.target.value)}>
-                    {deckTypes.map((d) => (
+                    {effectiveDeckTypes.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
