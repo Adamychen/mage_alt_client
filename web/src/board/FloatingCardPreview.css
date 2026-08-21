@@ -131,3 +131,32 @@
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
+
+.floating-card-flip-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(14, 18, 36, 0.9);
+  border: 1.5px solid rgba(255, 208, 112, 0.8);
+  color: #ffd070;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  animation: pulseFlip 2s infinite ease-in-out;
+}
+
+@keyframes pulseFlip {
+  0%, 100% { border-color: rgba(255, 208, 112, 0.6); }
+  50% { border-color: #63e6be; color: #63e6be; }
+}
+
+.floating-card-flip-badge .flip-icon {
+  font-size: 11px;
+}

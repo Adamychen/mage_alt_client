@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName, getSourceCardName, isAbilityCard } from '../cards/cardImages'
 import './FloatingCardPreview.css'
@@ -20,22 +20,57 @@ export default function FloatingCardPreview({
   fixedSide = 'auto',
 }: FloatingCardPreviewProps) {
   const [imgUrl, setImgUrl] = useState<string | null>(null)
+  const [showBackFace, setShowBackFace] = useState(false)
+
+  // Reset face toggle whenever the card changes
+  useEffect(() => {
+    setShowBackFace(false)
+  }, [card?.id, card?.name])
+
+  const hasSecondFace = !card?.faceDown && (!!card?.secondCardFace || !!card?.transformable || !!card?.alternateName)
+
+  // Keyboard shortcut: Press Shift or F while hovering to flip
+  useEffect(() => {
+    if (!hasSecondFace) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' || e.key.toLowerCase() === 'f') {
+        setShowBackFace((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [hasSecondFace])
+
+  // Determine which face to display
+  const activeCard: CardView | PermanentView | null = useMemo(() => {
+    if (!card) return null
+    if (!showBackFace) return card
+    if (card.secondCardFace) return card.secondCardFace
+    if (card.alternateName) {
+      return {
+        ...card,
+        name: card.alternateName,
+        displayName: card.alternateName,
+      }
+    }
+    return card
+  }, [card, showBackFace])
 
   useEffect(() => {
-    if (!card || card.faceDown) {
+    if (!activeCard || activeCard.faceDown) {
       setImgUrl(null)
       return
     }
     let cancelled = false
-    awaitImageUrl(card).then((url) => {
+    awaitImageUrl(activeCard).then((url) => {
       if (!cancelled) setImgUrl(url)
     })
     return () => {
       cancelled = true
     }
-  }, [card?.name, card?.expansionSetCode, card?.cardNumber, card?.faceDown])
+  }, [activeCard?.name, activeCard?.expansionSetCode, activeCard?.cardNumber, activeCard?.faceDown])
 
-  if (!card || !anchorRect || card.faceDown) {
+  if (!card || !anchorRect || card.faceDown || !activeCard) {
     return null
   }
 
@@ -112,15 +147,23 @@ export default function FloatingCardPreview({
     }
   }
 
-  const isAbility = isAbilityCard(card)
-  const perm = card as PermanentView
-  const name = isAbility ? getSourceCardName(card) : cardName(card)
-  const manaCost = (card.manaCostLeftStr ?? []).join('')
-  const rules = card.rules ?? []
+  const isAbility = isAbilityCard(activeCard)
+  const perm = activeCard as PermanentView
+  const name = isAbility ? getSourceCardName(activeCard) : cardName(activeCard)
+  const manaCost = (activeCard.manaCostLeftStr ?? []).join('')
+  const rules = activeCard.rules ?? []
 
   return (
     <div className="floating-card-preview" style={style}>
       <div className="floating-card-inner">
+        {/* Flip Hint Badge (Double-faced / Transform / MDFC) */}
+        {hasSecondFace && (
+          <div className="floating-card-flip-badge" title="Pulsa Shift o F para voltear">
+            <span className="flip-icon">🔄</span>
+            <span className="flip-label">{showBackFace ? 'Reverso' : 'Anverso'} (Shift / F)</span>
+          </div>
+        )}
+
         {imgUrl ? (
           <img src={imgUrl} alt={name} className="floating-card-img" draggable={false} />
         ) : (
@@ -129,8 +172,8 @@ export default function FloatingCardPreview({
               <span className="floating-card-name">{name}</span>
               {manaCost && <span className="floating-card-mana">{manaCost}</span>}
             </div>
-            {card.cardTypes && card.cardTypes.length > 0 && (
-              <div className="floating-card-type">{card.cardTypes.join(' — ')}</div>
+            {activeCard.cardTypes && activeCard.cardTypes.length > 0 && (
+              <div className="floating-card-type">{activeCard.cardTypes.join(' — ')}</div>
             )}
             {rules.length > 0 && (
               <div className="floating-card-rules">{rules.join('\n')}</div>
@@ -139,21 +182,21 @@ export default function FloatingCardPreview({
         )}
 
         {/* P/T Badge (Creatures only) */}
-        {card.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && perm.power && perm.toughness && (
+        {activeCard.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && perm.power && perm.toughness && (
           <div className="floating-card-pt">
             {perm.power}/{perm.toughness}
           </div>
         )}
 
         {/* Counters Badge */}
-        {card.counters && card.counters.length > 0 && (
+        {activeCard.counters && activeCard.counters.length > 0 && (
           <div className="floating-card-counters">
-            +{card.counters.reduce((sum, c) => sum + c.count, 0)} contadores
+            +{activeCard.counters.reduce((sum, c) => sum + c.count, 0)} contadores
           </div>
         )}
 
         {/* Token Badge */}
-        {(perm.isToken || card.mageObjectType === 'TOKEN') && !perm.copy && (
+        {(perm.isToken || activeCard.mageObjectType === 'TOKEN') && !perm.copy && (
           <div className="floating-card-token-badge">TOKEN</div>
         )}
       </div>

@@ -110,7 +110,7 @@ export default function CardSlot({
       if (!cancelled) setImgUrl(url)
     })
     return () => { cancelled = true }
-  }, [card.expansionSetCode, card.cardNumber, faceDown])
+  }, [card.expansionSetCode, card.cardNumber, card.name, (card as any).displayName, faceDown])
 
   const perm = card as PermanentView
   const counters = card.counters ?? []
@@ -123,6 +123,7 @@ export default function CardSlot({
   const isRealCreature = isCreature && (!isLand || types.includes('creature'))
   const isPlaneswalker = types.includes('planeswalker') || String(card.mageObjectType ?? '').toUpperCase().includes('PLANESWALKER')
   const isBattle = types.includes('battle') || String(card.mageObjectType ?? '').toUpperCase().includes('BATTLE')
+  const isFlipped = perm.flipped === true
 
   const loyaltyVal = perm.loyalty ? parseInt(String(perm.loyalty), 10) : 0
   const defenseVal = perm.defense ? parseInt(String(perm.defense), 10) : 0
@@ -140,6 +141,7 @@ export default function CardSlot({
         isPlayable ? 'playable' : '',
         isChosen ? 'chosen' : '',
         faceDown ? 'face-down' : '',
+        isFlipped ? 'is-flipped-card' : '',
         onClick ? 'clickable' : '',
         className,
       ].filter(Boolean).join(' ')}
@@ -208,6 +210,16 @@ export default function CardSlot({
           {perm.manifested && <span className="facedown-type-badge manifest" title="Manifestado">Manifest</span>}
           {perm.disguised && <span className="facedown-type-badge disguise" title="Disfraz">Disguise</span>}
           {perm.cloaked && <span className="facedown-type-badge cloak" title="Encubierto">Cloak</span>}
+        </div>
+      )}
+
+      {/* Transform / Double-Faced Indicator Badge */}
+      {(card.transformable || card.secondCardFace != null || card.alternateName != null) && !faceDown && (
+        <div
+          className={`card-transform-badge ${perm.transformed ? 'is-transformed' : ''}`}
+          title={perm.transformed ? 'Carta transformada (Reverso)' : 'Carta de doble cara (Anverso)'}
+        >
+          {perm.transformed ? '🌙' : '☀️'}
         </div>
       )}
     </div>

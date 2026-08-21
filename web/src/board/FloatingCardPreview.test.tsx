@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import FloatingCardPreview from './FloatingCardPreview'
 import type { CardView, PermanentView } from '../net/types'
@@ -135,5 +135,45 @@ describe('FloatingCardPreview', () => {
 
     expect(container.textContent).toContain('TOKEN')
     expect(container.textContent).toContain('+2 contadores')
+  })
+
+  it('renders flip badge for double-faced cards and toggles face on Shift key', () => {
+    const tdfcCard: CardView = {
+      name: 'Delver of Secrets',
+      manaValue: 1,
+      transformable: true,
+      secondCardFace: {
+        name: 'Insectile Aberration',
+        manaValue: 1,
+        power: '3',
+        toughness: '2',
+      },
+    }
+
+    const anchorRect = {
+      left: 200,
+      top: 200,
+      right: 290,
+      bottom: 326,
+      width: 90,
+      height: 126,
+    } as DOMRect
+
+    const { container } = render(
+      <FloatingCardPreview
+        card={tdfcCard}
+        anchorRect={anchorRect}
+        boardRect={dummyBoardRect}
+      />,
+    )
+
+    const flipBadge = container.querySelector('.floating-card-flip-badge')
+    expect(flipBadge).toBeTruthy()
+    expect(flipBadge?.textContent).toContain('Anverso')
+
+    // Simulate pressing Shift key to toggle to back face
+    fireEvent.keyDown(window, { key: 'Shift' })
+
+    expect(container.querySelector('.floating-card-flip-badge')?.textContent).toContain('Reverso')
   })
 })

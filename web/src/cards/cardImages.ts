@@ -251,15 +251,23 @@ export async function awaitImageUrl(card: CardView): Promise<string | null> {
   if (cached !== undefined) return cached
   const current = inflight.get(key)
   if (current) return current
-  const p = load(key)
-    .catch(() => null)
-    .then((url) => {
-      remember(key, url)
-      return url
-    })
-    .finally(() => {
-      if (inflight.get(key) === p) inflight.delete(key)
-    })
+
+  const name = card.displayName || card.name
+  const cleanName = name && !/^ability$/i.test(name) && !/^habilidad$/i.test(name) ? name.trim() : null
+
+  const p = (async () => {
+    let url = await load(key).catch(() => null)
+    // If set/number lookup returned null (e.g. 404 from mismatched set codes/promos), fallback by card name!
+    if (!url && cleanName && !key.startsWith('named:')) {
+      const fallbackKey = `named:${cleanName}`
+      url = await load(fallbackKey).catch(() => null)
+    }
+    remember(key, url)
+    return url
+  })().finally(() => {
+    if (inflight.get(key) === p) inflight.delete(key)
+  })
+
   inflight.set(key, p)
   return p
 }

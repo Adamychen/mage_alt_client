@@ -3,6 +3,7 @@ import type { CardView } from '../net/types'
 import { getSourceCardName, isAbilityCard } from '../cards/cardImages'
 import CardSlot from './CardSlot'
 import FloatingCardPreview from './FloatingCardPreview'
+import FormattedText from '../game/FormattedText'
 import './StackZone.css'
 
 interface StackZoneProps {
@@ -92,6 +93,7 @@ export default function StackZone({
   const topTypeLabel = stackTypeLabel(topCard)
   const topRulesText = stackRulesText(topCard)
   const topSourceName = isTopAbility ? getSourceCardName(topCard) : topCard.name
+  const topManaCost = (topCard.manaCostLeftStr ?? []).join('')
 
   return (
     <div className="stack-zone">
@@ -131,19 +133,36 @@ export default function StackZone({
                   <CardSlot cardId={topId} card={topCard} className="ability-card-thumb" />
                 </div>
                 <div className="ability-card-text">
-                  {topRulesText || topSourceName || 'Efecto en la pila'}
+                  <FormattedText text={topRulesText || topSourceName || 'Efecto en la pila'} />
                 </div>
               </div>
             </div>
           ) : (
-            <CardSlot
-              cardId={topId}
-              card={topCard}
-              onClick={onCardClick ? () => onCardClick(topId) : undefined}
-              onHover={handleHover}
-              isTarget={targetIds.has(topId)}
-              className={`stack-top-card${canResolve ? ' has-resolve-btn' : ''}`}
-            />
+            <div className="stack-spell-wrapper">
+              <CardSlot
+                cardId={topId}
+                card={topCard}
+                onClick={onCardClick ? () => onCardClick(topId) : undefined}
+                onHover={handleHover}
+                isTarget={targetIds.has(topId)}
+                className={`stack-top-card${canResolve && !topRulesText ? ' has-resolve-btn' : ''}`}
+              />
+              {topRulesText && (
+                <div className={`stack-card-rules-box${canResolve ? ' has-resolve-btn' : ''}`}>
+                  <div className="stack-card-rules-header">
+                    <span className="stack-card-rules-title">{topSourceName}</span>
+                    {topManaCost && (
+                      <span className="stack-card-mana">
+                        <FormattedText text={topManaCost} />
+                      </span>
+                    )}
+                  </div>
+                  <div className="stack-card-rules-body">
+                    <FormattedText text={topRulesText} />
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {canResolve && (
@@ -184,7 +203,11 @@ export default function StackZone({
                   <span className="underlying-pos">#{idx + 2}</span>
                 </div>
                 <div className="underlying-name">{sourceName}</div>
-                {rules && <div className="underlying-rule-preview">{rules}</div>}
+                {rules && (
+                  <div className="underlying-rule-preview">
+                    <FormattedText text={rules} />
+                  </div>
+                )}
               </div>
             </div>
           )

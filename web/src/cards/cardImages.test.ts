@@ -53,6 +53,28 @@ describe('card image cache', () => {
     await expect(awaitImageUrl(card)).resolves.toBeNull()
     expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAfterFirst)
   })
+
+  it('falls back to searching by card name if set/number lookup returns 404', async () => {
+    const bloodCrypt = {
+      name: 'Blood Crypt',
+      expansionSetCode: 'UNKNOWN_SET',
+      cardNumber: '999',
+    } as CardView
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 404 }) // UNKNOWN_SET/999 -> 404
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ image_uris: { normal: 'https://img.test/blood_crypt.jpg' }, name: 'Blood Crypt' }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(awaitImageUrl(bloodCrypt)).resolves.toBe('https://img.test/blood_crypt.jpg')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.scryfall.com/cards/UNKNOWN_SET/999?format=json', expect.anything())
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.scryfall.com/cards/named?exact=Blood%20Crypt', expect.anything())
+  })
 })
 
 describe('token image resolution', () => {
