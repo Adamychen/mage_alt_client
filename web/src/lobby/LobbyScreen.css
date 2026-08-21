@@ -258,36 +258,26 @@
   font-size: 14px;
 }
 
-/* Format Filters */
-.table-filter-pills {
+.hero-deck-badge {
   display: flex;
-  gap: 6px;
-  background: rgba(14, 18, 38, 0.6);
-  padding: 4px;
-  border-radius: 10px;
+  align-items: center;
+  gap: 8px;
+  background: rgba(14, 18, 38, 0.7);
+  padding: 6px 12px;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.filter-pill {
-  padding: 6px 12px;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  color: #8c96c0;
-  font-size: 12px;
+.hero-deck-label {
+  font-size: 11.5px;
+  color: #8c96ba;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
 }
 
-.filter-pill:hover {
-  color: #ffffff;
-}
-
-.filter-pill.active {
-  background: rgba(255, 208, 112, 0.2);
-  color: #ffd070;
+.hero-deck-name {
+  font-size: 12.5px;
   font-weight: 700;
+  color: #ffd070;
 }
 
 /* Tables Section Panel */

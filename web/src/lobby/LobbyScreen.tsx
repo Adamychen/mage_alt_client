@@ -5,6 +5,7 @@ import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
 import ChatBox from './ChatBox'
 import DeckManager from './DeckManager'
+import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import { AI_OPPONENT_DECK, DEFAULT_DECK, STABLE_DECK } from './decks'
 import './LobbyScreen.css'
 
@@ -64,7 +65,7 @@ export default function LobbyScreen() {
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
   const [showDebug, setShowDebug] = useState(false)
-  const [formatFilter, setFormatFilter] = useState('ALL')
+  const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
   const [busyTable, setBusyTable] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -72,13 +73,8 @@ export default function LobbyScreen() {
   const users = lobby?.users.usersView ?? []
 
   const filteredTables = useMemo(() => {
-    if (formatFilter === 'ALL') return tables
-    return tables.filter(
-      (t) =>
-        t.gameType?.toLowerCase().includes(formatFilter.toLowerCase()) ||
-        t.deckType?.toLowerCase().includes(formatFilter.toLowerCase())
-    )
-  }, [tables, formatFilter])
+    return filterTables(tables, filters)
+  }, [tables, filters])
 
   const runDemo = async () => {
     setBusyTable('demo')
@@ -284,45 +280,29 @@ export default function LobbyScreen() {
                 </button>
               </div>
 
-              {/* Format Filters */}
-              <div className="table-filter-pills">
-                <button
-                  type="button"
-                  className={`filter-pill ${formatFilter === 'ALL' ? 'active' : ''}`}
-                  onClick={() => setFormatFilter('ALL')}
-                >
-                  Todas ({tables.length})
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${formatFilter === 'Duel' ? 'active' : ''}`}
-                  onClick={() => setFormatFilter('Duel')}
-                >
-                  Duelo 1v1
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${formatFilter === 'Modern' ? 'active' : ''}`}
-                  onClick={() => setFormatFilter('Modern')}
-                >
-                  Modern
-                </button>
-                <button
-                  type="button"
-                  className={`filter-pill ${formatFilter === 'Commander' ? 'active' : ''}`}
-                  onClick={() => setFormatFilter('Commander')}
-                >
-                  Commander
-                </button>
+              <div className="hero-deck-badge" title={`Mazo activo para unirse a partidas: ${myDeck?.name ?? 'Mage Web bolt'}`}>
+                <span className="hero-deck-label">Mazo equipado:</span>
+                <span className="hero-deck-name">🃏 {myDeck?.name ?? 'Mage Web bolt'}</span>
               </div>
             </div>
+
+            {/* Modern Full Table Filter Bar */}
+            <TableFilterBar
+              tables={tables}
+              filters={filters}
+              onChange={setFilters}
+              onReset={() => setFilters(INITIAL_TABLE_FILTERS)}
+            />
 
             {/* Tables Grid Section */}
             <section className="panel tables-panel">
               <div className="tables-panel-header">
-                <h2>Mesas ({filteredTables.length})</h2>
+                <h2>
+                  Mesas ({filteredTables.length}
+                  {filteredTables.length !== tables.length ? ` de ${tables.length}` : ''})
+                </h2>
                 <span className="tables-deck-hint">
-                  Mazo equipado: <strong>{myDeck?.name ?? 'Mage Web bolt'}</strong>
+                  Mostrando partidas activas y en espera
                 </span>
               </div>
 
@@ -482,13 +462,30 @@ export default function LobbyScreen() {
                   )
                 })}
 
-                {filteredTables.length === 0 && (
+                {filteredTables.length === 0 && tables.length === 0 && (
                   <div className="tables-empty-state">
                     <span className="empty-icon">🏰</span>
                     <h3>No hay mesas disponibles en este momento</h3>
                     <p>Crea una nueva partida o lanza una demo rápida contra la IA.</p>
                     <button className="primary" onClick={() => setShowCreate(true)}>
                       ➕ Crear Nueva Mesa
+                    </button>
+                  </div>
+                )}
+
+                {filteredTables.length === 0 && tables.length > 0 && (
+                  <div className="tables-empty-match">
+                    <span className="empty-match-icon">🔍</span>
+                    <span className="empty-match-title">No hay mesas que coincidan con los filtros</span>
+                    <p className="empty-match-desc">
+                      Hay {tables.length} {tables.length === 1 ? 'mesa activa' : 'mesas activas'} en el servidor, pero ninguna cumple los criterios seleccionados.
+                    </p>
+                    <button
+                      type="button"
+                      className="empty-reset-btn"
+                      onClick={() => setFilters(INITIAL_TABLE_FILTERS)}
+                    >
+                      Restablecer filtros
                     </button>
                   </div>
                 )}
