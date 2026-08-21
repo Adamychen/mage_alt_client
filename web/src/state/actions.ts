@@ -26,6 +26,14 @@ export function clearGameEnd() {
   setState({ gameEnd: null })
 }
 
+export function setWatchingTable(table: import('../net/types').TableView | null) {
+  if (table) {
+    setState({ phase: 'spectating_pending', watchingTable: table, error: null })
+  } else {
+    setState({ phase: 'lobby', watchingTable: null, error: null })
+  }
+}
+
 export function returnToLobby() {
   const s = getState()
   const gameId = s.gameId
@@ -38,8 +46,12 @@ export function returnToLobby() {
       void cmds.quitMatch(gameId)
     }
   }
+  if (s.watchingTable) {
+    void cmds.leaveTable(s.watchingTable.tableId)
+  }
   setState({
     phase: 'lobby',
+    watchingTable: null,
     game: null,
     gameId: null,
     gameChatId: null,

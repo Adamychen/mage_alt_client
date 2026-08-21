@@ -1,4 +1,4 @@
-import type { ChatMessageEvent, DeckCardEntry, DeckJson, GameEndInfo, GameView, LobbyEnvelope } from '../net/types'
+import type { ChatMessageEvent, DeckCardEntry, DeckJson, GameEndInfo, GameView, LobbyEnvelope, TableView } from '../net/types'
 import type { FeedbackPrompt } from '../game/feedback'
 import type { PhaseStops } from '../net/commands'
 import { loadConn, type ConnectionInfo } from './persistence'
@@ -38,7 +38,7 @@ export interface SideboardScreenState {
 }
 
 export interface AppState {
-  phase: 'idle' | 'connecting' | 'lobby' | 'game'
+  phase: 'idle' | 'connecting' | 'lobby' | 'spectating_pending' | 'game'
   conn: ConnectionInfo | null
   wsUrl: string | null
   connecting: boolean
@@ -46,6 +46,7 @@ export interface AppState {
   lobby: LobbyEnvelope | null
   roomChatId: string | null
   chatMessages: ChatMessageEvent[]
+  watchingTable: TableView | null
   game: GameView | null
   gameId: string | null
   gameChatId: string | null
@@ -76,6 +77,7 @@ export const initialState: AppState = {
   lobby: null,
   roomChatId: null,
   chatMessages: [],
+  watchingTable: null,
   game: null,
   gameId: null,
   gameChatId: null,

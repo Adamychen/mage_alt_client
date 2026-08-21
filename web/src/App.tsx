@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { usePhase, useStore, loadConn, doConnect } from './state/store'
 import LoginScreen from './lobby/LoginScreen'
 import LobbyScreen from './lobby/LobbyScreen'
+import SpectatorStagingScreen from './lobby/SpectatorStagingScreen'
 import GameScreen from './game/GameScreen'
 import GameEndDialog from './game/GameEndDialog'
 
@@ -37,6 +38,8 @@ export default function App() {
       {reconnecting && <div className="reconnect-banner">Conexión con el proxy perdida — reconectando…</div>}
       {phase === 'lobby' ? (
         <LobbyScreen />
+      ) : phase === 'spectating_pending' ? (
+        <SpectatorStagingScreen />
       ) : phase === 'game' ? (
         <GameScreen />
       ) : phase === 'connecting' ? (

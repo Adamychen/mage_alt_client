@@ -25,9 +25,18 @@ export function handleMessage(msg: ProxyMessage) {
       setState({ error: msg.message })
       addLog('error', msg.message)
       break
-    case 'lobby':
-      setState({ lobby: msg })
+    case 'lobby': {
+      const s = getState()
+      let updatedWatching = s.watchingTable
+      if (s.phase === 'spectating_pending' && s.watchingTable) {
+        const found = msg.tables.find((t) => t.tableId === s.watchingTable?.tableId)
+        if (found) {
+          updatedWatching = found
+        }
+      }
+      setState({ lobby: msg, watchingTable: updatedWatching })
       break
+    }
     case 'result':
       if (!msg.ok && msg.action !== 'disconnect') {
         const detail = msg.error ?? (typeof msg.data === 'string' ? msg.data : undefined)
@@ -51,7 +60,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
 
   const embeddedGame = gameViewFrom(data)
   if (embeddedGame && !isOlderThanCurrentGame(embeddedGame, objectId, s.game, s.gameId)) {
-    setState({ game: embeddedGame, phase: 'game', gameId: objectId ?? s.gameId })
+    setState({ game: embeddedGame, phase: 'game', watchingTable: null, gameId: objectId ?? s.gameId })
   }
   if (method !== 'GAME_UPDATE' && method !== 'GAME_UPDATE_AND_INFORM') {
     setState({ events: [...s.events, { method, time: Date.now() }].slice(-12) })
@@ -81,7 +90,7 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       const d = data as { gameId?: string; tableName?: string } | null
       const isNewGame = !!d?.gameId && d.gameId !== s.gameId
       if (d?.gameId) saveActiveGame(d.gameId)
-      setState({ phase: 'game', gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null, sideboardScreen: null })
+      setState({ phase: 'game', watchingTable: null, gameId: d?.gameId ?? null, gameChatId: null, gameEnd: null, sideboardScreen: null })
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
       if (isNewGame) {
         void cmds.joinGame(d!.gameId!)

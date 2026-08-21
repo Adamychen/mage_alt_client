@@ -1,0 +1,405 @@
+.spectator-staging-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: radial-gradient(circle at 50% 20%, #151936 0%, #080a18 70%);
+  color: #e8eaf6;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  overflow: hidden;
+}
+
+/* Top Header */
+.staging-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: rgba(10, 13, 28, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.staging-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staging-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 208, 112, 0.4);
+  box-shadow: 0 0 10px rgba(255, 208, 112, 0.2);
+}
+
+.staging-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.staging-main-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  background: linear-gradient(135deg, #ffffff 0%, #ffd070 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.staging-subtitle {
+  font-size: 11.5px;
+  color: #8c96c0;
+  font-weight: 600;
+}
+
+.staging-leave-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(40, 20, 30, 0.6);
+  border: 1px solid rgba(255, 80, 80, 0.35);
+  color: #ff9999;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.staging-leave-btn:hover {
+  background: rgba(60, 20, 30, 0.9);
+  border-color: #ff5252;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 80, 80, 0.3);
+}
+
+/* Main Staging Grid */
+.staging-main-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  padding: 24px;
+  min-height: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .staging-main-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+/* Arena Card */
+.staging-arena-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: rgba(14, 18, 38, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.staging-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 16px;
+}
+
+.staging-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.staging-status-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(124, 92, 255, 0.2);
+  color: #d1c4ff;
+  border: 1px solid rgba(124, 92, 255, 0.4);
+  letter-spacing: 0.05em;
+}
+
+.staging-table-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: var(--font-display);
+}
+
+.staging-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staging-tag {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b0badc;
+}
+
+.staging-tag.tag-game {
+  background: rgba(99, 230, 190, 0.1);
+  color: #63e6be;
+  border-color: rgba(99, 230, 190, 0.3);
+}
+
+.staging-tag.tag-deck {
+  background: rgba(255, 208, 112, 0.1);
+  color: #ffd070;
+  border-color: rgba(255, 208, 112, 0.3);
+}
+
+.staging-tag.tag-rated {
+  background: rgba(255, 176, 58, 0.15);
+  color: #ffb03a;
+  border-color: rgba(255, 176, 58, 0.4);
+}
+
+.staging-tag.tag-private {
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff8080;
+  border-color: rgba(255, 100, 100, 0.3);
+}
+
+/* Roster Area */
+.staging-roster-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+/* 1v1 Duel Layout */
+.staging-duel-roster {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  gap: 16px;
+}
+
+.staging-player-card {
+  flex: 1;
+  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px;
+  border-radius: 12px;
+  background: rgba(20, 26, 54, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.staging-player-card.occupied {
+  border-color: rgba(99, 230, 190, 0.4);
+  background: radial-gradient(circle at 50% 30%, rgba(30, 42, 80, 0.8), rgba(16, 22, 46, 0.9));
+}
+
+.staging-player-card.empty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.7;
+}
+
+.player-avatar-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2b356c 0%, #151930 100%);
+  border: 2px solid #ffd070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 0 16px rgba(255, 208, 112, 0.25);
+}
+
+.staging-player-card.empty .player-avatar-circle {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.player-card-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.player-crown {
+  font-size: 14px;
+}
+
+.player-status-tag {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.player-status-tag.ready {
+  background: rgba(99, 230, 190, 0.15);
+  color: #63e6be;
+}
+
+.player-status-tag.waiting {
+  background: rgba(255, 255, 255, 0.06);
+  color: #8c96ba;
+}
+
+/* VS Emblem */
+.staging-vs-emblem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.vs-text {
+  font-size: 24px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  background: linear-gradient(135deg, #ff5c6c 0%, #ffd070 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 12px rgba(255, 92, 108, 0.5));
+}
+
+.vs-line {
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Multiplayer Pod Layout */
+.staging-multi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+/* Pulse Banner */
+.staging-pulse-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(124, 92, 255, 0.12);
+  border: 1px solid rgba(124, 92, 255, 0.35);
+  box-shadow: 0 0 16px rgba(124, 92, 255, 0.15);
+}
+
+.pulse-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid rgba(124, 92, 255, 0.3);
+  border-top-color: #ffd070;
+  animation: stagingSpin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes stagingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pulse-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pulse-headline {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.pulse-subline {
+  font-size: 12px;
+  color: #a2acd4;
+}
+
+/* Chat Card */
+.staging-chat-card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 18, 38, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.staging-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.staging-chat-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #c8cae6;
+}
+
+.chat-hint {
+  font-size: 11.5px;
+  color: #8c96c0;
+}
+
+.staging-chat-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 12px;
+}

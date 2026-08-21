@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { reset, useLobby, useStore } from '../state/store'
+import { reset, useLobby, useStore, setWatchingTable } from '../state/store'
 import * as cmds from '../net/commands'
 import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
@@ -189,8 +189,16 @@ export default function LobbyScreen() {
   const watchTable = async (t: TableView) => {
     setBusyTable(t.tableId)
     try {
+      const isPlaying = t.tableState === 'DUELING' || t.tableState === 'SIDEBOARDING'
       const res = await withTimeout(cmds.watchTable(t.tableId), 15000, 'watchTable')
-      setNotice(res.ok ? 'Conectado como espectador' : `watchTable: ${res.error}`)
+      if (res.ok) {
+        if (!isPlaying) {
+          setWatchingTable(t)
+        }
+        setNotice('Conectado como espectador')
+      } else {
+        setNotice(`watchTable: ${res.error}`)
+      }
     } catch (e) {
       setNotice((e as Error).message)
     } finally {
