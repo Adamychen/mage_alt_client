@@ -43,28 +43,31 @@
 .player-avatar {
   position: relative;
   flex-shrink: 0;
-}
-
-.avatar-frame {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2a3158 0%, #151930 100%);
-  border: 2px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 800;
-  color: #ffffff;
-  font-family: var(--font-display);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.compact .avatar-frame {
+.player-avatar .avatar-image {
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(255, 208, 112, 0.7);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.compact .player-avatar .avatar-image {
   width: 32px;
   height: 32px;
-  font-size: 13px;
+}
+
+.player-avatar-flag {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #0f132a;
+  border-radius: 4px;
+  padding: 1px 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* Glowing priority ring animation around avatar */

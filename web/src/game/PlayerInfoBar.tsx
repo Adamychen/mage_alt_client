@@ -1,4 +1,7 @@
 import type { PlayerView } from '../net/types'
+import { useStore } from '../state/store'
+import AvatarImage from '../lobby/AvatarImage'
+import CountryFlag from '../lobby/CountryFlag'
 import './PlayerInfoBar.css'
 
 interface PlayerInfoBarProps {
@@ -29,6 +32,13 @@ function counterIcon(name: string): string {
 }
 
 export default function PlayerInfoBar({ player, side, compact = false, onClick, isTarget = false }: PlayerInfoBarProps) {
+  const myConn = useStore((s) => s.conn)
+  const rawUserData = player.userData as { avatarId?: number; flagName?: string } | undefined
+  const avatarId =
+    rawUserData?.avatarId ??
+    (player.isHuman ? (player.controlled ? (myConn?.avatarId ?? 10) : 10) : 13)
+  const flagName = rawUserData?.flagName
+
   const hasPriority = !!player.hasPriority
   const hasTimer = (player.priorityTimeLeftSecs != null && player.priorityTimeLeftSecs > 0) || !!player.timerActive
   const isTimeLow = hasTimer && (player.priorityTimeLeftSecs ?? 0) > 0 && (player.priorityTimeLeftSecs ?? 0) <= 30
@@ -50,9 +60,12 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
       role={onClick ? 'button' : undefined}
     >
       <div className={`player-avatar ${hasPriority ? 'avatar-active' : ''}`}>
-        <div className="avatar-frame">
-          {player.name.charAt(0).toUpperCase()}
-        </div>
+        <AvatarImage
+          avatarId={avatarId}
+          username={player.name}
+          size={compact ? 'small' : 'medium'}
+        />
+        {flagName && <CountryFlag flagName={flagName} className="player-avatar-flag" />}
         {hasPriority && <span className="avatar-priority-ring" />}
       </div>
 

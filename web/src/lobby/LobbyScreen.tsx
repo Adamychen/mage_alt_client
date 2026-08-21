@@ -472,14 +472,21 @@ export default function LobbyScreen() {
                           {t.seats.map((s, idx) => {
                             const isOwner = t.controllerName && s.playerName === t.controllerName
                             const isHuman = !s.playerType || s.playerType === 'HUMAN'
+                            const seatAvatarId = isHuman
+                              ? s.playerName === conn?.username
+                                ? conn?.avatarId
+                                : 10
+                              : 13
                             return (
                               <div
                                 key={idx}
                                 className={`seat-badge ${s.playerName ? 'occupied' : 'empty'} ${isOwner ? 'is-owner' : ''}`}
                               >
-                                <span className="seat-icon">
-                                  {s.playerName ? (isHuman ? '👤' : '🤖') : '⭕'}
-                                </span>
+                                {s.playerName ? (
+                                  <AvatarImage avatarId={seatAvatarId} username={s.playerName} size="small" />
+                                ) : (
+                                  <span className="seat-icon">⭕</span>
+                                )}
                                 {s.flagName && <CountryFlag flagName={s.flagName} className="seat-flag" />}
                                 <span className="seat-name">
                                   {s.playerName || 'Plaza vacía'}
