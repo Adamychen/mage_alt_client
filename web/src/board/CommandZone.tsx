@@ -36,17 +36,39 @@ function parseCommandList(
     if (seenIds.has(id)) return
     seenIds.add(id)
 
+    const nameLower = String(card.name ?? '').toLowerCase()
+    const displayNameLower = String(card.displayName ?? '').toLowerCase()
+
+    // 1. Filter out XMage internal system helper cards (Day/Night, internal rule trackers)
+    const isInternalHelper =
+      nameLower.startsWith('helper emblem') ||
+      displayNameLower.startsWith('helper emblem') ||
+      nameLower === 'helper emblem' ||
+      displayNameLower === 'helper emblem' ||
+      card.mageObjectType === 'HELPER' ||
+      card.mageObjectType === 'HELPER_EMBLEM' ||
+      card.isHelperCard === true ||
+      (Array.isArray(card.rules) && card.rules.some((r: string) => r.toLowerCase().includes('day or night') && r.toLowerCase().includes('neither day nor night')))
+
+    if (isInternalHelper) {
+      return
+    }
+
+    // 2. Real Planeswalker Emblems (e.g. "Emblem - Teferi", "Emblem - Chandra")
     const isEmblem =
       card.mageObjectType === 'EMBLEM' ||
-      card.isAbility ||
-      String(card.name ?? '').toLowerCase().includes('emblem') ||
+      nameLower.startsWith('emblem -') ||
+      nameLower.startsWith('emblem:') ||
+      nameLower.startsWith('emblem ') ||
       (card.cardTypes && card.cardTypes.some((t: string) => String(t).toLowerCase() === 'emblem'))
 
+    // 3. Companion Cards (e.g. Lurrus, Yorion, Jegantha)
     const isCompanion =
       card.mageObjectType === 'COMPANION' ||
       card.isCompanion === true ||
       (Array.isArray(card.rules) && card.rules.some((r: string) => String(r).toLowerCase().includes('companion')))
 
+    // 4. Commanders (default if in command zone and not emblem or companion)
     const isCommander =
       (!isEmblem && !isCompanion) ||
       card.mageObjectType === 'COMMANDER' ||
@@ -64,14 +86,14 @@ function parseCommandList(
     })
   }
 
-  // 1. Process player.commandList
+  // 1. Process player.commandList (Commanders & Companions in command zone)
   if (Array.isArray(commandList)) {
     commandList.forEach((c) => processCard(c))
   } else if (commandList && typeof commandList === 'object') {
     Object.entries(commandList).forEach(([id, c]) => processCard(c, id))
   }
 
-  // 2. Process helperCards (Emblems / Dungeons)
+  // 2. Process helperCards (Real player emblems)
   if (helperCards && typeof helperCards === 'object') {
     Object.entries(helperCards).forEach(([id, c]) => processCard(c, id))
   }

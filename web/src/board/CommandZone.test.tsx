@@ -171,4 +171,26 @@ describe('CommandZone', () => {
     expect(container.querySelector('.emblems-wrap')).not.toBeNull()
     expect(getByText('2')).not.toBeNull() // 2 emblems count badge
   })
+
+  it('filters out XMage internal system helper emblems like Day/Night trackers', () => {
+    const fakePlayer: Partial<PlayerView> = {
+      name: 'Player1',
+      commandList: [],
+      helperCards: {
+        'helper-day-night': {
+          id: 'helper-day-night',
+          name: 'Helper Emblem',
+          displayName: 'Helper Emblem',
+          rules: ["Day or night.\n<br/><hintstart/>It's neither day nor night."],
+          manaValue: 0,
+        },
+      },
+    }
+
+    const { container } = render(
+      <CommandZone player={fakePlayer as PlayerView} side="my" />
+    )
+
+    expect(container.firstChild).toBeNull() // Correctly ignored
+  })
 })
