@@ -154,7 +154,7 @@ export default function GameBoard({
         onHover={handleCardHover}
         targetIds={targetIdSet}
         onResolveClick={onResolveClick}
-        canResolve={!!me?.hasPriority}
+        canResolve={!!me?.hasPriority || !!me?.isActive}
       />
       <TargetingOverlay
         sourceId={targetSourceId}

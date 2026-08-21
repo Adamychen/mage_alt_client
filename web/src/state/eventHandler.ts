@@ -96,12 +96,14 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         const patch: Partial<typeof s> = { playableIds: ids, playableWindow }
         if (method === 'GAME_INIT') {
           patch.gameEnd = null
+          patch.feedback = null
           if (objectId && !fresh.gameChatId) {
             void cmds.getGameChatId(objectId).then((cid) => setState({ gameChatId: cid ?? null }))
           }
         }
-        if (method === 'GAME_SELECT' && s.feedback?.method === 'GAME_TARGET') {
-          patch.feedback = null
+        if (method === 'GAME_SELECT') {
+          const selectFeedback = parseFeedback(method, objectId ?? s.gameId, data)
+          patch.feedback = selectFeedback ?? null
         }
         const combat = method === 'GAME_SELECT' ? combatFromSelect(data, s.game) : null
         patch.combat = combat

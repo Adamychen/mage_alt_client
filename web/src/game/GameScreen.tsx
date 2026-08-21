@@ -30,6 +30,7 @@ export default function GameScreen() {
   }, [game])
 
   const me = game?.players?.find((p) => p.controlled)
+  const canPass = !!gameId && (!!me?.hasPriority || (!!me?.isActive && (!feedback || feedback.mode === 'combat')))
   const targetIds = feedback?.method === 'GAME_TARGET' ? feedback.options.map((option) => option.id) : []
   const chosenTargetIds = feedback?.method === 'GAME_TARGET' ? (feedback.chosenTargets ?? []) : []
   const targetSourceId = game && feedback?.method === 'GAME_TARGET' ? resolveTargetSourceId(game, feedback.sourceName) : undefined
@@ -89,7 +90,7 @@ export default function GameScreen() {
             />
             Auto-pass
           </label>
-          <button disabled={!me?.hasPriority || !gameId} onClick={() => gameId && void cmds.sendPlayerBoolean(false, gameId)}>
+          <button disabled={!canPass} onClick={() => gameId && void cmds.sendPlayerBoolean(false, gameId)}>
             Pass
           </button>
           <button disabled={!gameId} onClick={() => gameId && void cmds.quitMatch(gameId)}>Quit</button>
