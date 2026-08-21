@@ -1,4 +1,5 @@
 .action-feed-turn-divider {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -26,6 +27,7 @@
 }
 
 .action-feed-system-banner {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,6 +43,7 @@
 }
 
 .action-feed-card {
+  flex-shrink: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -48,10 +51,10 @@
   border-radius: 8px;
   background: rgba(18, 24, 48, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  margin-bottom: 6px;
+  margin-bottom: 0;
   overflow: hidden;
   cursor: pointer;
-  min-height: 48px;
+  min-height: 52px;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 

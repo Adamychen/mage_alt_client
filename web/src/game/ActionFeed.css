@@ -52,9 +52,30 @@
   height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 8px 8px 16px 8px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.action-feed-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.action-feed-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.action-feed-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.action-feed-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 208, 112, 0.5);
 }
 
 .action-feed-empty {

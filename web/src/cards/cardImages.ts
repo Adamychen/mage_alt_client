@@ -94,16 +94,21 @@ export function cardKey(card: CardView): string | null {
   }
 
   // Token with cardNumber=0 — resolve via Scryfall token sets (t-prefixed)
-  if (isToken && set) {
+  if (isToken) {
+    if (!set || set === 'XMAGE') return null
     const name = card.displayName || card.name || ''
     if (!name) return null
-    // Skip XMAGE set (special/helper tokens with no real art)
-    if (set === 'XMAGE') return null
     const tokenSet = 't' + set.toLowerCase()
     // Strip " Token" suffix for Scryfall lookup (e.g. "Goblin Token" → "goblin")
     const stripped = name.replace(/\s+Token$/i, '')
     const slug = stripped.replace(/\s+/g, '-').toLowerCase()
     return `${tokenSet}/${slug}`
+  }
+
+  // Card with only a name (e.g. from game log feed or action history)
+  const name = card.displayName || card.name
+  if (name && name.trim()) {
+    return `named:${name.trim()}`
   }
 
   return null

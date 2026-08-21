@@ -172,6 +172,11 @@ describe('ability image and metadata resolution', () => {
     } as unknown as CardView
     expect(cardKey(ability)).toBe('RAV/81')
   })
+
+  it('builds named Scryfall key for cards with only a name (e.g. from action feed)', () => {
+    const feedCard = { name: 'Lightning Bolt' } as CardView
+    expect(cardKey(feedCard)).toBe('named:Lightning Bolt')
+  })
 })
 
 
