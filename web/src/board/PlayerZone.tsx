@@ -1,18 +1,18 @@
 import { useMemo } from 'react'
-import type { PlayerView, CardView, PermanentView } from '../net/types'
-import PlayerInfoBar from '../game/PlayerInfoBar'
-import ResourceBar from '../game/ResourceBar'
+import type { CardsView, PermanentView, PlayerView } from '../net/types'
 import CardSlot from './CardSlot'
 import HandZone from './HandZone'
+import ResourceBar from '../game/ResourceBar'
+import PlayerInfoBar from '../game/PlayerInfoBar'
 import type { CrossZonePlayable } from './crossZone'
 import './PlayerZone.css'
 
 interface PlayerZoneProps {
   player: PlayerView | undefined
-  hand: Record<string, CardView>
+  hand?: CardsView
   onCardClick?: (id: string) => void
   onHandCardClick?: (id: string) => void
-  onCardHover?: (card: CardView | PermanentView | null, rect?: DOMRect) => void
+  onCardHover?: (card: any, rect?: DOMRect) => void
   targetIds?: Set<string>
   playableIds?: Set<string>
   combatSelectable?: string[]
@@ -21,7 +21,7 @@ interface PlayerZoneProps {
   onPlayCrossZone?: (id: string) => void
 }
 
-function permanentKind(perm: PermanentView): 'creatures' | 'other' | 'lands' {
+function permanentKind(perm: PermanentView): 'creatures' | 'lands' | 'other' {
   const types = perm.cardTypes ?? []
   if (types.some((t) => t === 'Land' || t.toLowerCase() === 'land')) return 'lands'
   if (types.some((t) => t === 'Creature' || t.toLowerCase() === 'creature')) return 'creatures'
@@ -43,10 +43,20 @@ export default function PlayerZone({
 }: PlayerZoneProps) {
   if (!player) return <div className="player-zone empty" />
 
-  const permanents = Object.entries(player.battlefield ?? {})
-  const creatures = permanents.filter(([, p]) => permanentKind(p) === 'creatures')
-  const others = permanents.filter(([, p]) => permanentKind(p) === 'other')
-  const lands = permanents.filter(([, p]) => permanentKind(p) === 'lands')
+  const battlefield = player.battlefield ?? {}
+  const permanents = Object.entries(battlefield)
+
+  // Track attachments to nest them under host permanents
+  const attachedIds = new Set<string>()
+  permanents.forEach(([, p]) => {
+    if (p.attachments && Array.isArray(p.attachments)) {
+      p.attachments.forEach((attId) => attachedIds.add(attId))
+    }
+  })
+
+  const creatures = permanents.filter(([id, p]) => permanentKind(p) === 'creatures' && !attachedIds.has(id))
+  const others = permanents.filter(([id, p]) => permanentKind(p) === 'other' && !attachedIds.has(id))
+  const lands = permanents.filter(([id, p]) => permanentKind(p) === 'lands' && !attachedIds.has(id))
 
   const combatSelectableSet = useMemo(() => new Set(combatSelectable), [combatSelectable])
   const combatChosenSet = useMemo(() => new Set(combatChosen), [combatChosen])
@@ -60,6 +70,47 @@ export default function PlayerZone({
           {creatures.map(([id, perm]) => {
             const isSelectable = combatSelectableSet.has(id)
             const isChosen = combatChosenSet.has(id)
+            const attachments = perm.attachments ?? []
+
+            if (attachments.length > 0) {
+              return (
+                <div key={id} className="card-attachment-group">
+                  <div className="attachments-list">
+                    {attachments.map((attId, ai) => {
+                      const attCard = battlefield[attId]
+                      if (!attCard) return null
+                      return (
+                        <CardSlot
+                          key={attId}
+                          cardId={attId}
+                          card={attCard}
+                          onClick={onCardClick ? () => onCardClick(attId) : undefined}
+                          onHover={onCardHover}
+                          isTarget={targetIds.has(attId)}
+                          isPlayable={playableIds.has(attId)}
+                          className="attachment-subcard"
+                          style={{ top: `${-(ai + 1) * 14}px` }}
+                        />
+                      )
+                    })}
+                  </div>
+                  <CardSlot
+                    cardId={id}
+                    card={perm}
+                    onClick={onCardClick ? () => onCardClick(id) : undefined}
+                    onHover={onCardHover}
+                    isTarget={targetIds.has(id)}
+                    isPlayable={playableIds.has(id) || isSelectable || isChosen}
+                    isChosen={isChosen}
+                    tapped={perm.tapped === true}
+                    showPt
+                    showCounters
+                    showDamage
+                  />
+                </div>
+              )
+            }
+
             return (
               <CardSlot
                 key={id}
@@ -123,7 +174,7 @@ export default function PlayerZone({
           isTarget={targetIds.has(player.playerId)}
         />
         <HandZone
-          cards={hand}
+          cards={hand ?? {}}
           onCardClick={onHandCardClick}
           onHover={onCardHover}
           playableIds={playableIds}

@@ -52,6 +52,7 @@ export default function CardSlot({
   const perm = card as PermanentView
   const counters = card.counters ?? []
   const totalCounters = counters.reduce((a, c) => a + c.count, 0)
+  const hasSummoningSickness = !tapped && perm.summoningSickness === true
 
   return (
     <div
@@ -86,24 +87,52 @@ export default function CardSlot({
         </div>
       )}
 
+      {/* Creature Power / Toughness Badge */}
       {showPt && perm.power && perm.toughness && (
         <div className="pt-badge">{perm.power}/{perm.toughness}</div>
       )}
 
+      {/* Planeswalker Loyalty Badge */}
+      {perm.loyalty && (
+        <div className="loyalty-badge" title={`Lealtad: ${perm.loyalty}`}>
+          <span className="loyalty-icon">🛡️</span>
+          <span className="loyalty-val">{perm.loyalty}</span>
+        </div>
+      )}
+
+      {/* Battle Defense Badge */}
+      {perm.defense && (
+        <div className="defense-badge" title={`Defensa: ${perm.defense}`}>
+          <span className="defense-icon">⚔️</span>
+          <span className="defense-val">{perm.defense}</span>
+        </div>
+      )}
+
+      {/* +1/+1 and generic Counters */}
       {showCounters && totalCounters > 0 && (
         <div className="counter-badge">+{totalCounters}</div>
       )}
 
+      {/* Accumulated Combat Damage */}
       {showDamage && perm.damage && perm.damage > 0 && (
         <div className="damage-badge">{perm.damage}</div>
       )}
 
-      {(perm as PermanentView).copy === true && (
-        <div className="copy-badge">COPIA</div>
+      {/* Summoning Sickness indicator */}
+      {hasSummoningSickness && (
+        <div className="sickness-badge" title="Mareo de invocación (No puede atacar ni girarse este turno)">
+          🌀
+        </div>
       )}
 
-      {((perm as PermanentView).isToken || card.mageObjectType === 'TOKEN') && !(perm as PermanentView).copy && (
-        <div className="token-badge">TOKEN</div>
+      {/* Face-down Special Type Badges (Morph / Manifest / Disguise / Cloak) */}
+      {faceDown && (
+        <div className="facedown-badges">
+          {perm.morphed && <span className="facedown-type-badge morph" title="Metamorfosis">Morph</span>}
+          {perm.manifested && <span className="facedown-type-badge manifest" title="Manifestado">Manifest</span>}
+          {perm.disguised && <span className="facedown-type-badge disguise" title="Disfraz">Disguise</span>}
+          {perm.cloaked && <span className="facedown-type-badge cloak" title="Encubierto">Cloak</span>}
+        </div>
       )}
     </div>
   )

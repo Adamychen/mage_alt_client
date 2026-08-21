@@ -104,6 +104,12 @@
   gap: 2px;
 }
 
+.player-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .player-name {
   font-size: 13px;
   font-weight: 700;
@@ -111,10 +117,26 @@
   letter-spacing: 0.02em;
 }
 
+.match-wins-dots {
+  display: flex;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.win-dot.won {
+  color: #ffd070;
+  text-shadow: 0 0 6px rgba(255, 208, 112, 0.8);
+}
+
+.win-dot.pending {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .player-counters {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .life-counter {
@@ -142,14 +164,67 @@
   to { transform: scale(1.1); text-shadow: 0 0 8px #ff5252; }
 }
 
-.secondary-counter {
+.player-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   padding: 1px 6px;
   border-radius: 4px;
-  background: rgba(99, 230, 190, 0.2);
+  background: rgba(40, 48, 80, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e8eaf6;
+}
+
+.counter-poison {
+  background: rgba(140, 70, 200, 0.25);
+  border-color: rgba(140, 70, 200, 0.6);
+  color: #c77dff;
+}
+
+.counter-energy {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #38bdf8;
+}
+
+.counter-rad {
+  background: rgba(76, 208, 125, 0.25);
+  border-color: rgba(76, 208, 125, 0.6);
+  color: #4cd07d;
+}
+
+/* Priority Timer Clock */
+.player-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(20, 24, 45, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #94a3b8;
+  font-family: var(--font-mono, monospace);
+}
+
+.player-timer-badge.timer-active {
+  border-color: #63e6be;
   color: #63e6be;
-  border: 1px solid rgba(99, 230, 190, 0.4);
+  box-shadow: 0 0 8px rgba(99, 230, 190, 0.3);
+}
+
+.player-timer-badge.timer-low {
+  border-color: #ff5252;
+  color: #ff5252;
+  animation: timerWarning 0.8s infinite alternate;
+}
+
+@keyframes timerWarning {
+  from { opacity: 0.7; }
+  to { opacity: 1; text-shadow: 0 0 6px #ff5252; }
 }
 
 .player-badges {
@@ -160,6 +235,7 @@
 .player-badges .badge {
   font-size: 13px;
   color: #ffd070;
+  filter: drop-shadow(0 0 4px rgba(255, 208, 112, 0.6));
 }
 
 /* Targeting pulse on player */

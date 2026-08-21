@@ -9,17 +9,32 @@ interface PlayerInfoBarProps {
   isTarget?: boolean
 }
 
-function secondaryCounter(player: PlayerView): { label: string; value: number } {
-  const poison = player.counters?.find((c) => c.name.toLowerCase() === 'poison')
-  if (poison) return { label: 'Veneno', value: poison.count }
-  const other = player.counters?.[0]
-  if (other) return { label: other.name, value: other.count }
-  return { label: 'Veneno', value: 0 }
+function formatTimer(seconds: number): string {
+  if (seconds <= 0) return '00:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+function counterIcon(name: string): string {
+  const n = name.toLowerCase()
+  if (n.includes('poison')) return '☠️'
+  if (n.includes('energy')) return '⚡'
+  if (n.includes('rad')) return '☢️'
+  if (n.includes('experience')) return '🎖️'
+  if (n.includes('ticket')) return '🎟️'
+  return '💎'
 }
 
 export default function PlayerInfoBar({ player, side, compact = false, onClick, isTarget = false }: PlayerInfoBarProps) {
-  const secondary = secondaryCounter(player)
   const hasPriority = !!player.hasPriority
+  const hasTimer = player.priorityTimeLeftSecs != null && player.priorityTimeLeftSecs > 0
+  const isTimeLow = hasTimer && (player.priorityTimeLeftSecs ?? 0) <= 30
+
+  // Match wins dots (Bo3 / Bo5)
+  const winsNeeded = player.winsNeeded ?? 0
+  const wins = player.wins ?? 0
+  const showMatchWins = winsNeeded > 1
 
   return (
     <div
@@ -34,27 +49,62 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
         </div>
         {hasPriority && <span className="avatar-priority-ring" />}
       </div>
+
       <div className="player-details">
-        <div className="player-name" data-priority={player.hasPriority || undefined}>
-          {player.name}
+        <div className="player-name-row">
+          <span className="player-name" data-priority={player.hasPriority || undefined}>
+            {player.name}
+          </span>
+          {showMatchWins && (
+            <span className="match-wins-dots" title={`Victorias: ${wins}/${winsNeeded}`}>
+              {Array.from({ length: winsNeeded }).map((_, i) => (
+                <span key={i} className={`win-dot ${i < wins ? 'won' : 'pending'}`}>
+                  {i < wins ? '●' : '○'}
+                </span>
+              ))}
+            </span>
+          )}
         </div>
+
         <div className="player-counters">
           <span className={`counter life-counter ${player.life <= 5 ? 'life-danger' : ''}`} title="Vida">
             <span className="counter-icon">&#9829;</span>
             <span className="life-value">{player.life}</span>
           </span>
-          {secondary.value > 0 && (
-            <span className="counter secondary-counter" title={secondary.label}>
-              {secondary.value}
+
+          {/* Player counters: Poison, Energy, Rads, Experience, Tickets */}
+          {player.counters?.map((c) => (
+            <span
+              key={c.name}
+              className={`counter player-counter-badge counter-${c.name.toLowerCase()}`}
+              title={`${c.name}: ${c.count}`}
+            >
+              <span className="counter-emoji">{counterIcon(c.name)}</span>
+              <span className="counter-val">{c.count}</span>
+            </span>
+          ))}
+
+          {/* Priority Clock Timer */}
+          {hasTimer && (
+            <span
+              className={`player-timer-badge ${isTimeLow ? 'timer-low' : ''} ${hasPriority ? 'timer-active' : ''}`}
+              title="Tiempo restante de prioridad"
+            >
+              <span className="timer-icon">⏱️</span>
+              <span className="timer-value">{formatTimer(player.priorityTimeLeftSecs ?? 0)}</span>
             </span>
           )}
         </div>
       </div>
+
+      {/* Status Badges: Monarch, Initiative, City's Blessing, Designations */}
       {(player.monarch || player.initiative || (player.designationNames && player.designationNames.length > 0)) && (
         <div className="player-badges">
-          {player.monarch && <span className="badge" title="Monarch">&#9819;</span>}
-          {player.initiative && <span className="badge" title="Initiative">&#9876;</span>}
-          {player.designationNames?.[0] && <span className="badge" title={player.designationNames[0]}>&#9733;</span>}
+          {player.monarch && <span className="badge badge-monarch" title="Monarca (Roba carta al final del turno)">👑</span>}
+          {player.initiative && <span className="badge badge-initiative" title="Iniciativa (Te adentras en la Mazmorra)">⚔️</span>}
+          {player.designationNames?.map((d) => (
+            <span key={d} className="badge badge-designation" title={d}>★</span>
+          ))}
         </div>
       )}
     </div>

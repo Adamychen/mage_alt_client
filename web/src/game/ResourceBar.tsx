@@ -4,6 +4,7 @@ import PileOverlay from '../board/PileOverlay'
 import CrossZoneOverlay from '../board/CrossZoneOverlay'
 import { crossZoneCounts } from '../board/crossZone'
 import type { CrossZonePlayable } from '../board/crossZone'
+import CardSlot from '../board/CardSlot'
 import './ResourceBar.css'
 
 const MANA_COLORS: Array<{ key: keyof PlayerView['manaPool']; symbol: string; className: string }> = [
@@ -69,9 +70,17 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
       </div>
 
       <div className="resource-piles">
-        <div className="resource-stack library-stack" title={`Biblioteca: ${player.libraryCount}`}>
-          <img className="stack-back-img" src={CARD_BACK_URL} alt="" draggable={false} />
+        <div
+          className={`resource-stack library-stack ${player.topCard ? 'has-top-revealed' : ''}`}
+          title={player.topCard ? `Biblioteca: ${player.libraryCount} (Top: ${player.topCard.name})` : `Biblioteca: ${player.libraryCount}`}
+        >
+          {player.topCard ? (
+            <CardSlot card={player.topCard} className="library-top-card" />
+          ) : (
+            <img className="stack-back-img" src={CARD_BACK_URL} alt="" draggable={false} />
+          )}
           <span className="stack-count">{player.libraryCount}</span>
+          {player.topCard && <span className="top-card-badge" title="Carta superior revelada">👁️</span>}
         </div>
         <button
           type="button"

@@ -1,82 +1,81 @@
 .card-slot {
-  position: relative;
   width: var(--card-w, 116px);
   height: calc(var(--card-w, 116px) * 1.4);
-  border-radius: 8px;
-  background: #14182e;
-  border: 1.5px solid #2e3560;
-  box-sizing: border-box;
-  flex-shrink: 0;
+  position: relative;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  background: #101322;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+              box-shadow 0.2s ease,
+              border-color 0.2s ease;
   user-select: none;
-  cursor: default;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Clickable */
 .card-slot.clickable {
   cursor: pointer;
 }
 
-/* Hover glow */
-.card-slot.clickable:hover,
-.card-slot:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
-  z-index: 40;
-  border-color: rgba(255, 208, 112, 0.8);
+.card-slot.clickable:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+  z-index: 20;
 }
 
-/* Tapped */
 .card-slot.tapped {
-  transform: rotate(90deg) scale(0.9);
-  transform-origin: center center;
-  margin: 8px 0;
-}
-.card-slot.tapped:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
-  z-index: 40;
-  border-color: rgba(255, 208, 112, 0.8);
-}
-.card-slot.tapped.playable {
-  box-shadow: 0 0 16px 4px rgba(99, 230, 190, 0.75);
-  border-color: #63e6be;
-}
-.card-slot.tapped.chosen {
-  box-shadow: 0 0 18px 6px rgba(255, 100, 100, 0.9), inset 0 0 0 2px #ff6464;
-  border-color: #ff6464;
+  transform: rotate(90deg);
 }
 
-/* Playable glow */
+.card-slot.tapped.clickable:hover {
+  transform: rotate(90deg) translateY(-4px) scale(1.04);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+  z-index: 20;
+}
+
+/* Playable glow (green) */
 .card-slot.playable {
-  box-shadow: 0 0 14px 3px rgba(99, 230, 190, 0.6);
   border-color: #63e6be;
-}
-.card-slot.playable.clickable:hover {
-  box-shadow: 0 0 22px 6px rgba(99, 230, 190, 0.85);
+  box-shadow: 0 0 14px 2px rgba(99, 230, 190, 0.65), 0 4px 12px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
 }
 
-/* Targeting pulse */
+.card-slot.playable:hover {
+  box-shadow: 0 0 20px 4px rgba(99, 230, 190, 0.9), 0 10px 24px rgba(0, 0, 0, 0.7);
+}
+
+/* Targetable glow (orange pulse) */
 @keyframes targetPulse {
-  0%, 100% { box-shadow: 0 0 10px 2px rgba(255, 176, 58, 0.5); }
-  50% { box-shadow: 0 0 22px 6px rgba(255, 176, 58, 0.85); }
+  0%, 100% {
+    box-shadow: 0 0 12px 2px rgba(255, 176, 58, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-color: #ffb03a;
+  }
+  50% {
+    box-shadow: 0 0 24px 6px rgba(255, 176, 58, 0.95), 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-color: #ffffff;
+  }
 }
 
 .card-slot.targetable {
   animation: targetPulse 1.2s ease-in-out infinite;
-  cursor: pointer;
+  cursor: crosshair;
   border-color: #ffb03a;
 }
 
-/* Chosen target / Attacking in combat */
+/* Chosen / Attacking / Blocking glow (crimson / cyan) */
 .card-slot.chosen {
-  box-shadow: 0 0 18px 5px rgba(255, 100, 100, 0.9), inset 0 0 0 2px #ff6464;
-  border-color: #ff6464;
-  animation: none;
+  border-color: #ff4757;
+  box-shadow: 0 0 18px 4px rgba(255, 71, 87, 0.8), 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
-/* Face down */
-.card-slot.face-down {
-  background: #1e2348;
-  border-color: #5a6399;
+.card-slot.tapped.chosen {
+  border-color: #ff4757;
+  box-shadow: 0 0 18px 4px rgba(255, 71, 87, 0.8), 0 4px 12px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
 }
 
 /* Card image */
@@ -85,7 +84,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 7px;
+  pointer-events: none;
 }
 
 /* Placeholder */
@@ -111,6 +110,8 @@
 
 /* Badges */
 .pt-badge,
+.loyalty-badge,
+.defense-badge,
 .counter-badge,
 .damage-badge {
   position: absolute;
@@ -134,6 +135,26 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+.loyalty-badge {
+  background: rgba(20, 24, 50, 0.95);
+  border: 1.5px solid #a855f7;
+  color: #c084fc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.defense-badge {
+  background: rgba(30, 20, 15, 0.95);
+  border: 1.5px solid #f97316;
+  color: #fdba74;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
 .counter-badge {
   bottom: 4px;
   left: 4px;
@@ -151,6 +172,67 @@
   background: rgba(235, 68, 54, 0.95);
   color: #ffffff;
   border: 1px solid rgba(255, 120, 110, 0.8);
+}
+
+/* Summoning Sickness */
+.sickness-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 14px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8));
+  animation: sicknessFloat 2s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 5;
+}
+
+@keyframes sicknessFloat {
+  from { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+  to { transform: translateY(-3px) rotate(15deg); opacity: 1; }
+}
+
+/* Face-down Special Type Badges */
+.facedown-badges {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: flex;
+  gap: 3px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.facedown-type-badge {
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(18, 22, 42, 0.9);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.facedown-type-badge.morph {
+  border-color: #a855f7;
+  color: #c084fc;
+}
+
+.facedown-type-badge.manifest {
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.facedown-type-badge.disguise {
+  border-color: #fb923c;
+  color: #fb923c;
+}
+
+.facedown-type-badge.cloak {
+  border-color: #4cd07d;
+  color: #4cd07d;
 }
 
 .copy-badge {
@@ -183,4 +265,37 @@
   border: 1px solid rgba(255, 208, 112, 0.8);
   z-index: 5;
   pointer-events: none;
+}
+
+/* Card Attachment Group (Auras & Equipment attached to host creature) */
+.card-attachment-group {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.attachments-list {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.attachment-subcard {
+  position: absolute !important;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: auto;
+  opacity: 0.85;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.6);
+  border-bottom: 2px solid rgba(255, 208, 112, 0.6);
+  transition: transform 0.2s ease, opacity 0.2s ease, z-index 0.2s ease;
+}
+
+.attachment-subcard:hover {
+  opacity: 1;
+  z-index: 30;
+  transform: translateY(-8px) scale(1.05) !important;
 }
