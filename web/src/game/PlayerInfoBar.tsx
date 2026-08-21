@@ -28,13 +28,13 @@ function counterIcon(name: string): string {
 
 export default function PlayerInfoBar({ player, side, compact = false, onClick, isTarget = false }: PlayerInfoBarProps) {
   const hasPriority = !!player.hasPriority
-  const hasTimer = player.priorityTimeLeftSecs != null && player.priorityTimeLeftSecs > 0
-  const isTimeLow = hasTimer && (player.priorityTimeLeftSecs ?? 0) <= 30
+  const hasTimer = (player.priorityTimeLeftSecs != null && player.priorityTimeLeftSecs > 0) || !!player.timerActive
+  const isTimeLow = hasTimer && (player.priorityTimeLeftSecs ?? 0) > 0 && (player.priorityTimeLeftSecs ?? 0) <= 30
 
-  // Match wins dots (Bo3 / Bo5)
-  const winsNeeded = player.winsNeeded ?? 0
+  // Match wins dots (Bo1 / Bo3 / Bo5)
+  const winsNeeded = player.winsNeeded ?? (player.wins ? player.wins : 0)
   const wins = player.wins ?? 0
-  const showMatchWins = winsNeeded > 1
+  const showMatchWins = winsNeeded >= 1 || wins > 0
 
   return (
     <div

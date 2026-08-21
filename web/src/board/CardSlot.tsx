@@ -52,7 +52,8 @@ export default function CardSlot({
   const perm = card as PermanentView
   const counters = card.counters ?? []
   const totalCounters = counters.reduce((a, c) => a + c.count, 0)
-  const hasSummoningSickness = !tapped && perm.summoningSickness === true
+  const isCreature = (perm.cardTypes ?? []).some((t) => t === 'Creature' || t.toLowerCase() === 'creature') || (perm.power != null && perm.toughness != null)
+  const hasSummoningSickness = isCreature && !tapped && perm.summoningSickness === true
 
   return (
     <div
