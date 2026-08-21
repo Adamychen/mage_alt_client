@@ -44,20 +44,24 @@ export default function CombatArrowsOverlay({
     const newArrows: ArrowItem[] = []
 
     const getCenter = (id: string): { x: number; y: number } | null => {
-      const cardEl = boardEl.querySelector(`[data-card-id="${id}"]`)
+      const cardEl = boardEl.querySelector(`[data-card-id="${id}"]`) || document.querySelector(`[data-card-id="${id}"]`)
       if (cardEl) {
         const rect = cardEl.getBoundingClientRect()
-        return {
-          x: rect.left + rect.width / 2 - boardRect.left,
-          y: rect.top + rect.height / 2 - boardRect.top,
+        if (rect.width > 0 && rect.height > 0) {
+          return {
+            x: rect.left + rect.width / 2 - boardRect.left,
+            y: rect.top + rect.height / 2 - boardRect.top,
+          }
         }
       }
-      const playerEl = boardEl.querySelector(`[data-player-id="${id}"]`)
+      const playerEl = boardEl.querySelector(`[data-player-id="${id}"]`) || document.querySelector(`[data-player-id="${id}"]`)
       if (playerEl) {
         const rect = playerEl.getBoundingClientRect()
-        return {
-          x: rect.left + rect.width / 2 - boardRect.left,
-          y: rect.top + rect.height / 2 - boardRect.top,
+        if (rect.width > 0 && rect.height > 0) {
+          return {
+            x: rect.left + rect.width / 2 - boardRect.left,
+            y: rect.top + rect.height / 2 - boardRect.top,
+          }
         }
       }
       return null
@@ -172,7 +176,8 @@ export default function CombatArrowsOverlay({
         const sourceCenter = getCenter(stackId)
         if (!sourceCenter) return
 
-        const targets = (stackCard as any).targets ?? (stackCard as any).targetIds ?? (stackCard as any).chosenTargets ?? []
+        const cardObj = stackCard as unknown as Record<string, unknown>
+        const targets = cardObj.targets ?? cardObj.targetIds ?? cardObj.chosenTargets ?? []
         const targetList: string[] = Array.isArray(targets)
           ? targets.map((t: any) => typeof t === 'string' ? t : t?.id).filter(Boolean)
           : typeof targets === 'object' && targets !== null

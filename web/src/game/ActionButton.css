@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 6px 10px;
   flex-shrink: 0;
   background: #0a0d1a;
   border-top: 1px solid #1e2444;
@@ -11,12 +11,12 @@
 .big-action-btn {
   position: relative;
   width: 100%;
-  min-height: 46px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
-  border-radius: 10px;
+  padding: 6px 12px;
+  border-radius: 9px;
   border: 1.5px solid transparent;
   cursor: pointer;
   user-select: none;

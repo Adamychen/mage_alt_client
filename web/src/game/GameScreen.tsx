@@ -11,6 +11,7 @@ import PhaseBar from './PhaseBar'
 import ActionButton from './ActionButton'
 import ActionFeed from './ActionFeed'
 import StackZone from '../board/StackZone'
+import CombatArrowsOverlay from '../board/CombatArrowsOverlay'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
 import './GameScreen.css'
@@ -22,6 +23,7 @@ export default function GameScreen() {
   const feedback = useStore((s) => s.feedback)
   const playableIds = useStore((s) => s.playableIds)
   const combat = useStore((s) => s.combat)
+  const gameBodyRef = useRef<HTMLDivElement>(null)
   const [rightTab, setRightTab] = useState<'stack' | 'log' | 'chat'>('log')
   const [busy, setBusy] = useState(false)
   const stackCount = Object.keys(game?.stack ?? {}).length
@@ -165,7 +167,7 @@ export default function GameScreen() {
           </button>
         </div>
       </header>
-      <div className="game-body">
+      <div className="game-body" ref={gameBodyRef}>
         <Sidebar />
         <div className="board-wrap">
           <GameBoard
@@ -236,6 +238,14 @@ export default function GameScreen() {
             busy={busy}
           />
         </div>
+        <CombatArrowsOverlay
+          game={game}
+          boardRef={gameBodyRef}
+          targetSourceId={targetSourceId}
+          chosenTargetIds={chosenTargetIds}
+          combatChosen={combat?.chosen ?? []}
+          combatMode={combat?.mode ?? null}
+        />
       </div>
       <FeedbackDialog />
       <SideboardScreen />

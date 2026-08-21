@@ -3,7 +3,6 @@ import type { CardView, GameView, PermanentView, PlayerView } from '../net/types
 import OpponentZone from './OpponentZone'
 import PlayerZone from './PlayerZone'
 import TargetingOverlay from './TargetingOverlay'
-import CombatArrowsOverlay from './CombatArrowsOverlay'
 import FloatingCardPreview from './FloatingCardPreview'
 import { useSceneBridge } from './sceneBridge'
 import type { CrossZonePlayable } from './crossZone'
@@ -224,14 +223,6 @@ export default function GameBoard({
         targetIds={targetIds}
         chosenIds={chosenTargetIds}
         cards={allTargetCards}
-      />
-      <CombatArrowsOverlay
-        game={game}
-        boardRef={boardRef}
-        targetSourceId={targetSourceId}
-        chosenTargetIds={chosenTargetIds}
-        combatChosen={combatChosen}
-        combatMode={combatMode}
       />
       <FloatingCardPreview
         card={floatingCard}

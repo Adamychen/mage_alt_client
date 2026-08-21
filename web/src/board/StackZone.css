@@ -6,10 +6,10 @@
   pointer-events: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
   overflow-y: auto;
-  padding: 12px 14px;
+  padding: 8px 10px;
   background: transparent;
   box-sizing: border-box;
 }
@@ -77,31 +77,36 @@
 .stack-items-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
   width: 100%;
 }
 
-/* Top item container */
-.stack-item--top {
+.stack-card-entry {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  position: relative;
+  transition: transform 0.15s ease;
 }
 
-.stack-top-badge-row {
-  width: 100%;
+.stack-card-badge-row {
+  width: 226px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
 }
 
-.stack-top-indicator {
+.stack-pos-indicator {
   font-size: 10px;
   font-weight: 700;
-  color: #63e6be;
+  color: #94a3b8;
   letter-spacing: 0.02em;
+}
+
+.stack-pos-indicator.top {
+  color: #63e6be;
 }
 
 .stack-type-badge {
@@ -117,7 +122,6 @@
   white-space: nowrap;
 }
 
-/* Top card sizing */
 .stack-spell-wrapper {
   display: flex;
   flex-direction: column;
@@ -125,26 +129,31 @@
   width: 100%;
 }
 
-.stack-zone .stack-top-card {
+.stack-zone .stack-top-card,
+.stack-zone .stack-entry-card {
   position: relative;
-  width: 230px;
-  height: calc(230px * 1.38);
+  width: 226px;
+  height: calc(226px * 1.38);
   border-radius: 9px;
   z-index: 2;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
-.stack-zone .stack-top-card.has-resolve-btn {
+.stack-zone .stack-top-card.has-resolve-btn,
+.stack-zone .stack-entry-card.has-resolve-btn {
   border-radius: 9px 9px 0 0;
 }
 
-.stack-zone .stack-top-card:hover {
-  transform: none !important;
-  box-shadow: 0 0 16px rgba(120, 160, 255, 0.45) !important;
+.stack-zone .stack-top-card:hover,
+.stack-zone .stack-entry-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(120, 160, 255, 0.55) !important;
 }
 
-/* Formatted rules box for spells on the stack */
+/* Formatted rules box for spells & abilities on the stack */
 .stack-card-rules-box {
-  width: 230px;
+  width: 226px;
   background: rgba(18, 22, 42, 0.96);
   border: 1px solid rgba(130, 160, 230, 0.35);
   border-top: none;
@@ -154,7 +163,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
@@ -196,92 +205,10 @@
   word-break: break-word;
 }
 
-/* Arena-style ability card capsule */
-.stack-ability-card {
-  width: 230px;
-  height: auto;
-  min-height: 240px;
-  background: linear-gradient(145deg, rgba(28, 32, 54, 0.96) 0%, rgba(16, 20, 36, 0.98) 100%);
-  border: 1.5px solid rgba(130, 160, 230, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 16px rgba(80, 120, 220, 0.15);
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  box-sizing: border-box;
-  border-radius: 9px;
-}
-
-.stack-ability-card.has-resolve-btn {
-  border-radius: 9px 9px 0 0;
-}
-
-.ability-card-header {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-}
-
-.ability-card-badge {
-  font-size: 10px;
-  font-weight: 700;
-  color: #ffca58;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.ability-card-source {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ability-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-}
-
-.ability-card-thumb-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  max-height: 105px;
-  overflow: hidden;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #0d101d;
-}
-
-.ability-card-thumb {
-  --card-w: 80px !important;
-  transform: scale(0.95);
-}
-
-.ability-card-text {
-  font-size: 12px;
-  line-height: 1.45;
-  color: #d8ddf0;
-  overflow-y: auto;
-  flex: 1;
-  max-height: 220px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  word-break: break-word;
-}
-
 .stack-resolve-btn {
   display: block;
-  width: 230px;
-  padding: 9px 0;
+  width: 226px;
+  padding: 8px 0;
   background: #1c6b50;
   border: 1px solid rgba(99, 230, 190, 0.4);
   border-top: none;
@@ -299,90 +226,4 @@
 
 .stack-resolve-btn:hover {
   background: #238564;
-}
-
-/* Underlying items (cards/abilities placed earlier on the stack) */
-.stack-item--underlying {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 8px;
-  background: rgba(22, 26, 46, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  box-sizing: border-box;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-
-.stack-item--underlying:hover {
-  background: rgba(32, 38, 68, 0.98);
-  border-color: rgba(130, 160, 230, 0.6);
-  transform: translateX(-4px);
-}
-
-.underlying-thumb-wrap {
-  width: 36px;
-  height: 50px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: #0d1020;
-}
-
-.underlying-thumb {
-  --card-w: 36px !important;
-  height: 50px !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.underlying-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  overflow: hidden;
-}
-
-.underlying-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.underlying-type {
-  font-size: 9px;
-  color: #ffca58;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.underlying-pos {
-  font-size: 9px;
-  color: #7c84a8;
-  font-weight: 700;
-}
-
-.underlying-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.underlying-rule-preview {
-  font-size: 10.5px;
-  line-height: 1.35;
-  color: #9aa2c8;
-  max-height: 38px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }

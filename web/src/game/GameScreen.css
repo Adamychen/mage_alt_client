@@ -92,8 +92,9 @@
 }
 
 .game-body {
+  position: relative;
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) 330px;
+  grid-template-columns: 64px minmax(0, 1fr) 250px;
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
