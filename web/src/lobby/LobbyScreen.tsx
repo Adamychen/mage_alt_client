@@ -297,6 +297,15 @@ export default function LobbyScreen() {
           </button>
           <button
             type="button"
+            className="nav-create-table-btn hero-create-btn"
+            onClick={() => setShowCreate(true)}
+            title="Crear una nueva partida o torneo"
+          >
+            <span className="btn-icon">➕</span>
+            <span>Nueva mesa</span>
+          </button>
+          <button
+            type="button"
             className={`nav-tab-btn ${activeTab === 'decks' ? 'active' : ''}`}
             onClick={() => setActiveTab('decks')}
           >
@@ -360,21 +369,6 @@ export default function LobbyScreen() {
       <div className="lobby-body-container">
         {activeTab === 'tables' && (
           <div className="lobby-tables-view">
-            {/* Hero Quick Action Bar */}
-            <div className="tables-hero-bar">
-              <div className="hero-left-actions">
-                <button className="primary hero-create-btn" onClick={() => setShowCreate(true)}>
-                  <span className="btn-icon">➕</span>
-                  <span>Nueva mesa</span>
-                </button>
-              </div>
-
-              <div className="hero-deck-badge" title={`Mazo activo para unirse a partidas: ${myDeck?.name ?? 'Mage Web bolt'}`}>
-                <span className="hero-deck-label">Mazo equipado:</span>
-                <span className="hero-deck-name">🃏 {myDeck?.name ?? 'Mage Web bolt'}</span>
-              </div>
-            </div>
-
             {/* Modern Full Table Filter Bar */}
             <TableFilterBar
               tables={tables}
@@ -386,13 +380,19 @@ export default function LobbyScreen() {
             {/* Tables Grid Section */}
             <section className="panel tables-panel">
               <div className="tables-panel-header">
-                <h2>
-                  Mesas ({filteredTables.length}
-                  {filteredTables.length !== tables.length ? ` de ${tables.length}` : ''})
-                </h2>
-                <span className="tables-deck-hint">
-                  Mostrando partidas activas y en espera
-                </span>
+                <div className="tables-header-title-row">
+                  <h2>
+                    Mesas ({filteredTables.length}
+                    {filteredTables.length !== tables.length ? ` de ${tables.length}` : ''})
+                  </h2>
+                  <span className="tables-deck-hint">
+                    Mostrando partidas activas y en espera
+                  </span>
+                </div>
+                <div className="hero-deck-badge" title={`Mazo activo para unirse a partidas: ${myDeck?.name ?? 'Mage Web bolt'}`}>
+                  <span className="hero-deck-label">Mazo equipado:</span>
+                  <span className="hero-deck-name">🃏 {myDeck?.name ?? 'Mage Web bolt'}</span>
+                </div>
               </div>
 
               <div className="tables-list">

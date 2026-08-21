@@ -243,61 +243,32 @@
   min-height: 0;
 }
 
-/* Tables Hero Quick Action Bar */
-.tables-hero-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.hero-left-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.hero-create-btn {
-  display: flex;
+/* Nav Create Table Button (in top bar next to Mesas) */
+.nav-create-table-btn {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 20px;
-  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 800;
   background: linear-gradient(135deg, #1c6b50 0%, #17543f 100%);
   border: 1.5px solid rgba(99, 230, 190, 0.6);
-  box-shadow: 0 4px 16px rgba(28, 107, 80, 0.4);
-}
-
-.hero-create-btn:hover {
-  background: linear-gradient(135deg, #248262 0%, #1e6d52 100%);
-  box-shadow: 0 6px 20px rgba(99, 230, 190, 0.45);
-}
-
-.hero-demo-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 18px;
-  font-size: 13.5px;
-  font-weight: 700;
-  border-radius: 8px;
-  background: rgba(30, 36, 72, 0.8);
-  border: 1px solid rgba(124, 92, 255, 0.4);
-  color: #d1c4ff;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.hero-demo-btn:hover:not(:disabled) {
-  background: rgba(42, 50, 100, 0.9);
-  border-color: #7c5cff;
   color: #ffffff;
-  box-shadow: 0 0 14px rgba(124, 92, 255, 0.35);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(28, 107, 80, 0.4);
+  transition: all 0.18s ease;
+  margin: 0 6px 0 2px;
+}
+
+.nav-create-table-btn:hover {
+  background: linear-gradient(135deg, #248262 0%, #1e6d52 100%);
+  box-shadow: 0 4px 14px rgba(99, 230, 190, 0.5);
+  transform: translateY(-1px);
 }
 
 .btn-icon {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .hero-deck-badge {
@@ -305,19 +276,19 @@
   align-items: center;
   gap: 8px;
   background: rgba(14, 18, 38, 0.7);
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .hero-deck-label {
-  font-size: 11.5px;
+  font-size: 11px;
   color: #8c96ba;
   font-weight: 600;
 }
 
 .hero-deck-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #ffd070;
 }
@@ -343,6 +314,13 @@
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 8px;
+  gap: 12px;
+}
+
+.tables-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .tables-panel h2 {
