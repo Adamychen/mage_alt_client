@@ -64,6 +64,49 @@ export default function PlayerZone({
   const combatSelectableSet = useMemo(() => new Set(combatSelectable), [combatSelectable])
   const combatChosenSet = useMemo(() => new Set(combatChosen), [combatChosen])
 
+  const handCount = player.handCount ?? 0
+  const givenHand = Object.entries(hand ?? {})
+
+  const finalHand = useMemo(() => {
+    if (givenHand.length > 0) {
+      if (givenHand.length >= handCount) {
+        return hand ?? {}
+      }
+      const res: Record<string, CardView> = { ...(hand ?? {}) }
+      const unknownCount = Math.max(0, handCount - givenHand.length)
+      for (let i = 0; i < unknownCount; i++) {
+        const id = `player-unknown-${i}`
+        res[id] = {
+          id,
+          name: '?',
+          manaValue: 0,
+          expansionSetCode: '',
+          cardNumber: '0',
+          faceDown: true,
+        }
+      }
+      return res
+    }
+
+    if (handCount > 0) {
+      const res: Record<string, CardView> = {}
+      for (let i = 0; i < handCount; i++) {
+        const id = `player-unknown-${i}`
+        res[id] = {
+          id,
+          name: '?',
+          manaValue: 0,
+          expansionSetCode: '',
+          cardNumber: '0',
+          faceDown: true,
+        }
+      }
+      return res
+    }
+
+    return {}
+  }, [hand, handCount, givenHand.length])
+
   return (
     <div className="player-zone">
       {/* Row 1: Commander + Creatures */}
@@ -187,7 +230,7 @@ export default function PlayerZone({
           isTarget={targetIds.has(player.playerId)}
         />
         <HandZone
-          cards={hand ?? {}}
+          cards={finalHand}
           onCardClick={onHandCardClick}
           onHover={onCardHover}
           playableIds={playableIds}

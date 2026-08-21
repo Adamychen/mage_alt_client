@@ -39,7 +39,7 @@ function toCardsView(simple: Record<string, { id: string; name?: string }> | und
   return out
 }
 
-function getOpponentRevealedCards(game: GameView | null | undefined, oppPlayerId?: string): Record<string, CardView> {
+function getOpponentRevealedCards(game: GameView | null | undefined, oppPlayerId?: string, oppPlayerName?: string): Record<string, CardView> {
   if (!game) return {}
   const res: Record<string, CardView> = {}
 
@@ -57,6 +57,13 @@ function getOpponentRevealedCards(game: GameView | null | undefined, oppPlayerId
     const oppHand = game.opponentHands[oppPlayerId]
     Object.entries(oppHand).forEach(([id, c]) => {
       res[id] = c as CardView
+    })
+  }
+
+  if (oppPlayerName && game.watchedHands?.[oppPlayerName]) {
+    const watched = game.watchedHands[oppPlayerName]
+    Object.entries(watched).forEach(([id, c]) => {
+      res[id] = { name: c.name ?? '?', manaValue: 0, expansionSetCode: '', cardNumber: '0', parentId: id, id }
     })
   }
 
@@ -88,7 +95,10 @@ export default function GameBoard({
 
   const targetIdSet = useMemo(() => new Set(targetIds), [targetIds])
   const playableIdSet = useMemo(() => new Set(playableIds), [playableIds])
-  const oppRevealed = useMemo(() => getOpponentRevealedCards(game, opp0?.playerId), [game, opp0?.playerId])
+  const oppRevealed = useMemo(
+    () => getOpponentRevealedCards(game, opp0?.playerId, opp0?.name),
+    [game, opp0?.playerId, opp0?.name]
+  )
 
   const boardRef = useRef<HTMLDivElement>(null)
   const [floatingCard, setFloatingCard] = useState<CardView | PermanentView | null>(null)
@@ -130,12 +140,19 @@ export default function GameBoard({
 
   const onHandCardClick = onPlayableClick
 
-  /** Mano boca arriba del jugador de abajo en modo espectador. */
+  /** Mano del jugador de abajo en modo espectador (revelada o vista). */
   const spectatorBottomHand = useMemo(() => {
     if (!isSpectator || !oppBottom) return {}
-    const watched = game?.watchedHands?.[oppBottom.name]
-    return toCardsView(watched)
-  }, [isSpectator, oppBottom, game?.watchedHands])
+    const watched =
+      game?.watchedHands?.[oppBottom.name] ||
+      game?.watchedHands?.[oppBottom.playerId]
+    const oppHand =
+      game?.opponentHands?.[oppBottom.playerId] ||
+      game?.opponentHands?.[oppBottom.name]
+    if (watched) return toCardsView(watched)
+    if (oppHand) return toCardsView(oppHand)
+    return {}
+  }, [isSpectator, oppBottom, game?.watchedHands, game?.opponentHands])
 
   const allTargetCards = useMemo(() => {
     const map: Record<string, { id: string; x: number; y: number }> = {}
