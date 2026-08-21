@@ -45,7 +45,13 @@ function isConnectionEvent(text: string): boolean {
   )
 }
 
-export default function ChatBox() {
+interface ChatBoxProps {
+  prefill?: string
+  onPrefillUsed?: () => void
+  onUserClick?: (username: string) => void
+}
+
+export default function ChatBox({ prefill, onPrefillUsed, onUserClick }: ChatBoxProps = {}) {
   const chatId = useStore((s) => s.roomChatId)
   const messages = useStore((s) => s.chatMessages)
   const [text, setText] = useState('')
@@ -53,6 +59,15 @@ export default function ChatBox() {
   const [hoverCard, setHoverCard] = useState<CardView | null>(null)
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (prefill) {
+      setText(prefill)
+      inputRef.current?.focus()
+      onPrefillUsed?.()
+    }
+  }, [prefill, onPrefillUsed])
 
   const handleHover = useCallback((card: CardView | null, rect?: DOMRect) => {
     setHoverCard(card)
@@ -97,6 +112,11 @@ export default function ChatBox() {
       <div className="chat-list" ref={listRef}>
         {filteredMessages.map((m, i) => {
           const sys = isSystemMessage(m)
+          const isWhisper =
+            m.messageType === 'WHISPER_FROM' ||
+            m.messageType === 'WHISPER_TO' ||
+            m.message.toLowerCase().startsWith('whisper')
+
           if (sys) {
             const parsed = parseSystemEvent(m.message)
             return (
@@ -109,8 +129,15 @@ export default function ChatBox() {
             )
           }
           return (
-            <div key={i} className="chat-msg user-msg">
-              <span className="chat-from">{m.username}:</span>{' '}
+            <div key={i} className={`chat-msg user-msg ${isWhisper ? 'whisper-msg' : ''}`}>
+              <span
+                className="chat-from"
+                onClick={() => onUserClick?.(m.username)}
+                style={{ cursor: 'pointer' }}
+                title={`Ver acciones de usuario para ${m.username}`}
+              >
+                {m.username}:
+              </span>{' '}
               <FormattedText text={m.message} onHover={handleHover} />
             </div>
           )
@@ -125,7 +152,12 @@ export default function ChatBox() {
       />
 
       <form className="chat-input" onSubmit={send}>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mensaje al chat global…" />
+        <input
+          ref={inputRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Mensaje o comando (/w, /card, /history, /ignore, /help)…"
+        />
         <button className="primary" disabled={!chatId} type="submit">
           Enviar
         </button>

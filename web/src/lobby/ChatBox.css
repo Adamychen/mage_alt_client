@@ -78,9 +78,23 @@
   font-style: italic;
 }
 
+.chat-msg.whisper-msg {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: #f3e8ff;
+}
+
 .chat-from {
   color: #ffd070;
   font-weight: 700;
+  transition: color 0.15s ease;
+}
+
+.chat-from:hover {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 .chat-input {

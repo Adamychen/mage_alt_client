@@ -1,0 +1,182 @@
+/* User Action Modal Styles */
+.user-action-dialog {
+  max-width: 480px;
+  width: 92vw;
+  background: rgba(14, 18, 38, 0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(124, 92, 255, 0.25);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-action-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  background: rgba(22, 28, 56, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.user-action-avatar-col {
+  flex-shrink: 0;
+}
+
+.user-action-identity-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-action-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-action-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.user-action-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.user-action-history-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #c4cae8;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+
+.user-action-status-row {
+  font-size: 11px;
+}
+
+.user-status-playing {
+  color: #ffd070;
+  font-weight: 600;
+}
+
+.user-status-idle {
+  color: #63e6be;
+  font-weight: 600;
+}
+
+.user-action-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c4cae8;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  align-self: flex-start;
+  transition: all 0.15s ease;
+}
+
+.user-action-close-btn:hover {
+  background: rgba(255, 71, 87, 0.25);
+  border-color: #ff4757;
+  color: #ffffff;
+}
+
+/* Action Body */
+.user-action-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(22, 28, 56, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.user-action-btn:hover {
+  background: rgba(35, 45, 90, 0.85);
+  border-color: rgba(255, 208, 112, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.user-action-btn.primary {
+  background: linear-gradient(135deg, rgba(255, 208, 112, 0.25) 0%, rgba(200, 140, 40, 0.3) 100%);
+  border-color: #ffd070;
+}
+
+.user-action-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(255, 208, 112, 0.35) 0%, rgba(200, 140, 40, 0.45) 100%);
+  box-shadow: 0 0 14px rgba(255, 208, 112, 0.35);
+}
+
+.user-action-btn.spectate-btn {
+  background: rgba(124, 92, 255, 0.2);
+  border-color: #7c5cff;
+}
+
+.user-action-btn.spectate-btn:hover {
+  background: rgba(124, 92, 255, 0.35);
+  box-shadow: 0 0 14px rgba(124, 92, 255, 0.4);
+}
+
+.user-action-btn.ignore-btn:hover {
+  background: rgba(255, 71, 87, 0.2);
+  border-color: #ff4757;
+}
+
+.user-action-btn.unignore-btn {
+  background: rgba(99, 230, 190, 0.15);
+  border-color: #63e6be;
+}
+
+.action-btn-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.action-btn-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.action-btn-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.action-btn-desc {
+  font-size: 11px;
+  color: #8c96c0;
+}

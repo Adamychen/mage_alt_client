@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { reset, useLobby, useStore, setWatchingTable } from '../state/store'
 import * as cmds from '../net/commands'
-import type { TableView } from '../net/types'
+import type { TableView, UsersView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
 import JoinTableDialog from './JoinTableDialog'
 import ChatBox from './ChatBox'
@@ -10,6 +10,7 @@ import CountryFlag from './CountryFlag'
 import RankBadge from './RankBadge'
 import AvatarImage from './AvatarImage'
 import LeaderboardModal from './LeaderboardModal'
+import UserActionModal from './UserActionModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
@@ -90,9 +91,12 @@ export default function LobbyScreen() {
   const myDeck = useStore((s) => s.myDeck)
   const error = useStore((s) => s.error)
   const events = useStore((s) => s.events)
+  const roomChatId = useStore((s) => s.roomChatId)
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UsersView | null>(null)
+  const [chatPrefill, setChatPrefill] = useState<string>('')
   const [joiningTable, setJoiningTable] = useState<TableView | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
@@ -480,7 +484,30 @@ export default function LobbyScreen() {
                             return (
                               <div
                                 key={idx}
-                                className={`seat-badge ${s.playerName ? 'occupied' : 'empty'} ${isOwner ? 'is-owner' : ''}`}
+                                className={`seat-badge ${s.playerName ? 'occupied interactive' : 'empty'} ${isOwner ? 'is-owner' : ''}`}
+                                onClick={() => {
+                                  if (!s.playerName) return
+                                  const foundUser = users.find(
+                                    (u) => u.userName.toLowerCase() === s.playerName.toLowerCase(),
+                                  )
+                                  setSelectedUser(
+                                    foundUser ?? {
+                                      userName: s.playerName,
+                                      flagName: s.flagName ?? '',
+                                      constructedRating: (s as any).constructedRating || 1500,
+                                      matchHistory: s.history || '',
+                                      infoGames: '',
+                                      matchQuitRatio: 0,
+                                      tourneyHistory: '',
+                                      tourneyQuitRatio: 0,
+                                      infoPing: '',
+                                      generalRating: 1500,
+                                      limitedRating: 1500,
+                                    },
+                                  )
+                                }}
+                                style={s.playerName ? { cursor: 'pointer' } : undefined}
+                                title={s.playerName ? `Ver acciones de ${s.playerName}` : undefined}
                               >
                                 {s.playerName ? (
                                   <AvatarImage avatarId={seatAvatarId} username={s.playerName} size="small" />
@@ -581,7 +608,32 @@ export default function LobbyScreen() {
           <div className="lobby-community-grid">
             <section className="panel chat-panel">
               <h2>💬 Sala de Chat Global</h2>
-              <ChatBox />
+              <ChatBox
+                prefill={chatPrefill}
+                onPrefillUsed={() => setChatPrefill('')}
+                onUserClick={(username) => {
+                  const found = users.find(
+                    (u) => u.userName.toLowerCase() === username.toLowerCase(),
+                  )
+                  if (found) {
+                    setSelectedUser(found)
+                  } else {
+                    setSelectedUser({
+                      userName: username,
+                      flagName: '',
+                      constructedRating: 1500,
+                      matchHistory: '',
+                      infoGames: '',
+                      matchQuitRatio: 0,
+                      tourneyHistory: '',
+                      tourneyQuitRatio: 0,
+                      infoPing: '',
+                      generalRating: 1500,
+                      limitedRating: 1500,
+                    })
+                  }
+                }}
+              />
             </section>
 
             <section className="panel users-panel">
@@ -598,7 +650,13 @@ export default function LobbyScreen() {
               </div>
               <ul className="users-list">
                 {users.map((u) => (
-                  <li key={u.userName} className="user-list-item">
+                  <li
+                    key={u.userName}
+                    className="user-list-item interactive"
+                    onClick={() => setSelectedUser(u)}
+                    style={{ cursor: 'pointer' }}
+                    title={`Ver acciones de usuario para ${u.userName}`}
+                  >
                     <span className={`dot ${u.infoGames ? 'playing' : 'online'}`} />
                     <AvatarImage avatarId={u.avatarId} username={u.userName} size="medium" />
                     <div className="user-info-col">
@@ -665,6 +723,31 @@ export default function LobbyScreen() {
           users={users}
           currentUsername={conn?.username ?? ''}
           onClose={() => setShowLeaderboard(false)}
+        />
+      )}
+      {selectedUser && (
+        <UserActionModal
+          user={selectedUser}
+          currentUsername={conn?.username ?? ''}
+          tables={tables}
+          onWhisper={(username) => {
+            setActiveTab('community')
+            setChatPrefill(`/w ${username} `)
+          }}
+          onViewLeaderboard={(_username) => {
+            setShowLeaderboard(true)
+          }}
+          onSendChatCommand={(cmd) => {
+            if (roomChatId) {
+              void cmds.sendChatMessage(roomChatId, cmd)
+            }
+          }}
+          onWatchTable={async (tableId) => {
+            setNotice('Conectando como espectador…')
+            const watched = await withTimeout(cmds.watchTable(tableId), 15000, 'watchTable')
+            setNotice(watched.ok ? 'Conectado como espectador' : `watchTable falló: ${watched.error}`)
+          }}
+          onClose={() => setSelectedUser(null)}
         />
       )}
       {joiningTable && (

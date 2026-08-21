@@ -56,7 +56,7 @@ describe('ChatBox component', () => {
     const sendSpy = vi.spyOn(cmds, 'sendChatMessage').mockResolvedValue({ type: 'result', ok: true, action: 'sendChatMessage' })
     const { getByPlaceholderText, getByText } = render(<ChatBox />)
 
-    const input = getByPlaceholderText('Mensaje al chat global…')
+    const input = getByPlaceholderText(/Mensaje/)
     fireEvent.change(input, { target: { value: 'Testing message' } })
 
     const sendBtn = getByText('Enviar')
