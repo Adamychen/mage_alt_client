@@ -1,0 +1,391 @@
+/* Join Table Modal Backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 16, 0.78);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.join-table-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 10%, #171d42 0%, #0c0f24 100%);
+  border: 1.5px solid rgba(255, 208, 112, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(124, 92, 255, 0.15);
+  overflow: hidden;
+  color: #e8eaf6;
+}
+
+.join-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.join-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.join-target-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(99, 230, 190, 0.15);
+  color: #63e6be;
+  border: 1px solid rgba(99, 230, 190, 0.3);
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.join-table-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: var(--font-display);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #8c96ba;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Meta Bar */
+.join-table-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background: rgba(10, 13, 30, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.meta-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c8cae6;
+}
+
+.meta-badge strong {
+  color: #ffffff;
+}
+
+.meta-badge.meta-format {
+  border-color: rgba(255, 208, 112, 0.3);
+  color: #ffd070;
+}
+
+.meta-badge.meta-lock {
+  border-color: rgba(255, 100, 100, 0.3);
+  color: #ff8080;
+  background: rgba(255, 100, 100, 0.1);
+}
+
+/* Form Container */
+.join-modal-form {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 24px;
+  gap: 16px;
+}
+
+/* Password field */
+.join-password-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.join-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd070;
+}
+
+.join-password-input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(10, 13, 30, 0.8);
+  border: 1.5px solid rgba(255, 208, 112, 0.4);
+  color: #ffffff;
+  font-size: 14px;
+  outline: none;
+}
+
+.join-password-input:focus {
+  border-color: #ffd070;
+  box-shadow: 0 0 12px rgba(255, 208, 112, 0.3);
+}
+
+/* Deck Selection */
+.join-deck-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.join-deck-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.join-deck-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #b0badc;
+}
+
+.join-import-toggle-btn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(124, 92, 255, 0.15);
+  border: 1px solid rgba(124, 92, 255, 0.35);
+  color: #d1c4ff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.join-import-toggle-btn:hover {
+  background: rgba(124, 92, 255, 0.3);
+  color: #ffffff;
+}
+
+/* Inline Importer */
+.join-inline-importer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(20, 26, 60, 0.7);
+  border: 1px solid rgba(124, 92, 255, 0.3);
+}
+
+.join-inline-importer h4 {
+  margin: 0;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.import-name-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(10, 13, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.import-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(10, 13, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e8eaf6;
+  font-family: monospace;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.import-error-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #ff7777;
+}
+
+.import-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.import-submit-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+/* Deck Cards List */
+.join-deck-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.join-deck-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(14, 18, 38, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.join-deck-card:hover {
+  background: rgba(24, 30, 64, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.join-deck-card.selected {
+  background: radial-gradient(circle at 10% 50%, rgba(38, 48, 100, 0.9), rgba(20, 26, 56, 0.9));
+  border-color: #ffd070;
+  box-shadow: 0 0 14px rgba(255, 208, 112, 0.2);
+}
+
+.join-deck-card.recommended {
+  border-left: 3px solid #63e6be;
+}
+
+.deck-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.deck-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deck-card-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-card-count-badge {
+  font-size: 11.5px;
+  color: #8c96c0;
+  font-weight: 600;
+}
+
+.deck-card-sample {
+  font-size: 11.5px;
+  color: #7b85aa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Error Banner */
+.join-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 77, 77, 0.15);
+  border: 1px solid rgba(255, 77, 77, 0.4);
+  color: #ff9999;
+  font-size: 12.5px;
+  margin: 0 24px;
+}
+
+/* Footer */
+.join-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+}
+
+.join-default-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #8c96ba;
+  cursor: pointer;
+}
+
+.join-footer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.join-cancel-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b0badc;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.join-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.join-submit-btn {
+  padding: 9px 20px;
+  font-size: 13.5px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(28, 107, 80, 0.4);
+}

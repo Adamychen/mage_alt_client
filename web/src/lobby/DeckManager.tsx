@@ -1,25 +1,7 @@
 import { useState, useMemo } from 'react'
-import { DECKS, type Deck, type DeckCard } from './decks'
+import { DECKS, loadSavedCustomDecks, saveCustomDecks, type Deck, type DeckCard } from './decks'
 import { setMyDeck, useStore } from '../state/store'
 import './DeckManager.css'
-
-const CUSTOM_DECKS_STORAGE_KEY = 'mage_custom_decks'
-
-function loadSavedCustomDecks(): Deck[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_DECKS_STORAGE_KEY)
-    if (!raw) return []
-    return JSON.parse(raw) as Deck[]
-  } catch {
-    return []
-  }
-}
-
-function saveCustomDecks(decks: Deck[]) {
-  try {
-    localStorage.setItem(CUSTOM_DECKS_STORAGE_KEY, JSON.stringify(decks))
-  } catch {}
-}
 
 export function parseArenaDeck(text: string, defaultName = 'Mazo Importado'): Deck | null {
   const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 0)

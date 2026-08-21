@@ -129,3 +129,25 @@ export const COMBAT_BLOCK_SIM_DECK: Deck = {
 }
 
 export const DECKS = [DEFAULT_DECK, ADVANCED_DECK, STABLE_DECK, AI_OPPONENT_DECK, COMBAT_OPPONENT_DECK, COMBAT_HUMAN_DECK, COMBAT_BLOCK_SIM_DECK, LANDS_DECK]
+
+export const CUSTOM_DECKS_STORAGE_KEY = 'mage_custom_decks'
+
+export function loadSavedCustomDecks(): Deck[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_DECKS_STORAGE_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as Deck[]
+  } catch {
+    return []
+  }
+}
+
+export function saveCustomDecks(decks: Deck[]) {
+  try {
+    localStorage.setItem(CUSTOM_DECKS_STORAGE_KEY, JSON.stringify(decks))
+  } catch {}
+}
+
+export function getAllAvailableDecks(): Deck[] {
+  return [...DECKS, ...loadSavedCustomDecks()]
+}

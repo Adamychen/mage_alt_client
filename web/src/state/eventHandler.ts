@@ -84,6 +84,16 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       addLog(m.username, m.message, objectId ?? undefined)
       break
     }
+    case 'SHOW_USERMESSAGE':
+    case 'SHOW_USER_MESSAGE': {
+      const d = data as { title?: string; message?: string } | string | null
+      const text = typeof d === 'string' ? d : (d?.message ?? d?.title ?? JSON.stringify(d))
+      if (text) {
+        setState({ error: text })
+        addLog('servidor', text)
+      }
+      break
+    }
     case 'SERVER_MESSAGE': {
       const text = typeof data === 'string' ? data : JSON.stringify(data)
       addLog('servidor', text)

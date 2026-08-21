@@ -3,10 +3,11 @@ import { reset, useLobby, useStore, setWatchingTable } from '../state/store'
 import * as cmds from '../net/commands'
 import type { TableView } from '../net/types'
 import CreateTableDialog from './CreateTableDialog'
+import JoinTableDialog from './JoinTableDialog'
 import ChatBox from './ChatBox'
 import DeckManager from './DeckManager'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
-import { AI_OPPONENT_DECK, DEFAULT_DECK, STABLE_DECK } from './decks'
+import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
 
 /** Asiento de oponente simulado: lo une el proxy con su propia sesión (determinista). */
@@ -64,6 +65,7 @@ export default function LobbyScreen() {
   const events = useStore((s) => s.events)
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
+  const [joiningTable, setJoiningTable] = useState<TableView | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
   const [busyTable, setBusyTable] = useState<string | null>(null)
@@ -90,23 +92,19 @@ export default function LobbyScreen() {
           simDecks: [STABLE_DECK, STABLE_DECK],
         }),
         15000,
-        'createTable',
+        'createTable demo',
       )
       if (!table.ok) {
-        setNotice(`no se pudo crear la mesa: ${table.error}`)
+        setNotice(`createTable demo falló: ${table.error ?? 'error desconocido'}`)
         return
       }
-      const tableId = (table.data as { tableId?: string })?.tableId
+      const data = table.data as { tableId?: string; TableId?: string } | undefined
+      const tableId = data?.tableId ?? data?.TableId
       if (!tableId) {
-        setNotice('la creación de mesa no devolvió tableId')
+        setNotice('createTable demo ok pero sin tableId en respuesta')
         return
       }
-      const started = await withTimeout(cmds.startMatch(tableId), 20000, 'startMatch')
-      if (!started.ok) {
-        setNotice(`startMatch falló: ${started.error}`)
-        return
-      }
-      await new Promise((r) => setTimeout(r, 1500))
+      setNotice('Conectando como espectador a la demo…')
       const watched = await withTimeout(cmds.watchTable(tableId), 15000, 'watchTable')
       setNotice(watched.ok ? 'Conectado como espectador' : `watchTable falló: ${watched.error}`)
     } catch (e) {
@@ -116,14 +114,19 @@ export default function LobbyScreen() {
     }
   }
 
-  const joinHuman = async (t: TableView) => {
-    setBusyTable(t.tableId)
+  const joinHuman = (t: TableView) => {
     setNotice(null)
     const seat = t.seats.find((s) => !s.playerName)
     if (!seat) {
       setNotice('la mesa no tiene plazas libres')
       return
     }
+    setJoiningTable(t)
+  }
+
+  const handleJoinWithDeck = async (t: TableView, deck: Deck, password?: string) => {
+    setBusyTable(t.tableId)
+    setNotice(null)
     try {
       const res = await withTimeout(
         cmds.joinTable({
@@ -131,12 +134,18 @@ export default function LobbyScreen() {
           playerName: conn?.username ?? 'player',
           playerType: 'HUMAN',
           skill: 1,
-          deck: myDeck ?? DEFAULT_DECK,
+          deck,
+          password,
         }),
         15000,
         'joinTable',
       )
-      setNotice(res.ok ? 'Unido a la mesa (auto-pase activo). Esperando startMatch…' : `joinTable: ${res.error}`)
+      if (res.ok) {
+        setNotice('Unido a la mesa (auto-pase activo). Esperando startMatch…')
+        setJoiningTable(null)
+      } else {
+        throw new Error(res.error || 'El servidor rechazó la unión a la mesa.')
+      }
     } catch (e) {
       setNotice((e as Error).message)
     } finally {
@@ -562,6 +571,14 @@ export default function LobbyScreen() {
       </div>
 
       {showCreate && <CreateTableDialog onClose={() => setShowCreate(false)} />}
+      {joiningTable && (
+        <JoinTableDialog
+          table={joiningTable}
+          busy={busyTable === joiningTable.tableId}
+          onClose={() => setJoiningTable(null)}
+          onJoin={handleJoinWithDeck}
+        />
+      )}
     </div>
   )
 }
