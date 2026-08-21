@@ -266,7 +266,23 @@ export function parseGameEvent(
     }
   }
 
-  // 10. Meaningful game announcements: game start, game over, concession, win
+  // 10. Token creations: "Player creates a Wizard Token token" or "Player creates 2 Goblin tokens"
+  const tokenMatch = text.match(/^([^:]+?)\s+creates?\s+(?:a\s+|an\s+|(\d+)\s+)?(.+?)\s+tokens?$/i)
+  if (tokenMatch) {
+    const pName = tokenMatch[1].trim()
+    const count = tokenMatch[2] ? Number(tokenMatch[2]) : 1
+    const tokenName = tokenMatch[3].trim()
+    return {
+      ...base,
+      type: 'ability',
+      playerName: pName,
+      isMe: isMe(pName),
+      cardName: tokenName,
+      description: `${pName} crea ${count > 1 ? `${count} fichas` : 'una ficha'} ${tokenName}`,
+    }
+  }
+
+  // 11. Meaningful game announcements: game start, game over, concession, win
   if (
     text.startsWith('¡Partida') ||
     text.toLowerCase().includes('ha ganado') ||

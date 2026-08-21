@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useStore } from '../state/store'
 import { parseGameEvent, type ActionFeedItem } from './gameEventParser'
 import ActionFeedCard from './ActionFeedCard'
-import FormattedText from './FormattedText'
+import FormattedText, { cleanMageHtml } from './FormattedText'
 import FloatingCardPreview from '../board/FloatingCardPreview'
 import type { CardView } from '../net/types'
 import './ActionFeed.css'
@@ -51,7 +51,7 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
         items.push({
           id: `log-sys-${entry.id ?? i}`,
           type: 'system',
-          description: entry.text,
+          description: cleanMageHtml(entry.text),
           rawText: entry.text,
           timestamp: entry.time,
         })

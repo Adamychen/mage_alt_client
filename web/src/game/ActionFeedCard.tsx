@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import type { ActionFeedItem } from './gameEventParser'
 import { awaitImageUrl } from '../cards/cardImages'
+import FormattedText from './FormattedText'
 import './ActionFeedCard.css'
 
 interface ActionFeedCardProps {
@@ -54,7 +55,9 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
     return (
       <div className="action-feed-system-banner game-log-entry">
         <span className="system-icon">{icon}</span>
-        <span className="system-text">{item.description}</span>
+        <span className="system-text">
+          <FormattedText text={item.description} onHover={onHover} />
+        </span>
       </div>
     )
   }
@@ -119,7 +122,9 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
               ➔ {item.targetName}
             </span>
           )}
-          <span className="action-desc-text">{item.description}</span>
+          <span className="action-desc-text">
+            <FormattedText text={item.description} onHover={onHover} />
+          </span>
         </div>
       </div>
     </div>

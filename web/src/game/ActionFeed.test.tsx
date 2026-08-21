@@ -90,4 +90,23 @@ describe('ActionFeed & ActionFeedCard', () => {
 
     expect(getByText('Lightning Bolt')).not.toBeNull()
   })
+
+  it('parses and renders token creation events without raw HTML tags or object hashes', () => {
+    handleMessage({
+      type: 'event',
+      method: 'CHATMESSAGE',
+      messageId: 11,
+      data: {
+        username: 'partida',
+        message: "<font color='#20B2AA'>ketaklak</font> creates a <font color='#696969' object_id='08c72361-bf20-48a9-b9bf-cc03fa175a40'>Wizard Token</font> [08c] token",
+      },
+    } as never)
+
+    const { container } = render(<ActionFeed />)
+
+    expect(container.textContent).toContain('ketaklak crea una ficha Wizard Token')
+    expect(container.textContent).not.toContain('<font')
+    expect(container.textContent).not.toContain('object_id')
+    expect(container.textContent).not.toContain('[08c]')
+  })
 })
