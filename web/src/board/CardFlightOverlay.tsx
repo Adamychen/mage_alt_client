@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardView, GameView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName } from '../cards/cardImages'
 import './CardFlightOverlay.css'
 
 const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
-const FLIGHT_DURATION_MS = 420
+const FLIGHT_DURATION_MS = 380
 
 export interface CardFlightItem {
   id: string
@@ -26,7 +26,14 @@ interface CardFlightOverlayProps {
   boardRef: React.RefObject<HTMLDivElement | null>
 }
 
-function getRelRect(domRect: DOMRect, boardRect: DOMRect) {
+interface Rect2D {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+function getRelRect(domRect: DOMRect, boardRect: DOMRect): Rect2D {
   return {
     x: domRect.left - boardRect.left,
     y: domRect.top - boardRect.top,
@@ -37,8 +44,57 @@ function getRelRect(domRect: DOMRect, boardRect: DOMRect) {
 
 export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayProps) {
   const prevGameRef = useRef<GameView | null>(null)
+  const cardRectsRef = useRef<Map<string, Rect2D>>(new Map())
+  const lastStackCenterRef = useRef<Rect2D | null>(null)
   const [flights, setFlights] = useState<CardFlightItem[]>([])
   const isInitialRef = useRef(true)
+
+  // Continuously record card and zone bounding rectangles before DOM updates
+  useLayoutEffect(() => {
+    if (!boardRef.current) return
+    const boardEl = boardRef.current
+    const boardRect = boardEl.getBoundingClientRect()
+    if (boardRect.width <= 0 || boardRect.height <= 0) return
+
+    const rectMap = new Map<string, Rect2D>()
+
+    // Record every card slot with an id
+    const cardEls = boardEl.querySelectorAll<HTMLElement>('[data-card-id]')
+    cardEls.forEach((el) => {
+      const id = el.getAttribute('data-card-id')
+      if (id) {
+        rectMap.set(id, getRelRect(el.getBoundingClientRect(), boardRect))
+      }
+    })
+
+    // Record key board zones
+    const stackEl = boardEl.querySelector('.stack-zone')
+    if (stackEl) {
+      const stackRect = getRelRect(stackEl.getBoundingClientRect(), boardRect)
+      rectMap.set('stack', stackRect)
+      lastStackCenterRef.current = stackRect
+    }
+
+    const myLib = boardEl.querySelector('.pz-bottom-row .library-stack')
+    if (myLib) rectMap.set('my-library', getRelRect(myLib.getBoundingClientRect(), boardRect))
+
+    const myGrave = boardEl.querySelector('.pz-bottom-row .graveyard-stack')
+    if (myGrave) rectMap.set('my-graveyard', getRelRect(myGrave.getBoundingClientRect(), boardRect))
+
+    const oppLib = boardEl.querySelector('.opp-top-row .library-stack')
+    if (oppLib) rectMap.set('opp-library', getRelRect(oppLib.getBoundingClientRect(), boardRect))
+
+    const oppGrave = boardEl.querySelector('.opp-top-row .graveyard-stack')
+    if (oppGrave) rectMap.set('opp-graveyard', getRelRect(oppGrave.getBoundingClientRect(), boardRect))
+
+    const myHand = boardEl.querySelector('.pz-bottom-row .hand-zone')
+    if (myHand) rectMap.set('my-hand', getRelRect(myHand.getBoundingClientRect(), boardRect))
+
+    const oppHand = boardEl.querySelector('.opp-zone .hand-zone')
+    if (oppHand) rectMap.set('opp-hand', getRelRect(oppHand.getBoundingClientRect(), boardRect))
+
+    cardRectsRef.current = rectMap
+  })
 
   useEffect(() => {
     if (!game || !boardRef.current) return
@@ -55,11 +111,10 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
     const boardRect = boardEl.getBoundingClientRect()
     if (boardRect.width <= 0 || boardRect.height <= 0) return
 
+    const rectMap = cardRectsRef.current
     const newFlights: CardFlightItem[] = []
     const now = Date.now()
 
-    // 1. Detect Player Drawn Cards (game.myHand)
-    const me = game.players?.find((p) => p.controlled)
     const prevMe = prevGame.players?.find((p) => p.controlled)
     const opp = game.players?.find((p) => !p.controlled)
     const prevOpp = prevGame.players?.find((p) => !p.controlled)
@@ -67,18 +122,47 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
     const myHand = game.myHand ?? {}
     const prevMyHand = prevGame.myHand ?? {}
 
-    for (const [id, card] of Object.entries(myHand)) {
-      if (!prevMyHand[id] && !prevGame.stack?.[id] && !prevMe?.battlefield?.[id]) {
-        // Card was newly drawn into my hand
-        const libEl = boardEl.querySelector('.pz-bottom-row .library-stack')
-        const handCardEl = boardEl.querySelector(`[data-card-id="${id}"]`) || boardEl.querySelector('.pz-bottom-row .hand-zone')
+    const currStack = game.stack ?? {}
+    const prevStack = prevGame.stack ?? {}
 
-        const start = libEl
-          ? getRelRect(libEl.getBoundingClientRect(), boardRect)
-          : { x: boardRect.width - 120, y: boardRect.height - 80, w: 50, h: 70 }
-        const end = handCardEl
-          ? getRelRect(handCardEl.getBoundingClientRect(), boardRect)
-          : { x: boardRect.width / 2, y: boardRect.height - 120, w: 80, h: 112 }
+    // Default fallback rects
+    const defaultStackRect: Rect2D = lastStackCenterRef.current || {
+      x: boardRect.width / 2 - 45,
+      y: boardRect.height / 2 - 63,
+      w: 90,
+      h: 126,
+    }
+    const defaultMyLib: Rect2D = rectMap.get('my-library') || {
+      x: boardRect.width - 120,
+      y: boardRect.height - 80,
+      w: 50,
+      h: 70,
+    }
+    const defaultOppLib: Rect2D = rectMap.get('opp-library') || {
+      x: boardRect.width - 120,
+      y: 40,
+      w: 50,
+      h: 70,
+    }
+    const defaultMyGrave: Rect2D = rectMap.get('my-graveyard') || {
+      x: boardRect.width - 60,
+      y: boardRect.height - 80,
+      w: 50,
+      h: 70,
+    }
+    const defaultOppGrave: Rect2D = rectMap.get('opp-graveyard') || {
+      x: boardRect.width - 60,
+      y: 40,
+      w: 50,
+      h: 70,
+    }
+
+    // 1. DRAW: Player hand cards newly added
+    for (const [id, card] of Object.entries(myHand)) {
+      if (!prevMyHand[id] && !prevStack[id] && !prevMe?.battlefield?.[id]) {
+        const start = defaultMyLib
+        const targetEl = boardEl.querySelector(`[data-card-id="${id}"]`)
+        const end = targetEl ? getRelRect(targetEl.getBoundingClientRect(), boardRect) : (rectMap.get('my-hand') || { x: boardRect.width / 2, y: boardRect.height - 120, w: 80, h: 112 })
 
         newFlights.push({
           id: `draw-${id}-${now}`,
@@ -96,17 +180,10 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
       }
     }
 
-    // 2. Detect Opponent Drawn Cards
+    // 2. DRAW: Opponent drawn cards
     if (opp && prevOpp && (opp.libraryCount ?? 0) < (prevOpp.libraryCount ?? 0)) {
-      const oppLibEl = boardEl.querySelector('.opp-top-row .library-stack')
-      const oppHandEl = boardEl.querySelector('.opp-zone .hand-zone')
-
-      const start = oppLibEl
-        ? getRelRect(oppLibEl.getBoundingClientRect(), boardRect)
-        : { x: boardRect.width - 120, y: 40, w: 50, h: 70 }
-      const end = oppHandEl
-        ? getRelRect(oppHandEl.getBoundingClientRect(), boardRect)
-        : { x: boardRect.width / 2, y: 40, w: 70, h: 98 }
+      const start = defaultOppLib
+      const end = rectMap.get('opp-hand') || { x: boardRect.width / 2, y: 40, w: 70, h: 98 }
 
       newFlights.push({
         id: `opp-draw-${now}`,
@@ -124,25 +201,13 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
       })
     }
 
-    // 3. Detect Cast Spells on Stack
-    const currStack = game.stack ?? {}
-    const prevStack = prevGame.stack ?? {}
-
+    // 3. CAST: Spells newly appearing on the stack
     for (const [id, spell] of Object.entries(currStack)) {
       if (!prevStack[id]) {
-        // Newly cast spell flying towards the stack
         const wasInMyHand = !!prevMyHand[id]
-        const fromEl = wasInMyHand
-          ? boardEl.querySelector('.pz-bottom-row .hand-zone')
-          : boardEl.querySelector('.opp-zone .hand-zone')
-        const stackEl = boardEl.querySelector('.stack-zone') || boardEl.querySelector(`[data-card-id="${id}"]`)
-
-        const start = fromEl
-          ? getRelRect(fromEl.getBoundingClientRect(), boardRect)
-          : { x: boardRect.width / 2, y: wasInMyHand ? boardRect.height - 120 : 60, w: 80, h: 112 }
-        const end = stackEl
-          ? getRelRect(stackEl.getBoundingClientRect(), boardRect)
-          : { x: boardRect.width / 2 - 45, y: boardRect.height / 2 - 60, w: 90, h: 126 }
+        const start = rectMap.get(id) || (wasInMyHand ? (rectMap.get('my-hand') || { x: boardRect.width / 2, y: boardRect.height - 120, w: 80, h: 112 }) : (rectMap.get('opp-hand') || { x: boardRect.width / 2, y: 60, w: 70, h: 98 }))
+        const stackCardEl = boardEl.querySelector(`[data-card-id="${id}"]`)
+        const end = stackCardEl ? getRelRect(stackCardEl.getBoundingClientRect(), boardRect) : defaultStackRect
 
         newFlights.push({
           id: `cast-${id}-${now}`,
@@ -160,63 +225,53 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
       }
     }
 
-    // 4. Detect Permanents entering Battlefield
-    const myBf = me?.battlefield ?? {}
-    const prevMyBf = prevMe?.battlefield ?? {}
+    // 4. RESOLVE / PLAY: Permanents entering battlefield
+    for (const p of game.players ?? []) {
+      const currBf = p.battlefield ?? {}
+      const prevP = prevGame.players?.find((x) => x.playerId === p.playerId)
+      const prevBf = prevP?.battlefield ?? {}
 
-    for (const [id, perm] of Object.entries(myBf)) {
-      if (!prevMyBf[id]) {
-        const wasInStack = !!prevStack[id]
-        const wasInHand = !!prevMyHand[id]
-        const fromEl = wasInStack
-          ? boardEl.querySelector('.stack-zone')
-          : wasInHand
-          ? boardEl.querySelector('.pz-bottom-row .hand-zone')
-          : null
-        const permEl = boardEl.querySelector(`[data-card-id="${id}"]`)
+      for (const [id, perm] of Object.entries(currBf)) {
+        if (!prevBf[id]) {
+          const wasInStack = !!prevStack[id]
+          const start = rectMap.get(id) || (wasInStack ? defaultStackRect : (p.controlled ? (rectMap.get('my-hand') || { x: boardRect.width / 2, y: boardRect.height - 120, w: 80, h: 112 }) : (rectMap.get('opp-hand') || { x: boardRect.width / 2, y: 60, w: 70, h: 98 })))
+          const permEl = boardEl.querySelector(`[data-card-id="${id}"]`)
 
-        if (permEl) {
-          const start = fromEl
-            ? getRelRect(fromEl.getBoundingClientRect(), boardRect)
-            : { x: boardRect.width / 2, y: boardRect.height - 120, w: 80, h: 112 }
-          const end = getRelRect(permEl.getBoundingClientRect(), boardRect)
-
-          newFlights.push({
-            id: `play-${id}-${now}`,
-            card: perm as PermanentView,
-            type: wasInStack ? 'resolve' : 'play',
-            startX: start.x,
-            startY: start.y,
-            startW: start.w,
-            startH: start.h,
-            endX: end.x,
-            endY: end.y,
-            endW: end.w,
-            endH: end.h,
-          })
+          if (permEl) {
+            const end = getRelRect(permEl.getBoundingClientRect(), boardRect)
+            newFlights.push({
+              id: `play-${id}-${now}`,
+              card: perm as PermanentView,
+              type: wasInStack ? 'resolve' : 'play',
+              startX: start.x,
+              startY: start.y,
+              startW: start.w,
+              startH: start.h,
+              endX: end.x,
+              endY: end.y,
+              endW: end.w,
+              endH: end.h,
+            })
+          }
         }
       }
     }
 
-    // 5. Detect Cards going to Graveyard
-    const myGrave = me?.graveyard ?? {}
-    const prevMyGrave = prevMe?.graveyard ?? {}
-
-    for (const [id, card] of Object.entries(myGrave)) {
-      if (!prevMyGrave[id]) {
-        const wasOnBf = !!prevMyBf[id]
-        const wasOnStack = !!prevStack[id]
-        const graveEl = boardEl.querySelector('.pz-bottom-row .graveyard-stack')
-
-        if (graveEl && (wasOnBf || wasOnStack)) {
-          const start = wasOnStack
-            ? (boardEl.querySelector('.stack-zone') ? getRelRect(boardEl.querySelector('.stack-zone')!.getBoundingClientRect(), boardRect) : { x: boardRect.width / 2, y: boardRect.height / 2, w: 80, h: 112 })
-            : { x: boardRect.width / 2, y: boardRect.height / 2 + 40, w: 80, h: 112 }
-          const end = getRelRect(graveEl.getBoundingClientRect(), boardRect)
+    // 5. STACK RESOLUTION TO GRAVEYARD: Spells leaving stack into graveyard
+    for (const [id, prevSpell] of Object.entries(prevStack)) {
+      if (!currStack[id]) {
+        // Spell was on stack and is no longer on stack
+        // Check if it didn't enter battlefield (e.g. Instant / Sorcery / counterspell / destroyed)
+        const isNowOnBf = (game.players ?? []).some((p) => p.battlefield?.[id])
+        if (!isNowOnBf) {
+          const start = rectMap.get(id) || defaultStackRect
+          // Determine target graveyard (controller of spell or active player)
+          const isMySpell = (prevSpell as any).controlled || !!prevMyHand[id]
+          const end = isMySpell ? defaultMyGrave : defaultOppGrave
 
           newFlights.push({
-            id: `grave-${id}-${now}`,
-            card: card as CardView,
+            id: `stack-resolve-grave-${id}-${now}`,
+            card: prevSpell as CardView,
             type: 'graveyard',
             startX: start.x,
             startY: start.y,
@@ -231,8 +286,38 @@ export default function CardFlightOverlay({ game, boardRef }: CardFlightOverlayP
       }
     }
 
+    // 6. BATTLEFIELD TO GRAVEYARD: Dying creatures / destroyed permanents
+    for (const p of game.players ?? []) {
+      const prevP = prevGame.players?.find((x) => x.playerId === p.playerId)
+      const prevBf = prevP?.battlefield ?? {}
+      const currBf = p.battlefield ?? {}
+
+      for (const [id, prevPerm] of Object.entries(prevBf)) {
+        if (!currBf[id] && !currStack[id]) {
+          const isNowInGrave = !!p.graveyard?.[id]
+          if (isNowInGrave) {
+            const start = rectMap.get(id) || { x: boardRect.width / 2, y: p.controlled ? boardRect.height / 2 + 50 : boardRect.height / 2 - 50, w: 80, h: 112 }
+            const end = p.controlled ? defaultMyGrave : defaultOppGrave
+
+            newFlights.push({
+              id: `die-grave-${id}-${now}`,
+              card: prevPerm as PermanentView,
+              type: 'graveyard',
+              startX: start.x,
+              startY: start.y,
+              startW: start.w,
+              startH: start.h,
+              endX: end.x,
+              endY: end.y,
+              endW: end.w,
+              endH: end.h,
+            })
+          }
+        }
+      }
+    }
+
     if (newFlights.length > 0) {
-      // Limit batch size to prevent overwhelm
       const capped = newFlights.slice(0, 8)
       setFlights((curr) => [...curr, ...capped])
 
