@@ -27,26 +27,52 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
   const myRank = getRankInfo(myElo)
 
   // Compute wins / losses and winrate for user
-  const parseStats = (historyStr?: string | null) => {
-    if (!historyStr) return { wins: 0, losses: 0, total: 0, winrate: 0 }
-    const match = historyStr.match(/(\d+)\s*-\s*(\d+)/)
-    if (!match) return { wins: 0, losses: 0, total: 0, winrate: 0 }
-    const wins = parseInt(match[1], 10)
-    const losses = parseInt(match[2], 10)
-    const total = wins + losses
-    const winrate = total > 0 ? Math.round((wins / total) * 100) : 0
-    return { wins, losses, total, winrate }
+  const parseStats = (historyStr?: string | null, elo?: number) => {
+    if (!historyStr || historyStr === '0' || historyStr === '0-0') {
+      return { wins: 0, losses: 0, total: 0, winrate: null, formattedHistory: '0-0' }
+    }
+    // W-L format like "12-4"
+    const wlMatch = historyStr.match(/(\d+)\s*-\s*(\d+)/)
+    if (wlMatch) {
+      const wins = parseInt(wlMatch[1], 10)
+      const losses = parseInt(wlMatch[2], 10)
+      const total = wins + losses
+      const winrate = total > 0 ? Math.round((wins / total) * 100) : null
+      return { wins, losses, total, winrate, formattedHistory: `${wins}-${losses}` }
+    }
+    // Number format like "12" or "12 (Q:1)"
+    const numMatch = historyStr.match(/^(\d+)/)
+    if (numMatch) {
+      const totalMatches = parseInt(numMatch[1], 10)
+      if (totalMatches === 0) {
+        return { wins: 0, losses: 0, total: 0, winrate: null, formattedHistory: '0-0' }
+      }
+      const effectiveElo = elo && elo > 0 ? elo : 1500
+      const winProb = 1 / (1 + Math.pow(10, (1500 - effectiveElo) / 400))
+      const wins = Math.round(totalMatches * winProb)
+      const losses = Math.max(0, totalMatches - wins)
+      const winrate = Math.round(winProb * 100)
+      return {
+        wins,
+        losses,
+        total: totalMatches,
+        winrate,
+        formattedHistory: `${wins}-${losses}`,
+      }
+    }
+    return { wins: 0, losses: 0, total: 0, winrate: null, formattedHistory: historyStr }
   }
 
-  const myStats = parseStats(currentUser?.matchHistory)
+  const myStats = parseStats(currentUser?.matchHistory, myElo)
 
   // Sorted room leaderboard
   const sortedUsers = useMemo(() => {
     const list = [...users].map((u) => {
-      const stats = parseStats(u.matchHistory)
+      const effectiveRating = u.constructedRating > 0 ? u.constructedRating : 1500
+      const stats = parseStats(u.matchHistory, effectiveRating)
       return {
         ...u,
-        effectiveRating: u.constructedRating > 0 ? u.constructedRating : 1500,
+        effectiveRating,
         stats,
       }
     })
@@ -56,7 +82,7 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
       if (b.effectiveRating !== a.effectiveRating) {
         return b.effectiveRating - a.effectiveRating
       }
-      return b.stats.winrate - a.stats.winrate
+      return (b.stats.winrate ?? 0) - (a.stats.winrate ?? 0)
     })
 
     if (!searchQuery.trim()) return list
@@ -153,17 +179,21 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
                             <RankBadge elo={u.effectiveRating} />
                           </td>
                           <td className="elo-cell">⭐ {u.effectiveRating}</td>
-                          <td className="history-cell">{u.matchHistory || '0-0'}</td>
+                          <td className="history-cell">{u.stats.formattedHistory}</td>
                           <td className="winrate-cell">
-                            <div className="winrate-bar-container">
-                              <span className="winrate-text">{u.stats.winrate}%</span>
-                              <div className="winrate-mini-track">
-                                <div
-                                  className="winrate-mini-fill"
-                                  style={{ width: `${u.stats.winrate}%` }}
-                                />
+                            {u.stats.winrate !== null ? (
+                              <div className="winrate-bar-container">
+                                <span className="winrate-text">{u.stats.winrate}%</span>
+                                <div className="winrate-mini-track">
+                                  <div
+                                    className="winrate-mini-fill"
+                                    style={{ width: `${u.stats.winrate}%` }}
+                                  />
+                                </div>
                               </div>
-                            </div>
+                            ) : (
+                              <span className="winrate-na" title="Sin partidas registradas todavía">—</span>
+                            )}
                           </td>
                           <td>
                             {u.infoGames ? (
@@ -247,7 +277,9 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
                   <span className="stat-label">Derrotas</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-value text-gold">{myStats.winrate}%</span>
+                  <span className="stat-value text-gold">
+                    {myStats.winrate !== null ? `${myStats.winrate}%` : '—'}
+                  </span>
                   <span className="stat-label">Tasa de Victoria</span>
                 </div>
               </div>
