@@ -23,6 +23,33 @@ interface CommandObject {
   castCount: number
 }
 
+const REMINDER_TOKEN_NAMES = new Set([
+  'radiation',
+  'rad',
+  'radiation counter',
+  'poison',
+  'poison counter',
+  'energy',
+  'energy reserve',
+  'experience',
+  'experience counter',
+  'the monarch',
+  'monarch',
+  'the initiative',
+  'initiative',
+  "city's blessing",
+  'blessing',
+  'the ring',
+  'the ring tempts you',
+  'day',
+  'night',
+  'day // night',
+  'day and night',
+  'day or night',
+  'helper emblem',
+  'designation',
+])
+
 function parseCommandList(
   commandList: unknown[] | Record<string, unknown> | undefined,
   helperCards?: Record<string, CardView>
@@ -36,21 +63,20 @@ function parseCommandList(
     if (seenIds.has(id)) return
     seenIds.add(id)
 
-    const nameLower = String(card.name ?? '').toLowerCase()
-    const displayNameLower = String(card.displayName ?? '').toLowerCase()
+    const nameLower = String(card.name ?? '').trim().toLowerCase()
+    const displayNameLower = String(card.displayName ?? '').trim().toLowerCase()
 
-    // 1. Filter out XMage internal system helper cards (Day/Night, internal rule trackers)
-    const isInternalHelper =
+    // 1. Filter out reminder cards, state helpers, and system trackers
+    if (
+      REMINDER_TOKEN_NAMES.has(nameLower) ||
+      REMINDER_TOKEN_NAMES.has(displayNameLower) ||
       nameLower.startsWith('helper emblem') ||
       displayNameLower.startsWith('helper emblem') ||
-      nameLower === 'helper emblem' ||
-      displayNameLower === 'helper emblem' ||
       card.mageObjectType === 'HELPER' ||
       card.mageObjectType === 'HELPER_EMBLEM' ||
       card.isHelperCard === true ||
       (Array.isArray(card.rules) && card.rules.some((r: string) => r.toLowerCase().includes('day or night') && r.toLowerCase().includes('neither day nor night')))
-
-    if (isInternalHelper) {
+    ) {
       return
     }
 
@@ -60,7 +86,7 @@ function parseCommandList(
       nameLower.startsWith('emblem -') ||
       nameLower.startsWith('emblem:') ||
       nameLower.startsWith('emblem ') ||
-      (card.cardTypes && card.cardTypes.some((t: string) => String(t).toLowerCase() === 'emblem'))
+      (Array.isArray(card.cardTypes) && card.cardTypes.some((t: string) => String(t).toLowerCase() === 'emblem'))
 
     // 3. Companion Cards (e.g. Lurrus, Yorion, Jegantha)
     const isCompanion =
@@ -68,11 +94,19 @@ function parseCommandList(
       card.isCompanion === true ||
       (Array.isArray(card.rules) && card.rules.some((r: string) => String(r).toLowerCase().includes('companion')))
 
-    // 4. Commanders (default if in command zone and not emblem or companion)
-    const isCommander =
-      (!isEmblem && !isCompanion) ||
-      card.mageObjectType === 'COMMANDER' ||
-      card.isCommander === true
+    // 4. Genuine Commander Cards
+    const isExplicitCommander = card.mageObjectType === 'COMMANDER' || card.isCommander === true
+    const isAuthenticCard =
+      (card.expansionSetCode && card.cardNumber) ||
+      (Array.isArray(card.cardTypes) && card.cardTypes.some((t: string) => ['creature', 'planeswalker'].includes(String(t).toLowerCase()))) ||
+      (Array.isArray(card.superTypes) && card.superTypes.some((t: string) => String(t).toLowerCase() === 'legendary'))
+
+    const isCommander = !isEmblem && !isCompanion && (isExplicitCommander || isAuthenticCard)
+
+    // Ignore any unknown non-commander/non-emblem helper object
+    if (!isEmblem && !isCompanion && !isCommander) {
+      return
+    }
 
     const castCount = typeof card.castCount === 'number' ? card.castCount : 0
 

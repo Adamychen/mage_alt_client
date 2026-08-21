@@ -193,4 +193,31 @@ describe('CommandZone', () => {
 
     expect(container.firstChild).toBeNull() // Correctly ignored
   })
+
+  it('filters out reminder tokens like Radiation, Poison, Monarch, Energy in commandList', () => {
+    const fakePlayer: Partial<PlayerView> = {
+      name: 'Player1',
+      commandList: [
+        {
+          id: 'rad-reminder',
+          name: 'Radiation',
+          displayName: 'Radiation',
+          rules: ['At the beginning of your precombat main phase...'],
+          manaValue: 0,
+        } as any,
+        {
+          id: 'monarch-reminder',
+          name: 'The Monarch',
+          displayName: 'The Monarch',
+          manaValue: 0,
+        } as any,
+      ],
+    }
+
+    const { container } = render(
+      <CommandZone player={fakePlayer as PlayerView} side="my" />
+    )
+
+    expect(container.firstChild).toBeNull() // Correctly ignored
+  })
 })
