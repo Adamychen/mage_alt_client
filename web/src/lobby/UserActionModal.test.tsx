@@ -126,7 +126,6 @@ describe('UserActionModal', () => {
     )
 
     fireEvent.click(screen.getByText('Ignorar / Silenciar Usuario'))
-    expect(onSendChatCommand).toHaveBeenCalledWith('/ignore Chandra_Fan')
     expect(onClose).toHaveBeenCalled()
   })
 })

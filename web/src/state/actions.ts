@@ -1,7 +1,6 @@
 import { getState, setState } from './state'
 import * as cmds from '../net/commands'
-import type { DeckJson } from '../net/types'
-import type { GameView } from '../net/types'
+import type { ChatMessageEvent, DeckJson, GameView } from '../net/types'
 import { BASIC_LANDS } from './gameUtils'
 import { clearActiveGame } from './persistence'
 import type { AppState } from './state'
@@ -94,4 +93,15 @@ export function maybeAutoPass(game: GameView) {
     if (playable || fallback || (myTurn && landInHand)) return
   }
   void cmds.sendPlayerBoolean(false, s.gameId)
+}
+
+export function appendLocalChatMessage(message: string, chatId?: string | null): void {
+  const s = getState()
+  const localMsg: ChatMessageEvent = {
+    chatId: chatId ?? s.roomChatId ?? '',
+    username: '',
+    message,
+    messageType: 'SYSTEM',
+  }
+  setState({ chatMessages: [...s.chatMessages, localMsg].slice(-300) })
 }

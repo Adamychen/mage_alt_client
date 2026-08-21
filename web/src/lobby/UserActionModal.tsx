@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { UsersView, TableView } from '../net/types'
+import { isUserIgnored, addIgnoredUser, removeIgnoredUser } from './ignoreList'
+import { appendLocalChatMessage } from '../state/store'
 import RankBadge from './RankBadge'
 import CountryFlag from './CountryFlag'
 import AvatarImage from './AvatarImage'
@@ -26,7 +28,7 @@ export default function UserActionModal({
   onWatchTable,
   onClose,
 }: UserActionModalProps) {
-  const [isIgnored, setIsIgnored] = useState(false)
+  const [isIgnored, setIsIgnored] = useState(() => isUserIgnored(user.userName))
   const isMe = user.userName.toLowerCase() === currentUsername.toLowerCase()
 
   // Find table where player is currently playing, if any
@@ -46,10 +48,12 @@ export default function UserActionModal({
 
   const handleToggleIgnore = () => {
     if (isIgnored) {
-      onSendChatCommand(`/unignore ${user.userName}`)
+      const res = removeIgnoredUser(user.userName)
+      appendLocalChatMessage(res.message)
       setIsIgnored(false)
     } else {
-      onSendChatCommand(`/ignore ${user.userName}`)
+      const res = addIgnoredUser(user.userName)
+      appendLocalChatMessage(res.message)
       setIsIgnored(true)
     }
     onClose()

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import * as cmds from '../net/commands'
-import { useStore } from '../state/store'
+import { useStore, appendLocalChatMessage } from '../state/store'
 import FormattedText from '../game/FormattedText'
 import FloatingCardPreview from '../board/FloatingCardPreview'
+import { handleIgnoreCommand, isUserIgnored } from './ignoreList'
 import type { CardView, ChatMessageEvent } from '../net/types'
 import './ChatBox.css'
 
@@ -79,6 +80,10 @@ export default function ChatBox({ prefill, onPrefillUsed, onUserClick }: ChatBox
       // If message specifies a chatId that doesn't match this room chat, exclude it
       if (m.chatId && chatId && m.chatId !== chatId) return false
       if (hideConnections && isConnectionEvent(m.message)) return false
+      // Filter out talk and whisper messages from ignored players
+      if (m.username && isUserIgnored(m.username) && (m.messageType === 'TALK' || m.messageType === 'WHISPER_FROM')) {
+        return false
+      }
       return true
     })
   }, [messages, chatId, hideConnections])
@@ -91,7 +96,17 @@ export default function ChatBox({ prefill, onPrefillUsed, onUserClick }: ChatBox
 
   const send = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!chatId || !text.trim()) return
+    if (!text.trim()) return
+
+    // Intercept client-side ignore / unignore commands
+    const ignoreResult = handleIgnoreCommand(text)
+    if (ignoreResult?.handled) {
+      appendLocalChatMessage(ignoreResult.message, chatId)
+      setText('')
+      return
+    }
+
+    if (!chatId) return
     void cmds.sendChatMessage(chatId, text)
     setText('')
   }
