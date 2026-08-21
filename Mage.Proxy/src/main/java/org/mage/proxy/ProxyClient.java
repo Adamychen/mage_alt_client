@@ -792,6 +792,45 @@ public class ProxyClient implements MageClient {
         options.setQuitRatio(getInt(args, "quitRatio", 100));
         options.setPassword(str(args, "password", ""));
         options.setSpectatorsAllowed(getBool(args, "spectatorsAllowed", true));
+        if (args.has("rollbackTurnsAllowed")) {
+            options.setRollbackTurnsAllowed(getBool(args, "rollbackTurnsAllowed", true));
+        }
+        if (args.has("rated")) {
+            options.setRated(getBool(args, "rated", false));
+        }
+        if (args.has("skillLevel")) {
+            try {
+                options.setSkillLevel(mage.constants.SkillLevel.valueOf(str(args, "skillLevel", "CASUAL").toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+            }
+        }
+        if (args.has("timeLimit")) {
+            try {
+                options.setMatchTimeLimit(mage.constants.MatchTimeLimit.valueOf(str(args, "timeLimit", "NONE").toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+            }
+        }
+        if (args.has("bufferTime")) {
+            try {
+                options.setMatchBufferTime(mage.constants.MatchBufferTime.valueOf(str(args, "bufferTime", "NONE").toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+            }
+        }
+        if (args.has("freeMulligans")) {
+            options.setFreeMulligans(getInt(args, "freeMulligans", 0));
+        }
+        if (args.has("attackOption")) {
+            try {
+                options.setAttackOption(mage.constants.MultiplayerAttackOption.valueOf(str(args, "attackOption", "LEFT").toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+            }
+        }
+        if (args.has("range")) {
+            try {
+                options.setRange(mage.constants.RangeOfInfluence.valueOf(str(args, "range", "ALL").toUpperCase(Locale.ROOT)));
+            } catch (Exception ignored) {
+            }
+        }
         // modo test: no barajar el mazo inicial (la librería queda en el orden
         // enviado); los servidores sin modificar ignoran el campo
         options.setSkipInitShuffling(getBool(args, "skipInitShuffling", false));

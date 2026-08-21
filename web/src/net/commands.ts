@@ -69,6 +69,15 @@ export interface CreateTableArgs {
   winsNeeded: number
   playerTypes: string[]
   password?: string
+  skillLevel?: 'BEGINNER' | 'CASUAL' | 'SERIOUS' | string
+  rated?: boolean
+  spectatorsAllowed?: boolean
+  rollbackTurnsAllowed?: boolean
+  timeLimit?: string
+  bufferTime?: string
+  freeMulligans?: number
+  attackOption?: string
+  range?: string
   skipInitShuffling?: boolean
   skipStartingPlayerChoice?: boolean
   /** mazos de los asientos "SIM" (oponentes simulados que une el proxy) */
