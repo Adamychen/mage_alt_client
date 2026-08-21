@@ -3,7 +3,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 6px 14px 4px 14px;
+  padding: 4px 14px 4px 14px;
   gap: 8px;
   overflow: hidden;
   justify-content: space-between;
@@ -26,6 +26,26 @@
   min-height: 0;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.opponent-zone .player-info-bar {
+  align-self: flex-start;
+}
+
+.opponent-zone .hand-zone {
+  align-items: flex-start;
+}
+
+.opponent-zone .hand-card-slot {
+  align-items: flex-start;
+}
+
+.opponent-zone .hand-card-slot .hand-card {
+  transform-origin: top center;
+}
+
+.opponent-zone .hand-card-slot:hover .hand-card {
+  transform: translateY(8px);
 }
 
 /* Row 2: Lands + Others (Backline) */

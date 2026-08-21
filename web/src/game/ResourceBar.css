@@ -6,6 +6,12 @@
   pointer-events: auto;
 }
 
+/* Opponent mode — aligned to top edge */
+.resource-bar.opp,
+.resource-bar.opp.compact {
+  align-items: flex-start;
+}
+
 /* Compact mode — card-sized stacks in bottom/top bar */
 .resource-bar.compact {
   height: 100%;
@@ -15,6 +21,10 @@
   overflow: visible;
   position: relative;
   z-index: 10;
+}
+
+.resource-bar.opp.compact {
+  align-items: flex-start;
 }
 
 .resource-mana-wrap {
@@ -52,6 +62,10 @@
   transform: translateY(-2px);
 }
 
+.resource-bar.opp .resource-mana:hover {
+  transform: translateY(2px);
+}
+
 .mana-total {
   color: #ffd070;
 }
@@ -69,6 +83,12 @@
   border: 1.5px solid #3a4478;
   border-radius: 10px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+}
+
+/* Opponent mana breakdown opens downward */
+.resource-bar.opp .mana-breakdown {
+  top: 48px;
+  bottom: auto;
 }
 
 .mana-pip {
@@ -116,6 +136,10 @@
   display: flex;
   gap: 8px;
   align-items: flex-end;
+}
+
+.resource-bar.opp .resource-piles {
+  align-items: flex-start;
 }
 
 /* Card-sized stacks */
@@ -245,6 +269,10 @@
 .clickable-pile:hover {
   transform: translateY(-4px) scale(1.06);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.8);
+}
+
+.resource-bar.opp .clickable-pile:hover {
+  transform: translateY(4px) scale(1.06);
 }
 
 .clickable-pile.has-playable {
