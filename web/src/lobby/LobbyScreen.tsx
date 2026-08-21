@@ -95,6 +95,8 @@ export default function LobbyScreen() {
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [leaderboardTarget, setLeaderboardTarget] = useState<string | undefined>(undefined)
+  const [leaderboardTab, setLeaderboardTab] = useState<'room' | 'profile' | 'tiers'>('room')
   const [selectedUser, setSelectedUser] = useState<UsersView | null>(null)
   const [chatPrefill, setChatPrefill] = useState<string>('')
   const [joiningTable, setJoiningTable] = useState<TableView | null>(null)
@@ -102,6 +104,12 @@ export default function LobbyScreen() {
   const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
   const [busyTable, setBusyTable] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  const openLeaderboard = (target?: string, tab: 'room' | 'profile' | 'tiers' = 'room') => {
+    setLeaderboardTarget(target)
+    setLeaderboardTab(tab)
+    setShowLeaderboard(true)
+  }
 
   const tables = lobby?.tables ?? []
   const users = useMemo(() => extractLobbyUsers(lobby?.users), [lobby?.users])
@@ -295,7 +303,7 @@ export default function LobbyScreen() {
           <button
             type="button"
             className="nav-tab-btn leaderboard-nav-tab"
-            onClick={() => setShowLeaderboard(true)}
+            onClick={() => openLeaderboard(conn?.username, 'room')}
             title="Ver clasificación de la sala y rangos de liga"
           >
             <span className="tab-icon">🏆</span>
@@ -307,8 +315,8 @@ export default function LobbyScreen() {
         <div className="lobby-user-actions">
           <div
             className="lobby-user-badge"
-            onClick={() => setShowLeaderboard(true)}
-            title="Haz clic para ver tu perfil competitivo y clasificación"
+            onClick={() => openLeaderboard(conn?.username, 'profile')}
+            title="Haz clic para ver tu perfil competitivo y estadísticas"
           >
             <AvatarImage avatarId={conn?.avatarId ?? 10} username={conn?.username} size="medium" />
             <div className="lobby-user-col">
@@ -642,7 +650,7 @@ export default function LobbyScreen() {
                 <button
                   type="button"
                   className="view-leaderboard-btn"
-                  onClick={() => setShowLeaderboard(true)}
+                  onClick={() => openLeaderboard(conn?.username, 'room')}
                   title="Abrir clasificación de la sala"
                 >
                   🏆 Leaderboard
@@ -722,7 +730,13 @@ export default function LobbyScreen() {
         <LeaderboardModal
           users={users}
           currentUsername={conn?.username ?? ''}
-          onClose={() => setShowLeaderboard(false)}
+          initialTargetUsername={leaderboardTarget}
+          initialTab={leaderboardTab}
+          onClose={() => {
+            setShowLeaderboard(false)
+            setLeaderboardTarget(undefined)
+            setLeaderboardTab('room')
+          }}
         />
       )}
       {selectedUser && (
@@ -734,8 +748,8 @@ export default function LobbyScreen() {
             setActiveTab('community')
             setChatPrefill(`/w ${username} `)
           }}
-          onViewLeaderboard={(_username) => {
-            setShowLeaderboard(true)
+          onViewLeaderboard={(username) => {
+            openLeaderboard(username, 'profile')
           }}
           onSendChatCommand={(cmd) => {
             if (roomChatId) {

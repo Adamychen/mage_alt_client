@@ -9,22 +9,41 @@ import './LeaderboardModal.css'
 interface LeaderboardModalProps {
   users: UsersView[]
   currentUsername: string
+  initialTargetUsername?: string
+  initialTab?: LeaderboardTab
   onClose: () => void
 }
 
 type LeaderboardTab = 'room' | 'profile' | 'tiers'
 
-export default function LeaderboardModal({ users, currentUsername, onClose }: LeaderboardModalProps) {
-  const [activeTab, setActiveTab] = useState<LeaderboardTab>('room')
+export default function LeaderboardModal({
+  users,
+  currentUsername,
+  initialTargetUsername,
+  initialTab = 'room',
+  onClose,
+}: LeaderboardModalProps) {
+  const [activeTab, setActiveTab] = useState<LeaderboardTab>(initialTab)
   const [searchQuery, setSearchQuery] = useState('')
+  const [targetUsername, setTargetUsername] = useState<string>(initialTargetUsername ?? currentUsername)
 
   // Current user's stats
   const currentUser = useMemo(() => {
     return users.find((u) => u.userName.toLowerCase() === currentUsername.toLowerCase())
   }, [users, currentUsername])
 
-  const myElo = currentUser?.constructedRating ?? 1500
-  const myRank = getRankInfo(myElo)
+  // Inspected user's stats
+  const targetUser = useMemo(() => {
+    return (
+      users.find((u) => u.userName.toLowerCase() === targetUsername.toLowerCase()) ??
+      currentUser
+    )
+  }, [users, targetUsername, currentUser])
+
+  const isMyProfile = (targetUser?.userName ?? '').toLowerCase() === currentUsername.toLowerCase()
+
+  const displayedElo = targetUser?.constructedRating ?? 1500
+  const displayedRank = getRankInfo(displayedElo)
 
   // Compute wins / losses and winrate for user
   const parseStats = (historyStr?: string | null, elo?: number) => {
@@ -63,7 +82,7 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
     return { wins: 0, losses: 0, total: 0, winrate: null, formattedHistory: historyStr }
   }
 
-  const myStats = parseStats(currentUser?.matchHistory, myElo)
+  const displayedStats = parseStats(targetUser?.matchHistory, displayedElo)
 
   // Sorted room leaderboard
   const sortedUsers = useMemo(() => {
@@ -122,7 +141,11 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
             className={`leaderboard-tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
-            <span>👤 Mi Rango & Estadísticas</span>
+            <span>
+              {isMyProfile
+                ? '👤 Mi Rango & Estadísticas'
+                : `👤 Perfil: ${targetUser?.userName ?? targetUsername}`}
+            </span>
           </button>
           <button
             type="button"
@@ -166,7 +189,16 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
                       const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : null
 
                       return (
-                        <tr key={u.userName} className={`leaderboard-row ${isMe ? 'is-me' : ''}`}>
+                        <tr
+                          key={u.userName}
+                          className={`leaderboard-row ${isMe ? 'is-me' : ''}`}
+                          onClick={() => {
+                            setTargetUsername(u.userName)
+                            setActiveTab('profile')
+                          }}
+                          style={{ cursor: 'pointer' }}
+                          title={`Haz clic para ver el perfil de ${u.userName}`}
+                        >
                           <td className="pos-cell">
                             {medal ? <span className="pos-medal">{medal}</span> : `#${pos}`}
                           </td>
@@ -226,14 +258,38 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
 
           {activeTab === 'profile' && (
             <div className="leaderboard-tab-content profile-tab-content">
-              <div className="profile-rank-card" style={{ borderColor: myRank.border }}>
+              {!isMyProfile && (
+                <div className="profile-inspect-banner">
+                  <span>
+                    Estás inspeccionando el perfil de <strong>{targetUser?.userName}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    className="profile-back-my-btn"
+                    onClick={() => setTargetUsername(currentUsername)}
+                  >
+                    👤 Ver mi propio perfil
+                  </button>
+                </div>
+              )}
+
+              <div className="profile-rank-card" style={{ borderColor: displayedRank.border }}>
                 <div className="profile-rank-header">
-                  <AvatarImage avatarId={currentUser?.avatarId ?? 10} username={currentUsername} size="huge" />
+                  <AvatarImage
+                    avatarId={targetUser?.avatarId ?? 10}
+                    username={targetUser?.userName ?? ''}
+                    size="huge"
+                  />
                   <div className="profile-rank-title-col">
-                    <span className="profile-rank-tier" style={{ color: myRank.color }}>
-                      {myRank.label}
+                    <div className="profile-rank-name-row">
+                      {targetUser?.flagName && <CountryFlag flagName={targetUser.flagName} />}
+                      <h3 className="profile-rank-username">{targetUser?.userName}</h3>
+                      {isMyProfile && <span className="me-badge">Tú</span>}
+                    </div>
+                    <span className="profile-rank-tier" style={{ color: displayedRank.color }}>
+                      {displayedRank.label}
                     </span>
-                    <span className="profile-rank-elo">⭐ {myElo} ELO Glicko Oficial</span>
+                    <span className="profile-rank-elo">⭐ {displayedElo} ELO Glicko Oficial</span>
                     <span className="profile-rank-desc">
                       Rango competitivo en partidas puntuadas (Ranked Matches)
                     </span>
@@ -241,28 +297,28 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
                 </div>
 
                 {/* Progress to Next Tier */}
-                {myRank.nextTierName && (
+                {displayedRank.nextTierName && (
                   <div className="profile-progress-box">
                     <div className="progress-labels">
-                      <span>Progreso hacia {myRank.nextTierName}</span>
+                      <span>Progreso hacia {displayedRank.nextTierName}</span>
                       <span className="progress-value">
-                        {myElo} / {myRank.nextTierMinElo} ELO ({myRank.progressPercent}%)
+                        {displayedElo} / {displayedRank.nextTierMinElo} ELO ({displayedRank.progressPercent}%)
                       </span>
                     </div>
                     <div className="progress-bar-track">
                       <div
                         className="progress-bar-fill"
                         style={{
-                          width: `${myRank.progressPercent}%`,
-                          backgroundColor: myRank.color,
+                          width: `${displayedRank.progressPercent}%`,
+                          backgroundColor: displayedRank.color,
                         }}
                       />
                     </div>
                   </div>
                 )}
-                {!myRank.nextTierName && (
+                {!displayedRank.nextTierName && (
                   <div className="profile-mythic-badge">
-                    <span>👑 ¡Has alcanzado el rango máximo Mítico! Enhorabuena maestro.</span>
+                    <span>👑 ¡Ha alcanzado el rango máximo Mítico! Enhorabuena maestro.</span>
                   </div>
                 )}
               </div>
@@ -270,20 +326,20 @@ export default function LeaderboardModal({ users, currentUsername, onClose }: Le
               {/* Player Stats Grid */}
               <div className="profile-stats-grid">
                 <div className="stat-card">
-                  <span className="stat-value">{myStats.total}</span>
+                  <span className="stat-value">{displayedStats.total}</span>
                   <span className="stat-label">Partidas Totales</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-value text-green">{myStats.wins}</span>
+                  <span className="stat-value text-green">{displayedStats.wins}</span>
                   <span className="stat-label">Victorias</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-value text-red">{myStats.losses}</span>
+                  <span className="stat-value text-red">{displayedStats.losses}</span>
                   <span className="stat-label">Derrotas</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-value text-gold">
-                    {myStats.winrate !== null ? `${myStats.winrate}%` : '—'}
+                    {displayedStats.winrate !== null ? `${displayedStats.winrate}%` : '—'}
                   </span>
                   <span className="stat-label">Tasa de Victoria</span>
                 </div>

@@ -87,4 +87,22 @@ describe('LeaderboardModal Component', () => {
     expect(screen.getByText('mythic_player')).toBeDefined()
     expect(screen.queryByText('novice')).toBeNull()
   })
+
+  it('opens target user profile when initialTargetUsername and initialTab="profile" are passed', () => {
+    const onClose = vi.fn()
+    render(
+      <LeaderboardModal
+        users={mockUsers}
+        currentUsername="player1"
+        initialTargetUsername="mythic_player"
+        initialTab="profile"
+        onClose={onClose}
+      />,
+    )
+
+    expect(screen.getByText(/Estás inspeccionando el perfil de/i)).toBeDefined()
+    expect(screen.getAllByText('mythic_player').length).toBeGreaterThan(0)
+    expect(screen.getByText(/⭐ 2050 ELO/i)).toBeDefined()
+    expect(screen.getByText('Mítico')).toBeDefined()
+  })
 })
