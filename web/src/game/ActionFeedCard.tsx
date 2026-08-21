@@ -20,7 +20,7 @@ const TYPE_ICONS: Record<string, string> = {
   draw: '🃏',
   discard: '🗑️',
   ability: '✨',
-  system: 'ℹ️',
+  system: '🏆',
 }
 
 export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
@@ -46,6 +46,15 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
           {icon} Turno {item.amount} {item.playerName ? `· ${item.playerName}` : ''}
         </span>
         <span className="turn-line" />
+      </div>
+    )
+  }
+
+  if (item.type === 'system') {
+    return (
+      <div className="action-feed-system-banner">
+        <span className="system-icon">{icon}</span>
+        <span className="system-text">{item.description}</span>
       </div>
     )
   }
@@ -89,11 +98,9 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
       <div className="action-card-content">
         <div className="action-card-header">
           <span className="action-icon">{icon}</span>
-          {item.playerName && (
-            <span className={`action-player-tag ${item.isMe ? 'me' : 'opp'}`}>
-              {item.isMe ? 'Tú' : item.playerName}
-            </span>
-          )}
+          <span className={`action-player-tag ${item.isMe ? 'me' : 'opp'}`}>
+            {item.isMe ? 'Tú' : item.playerName || 'Partida'}
+          </span>
           {/* Life / Damage badge */}
           {isDamage && item.amount !== undefined && (
             <span className="action-damage-badge">-{item.amount} ❤️</span>
@@ -112,9 +119,7 @@ export default function ActionFeedCard({ item, onHover }: ActionFeedCardProps) {
               ➔ {item.targetName}
             </span>
           )}
-          {!item.cardName && !item.targetName && (
-            <span className="action-desc-text">{item.description}</span>
-          )}
+          <span className="action-desc-text">{item.description}</span>
         </div>
       </div>
     </div>

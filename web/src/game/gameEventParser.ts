@@ -10,6 +10,7 @@ export type ActionFeedType =
   | 'draw'
   | 'discard'
   | 'ability'
+  | 'chat'
   | 'system'
 
 export interface ActionFeedItem {
@@ -37,8 +38,21 @@ export function cleanMageText(text: string): string {
     .trim()
 }
 
+/** Noise patterns that should not appear as visual action cards */
+const NOISE_PATTERNS = [
+  /^evento\s+/i,
+  /^sorteo:/i,
+  /^mulligan:/i,
+  /^Te has unido/i,
+  /^Espectador:/i,
+  /^Sideboard:/i,
+  /^\?[^?]+\?$/,
+  /^¿[^?]+(?:\?)?$/,
+]
+
 /**
  * Parses raw XMage chat / game log lines into structured ActionFeedItems.
+ * Returns null for internal engine noise or unparseable debug lines.
  */
 export function parseGameEvent(
   raw: string,
@@ -47,6 +61,11 @@ export function parseGameEvent(
 ): ActionFeedItem | null {
   const text = cleanMageText(raw)
   if (!text) return null
+
+  // Ignore internal technical debug noise
+  for (const pattern of NOISE_PATTERNS) {
+    if (pattern.test(text)) return null
+  }
 
   const isMe = (name?: string) => {
     if (!name || !myPlayerName) return false
@@ -61,7 +80,7 @@ export function parseGameEvent(
     rawText: text,
   }
 
-  // 1. Turn announcements: "Turn 1 (PlayerName)" or "Turn 2 Alice"
+  // 1. Turn announcements: "Turn 1 (PlayerName)" or "Turn 2 Alice" or "Turn 3 - Upkeep"
   const turnMatch = text.match(/^Turn\s+(\d+)\s*(?:\(([^)]+)\)|([A-Za-z0-9_]+))?/i)
   if (turnMatch) {
     const turnNum = Number(turnMatch[1])
@@ -69,7 +88,7 @@ export function parseGameEvent(
     return {
       ...base,
       type: 'turn',
-      playerName: pName,
+      playerName: pName || undefined,
       isMe: isMe(pName),
       amount: turnNum,
       description: `Turno ${turnNum}${pName ? ` · ${pName}` : ''}`,
@@ -239,10 +258,22 @@ export function parseGameEvent(
     }
   }
 
-  // 10. Fallback System Message
-  return {
-    ...base,
-    type: 'system',
-    description: text,
+  // 10. Meaningful game announcements: game start, game over, concession, win
+  if (
+    text.startsWith('¡Partida') ||
+    text.toLowerCase().includes('ha ganado') ||
+    text.toLowerCase().includes('won the match') ||
+    text.toLowerCase().includes('won the game') ||
+    text.toLowerCase().includes('has conceded') ||
+    text.toLowerCase().includes('fin de partida')
+  ) {
+    return {
+      ...base,
+      type: 'system',
+      description: text,
+    }
   }
+
+  // Ignore any other generic unhandled noise
+  return null
 }

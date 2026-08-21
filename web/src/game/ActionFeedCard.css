@@ -25,24 +25,40 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
+.action-feed-system-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 6px 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(40, 30, 10, 0.7);
+  border: 1px solid rgba(255, 208, 112, 0.3);
+  color: #ffd070;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .action-feed-card {
   position: relative;
   display: flex;
   flex-direction: column;
   padding: 8px 10px;
   border-radius: 8px;
-  background: rgba(18, 22, 44, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 24, 48, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   margin-bottom: 6px;
   overflow: hidden;
   cursor: pointer;
+  min-height: 48px;
   transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .action-feed-card:hover {
   transform: translateX(-2px);
   border-color: rgba(255, 208, 112, 0.7);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .action-card-bg {
@@ -57,11 +73,6 @@
   mask-image: linear-gradient(to right, transparent, black 70%);
   -webkit-mask-image: linear-gradient(to right, transparent, black 70%);
   pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.action-feed-card:hover .action-card-bg {
-  opacity: 0.45;
 }
 
 .action-card-content {
@@ -137,9 +148,9 @@
 }
 
 .action-card-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #f8fafc;
   font-family: var(--font-display);
 }
 
@@ -153,8 +164,8 @@
 }
 
 .action-desc-text {
-  font-size: 12px;
-  color: #cbd5e1;
+  font-size: 11px;
+  color: #94a3b8;
 }
 
 /* Card Types Borders */
@@ -176,7 +187,7 @@
 
 .action-feed-card.type-damage {
   border-left: 3px solid #ef4444;
-  background: rgba(35, 15, 20, 0.85);
+  background: rgba(35, 15, 20, 0.9);
 }
 
 .action-feed-card.type-ability {
