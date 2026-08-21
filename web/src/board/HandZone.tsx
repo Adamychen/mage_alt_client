@@ -39,9 +39,10 @@ export default function HandZone({
       const count = entries.length
       if (count === 0 || availW <= 0) return
 
-      const overlap = 0.4
+      const overlap = 0.35
       const wByWidth = availW / (count * (1 - overlap) + overlap)
-      const wByHeight = availH > 0 ? (availH - 4) / 1.4 : MAX_CARD_W
+      const maxH = availH > 20 ? availH - 4 : MAX_CARD_W * 1.4
+      const wByHeight = maxH / 1.4
       const w = Math.min(MAX_CARD_W, Math.max(MIN_CARD_W, Math.min(wByWidth, wByHeight)))
       setCardW(w)
     }

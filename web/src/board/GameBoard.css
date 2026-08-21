@@ -6,7 +6,7 @@
   position: relative;
   background: radial-gradient(circle at 50% 50%, #151930 0%, #0d1022 55%, #080a16 100%);
   overflow: hidden;
-  --card-w: 96px;
+  --card-w: clamp(90px, 7.5vw, 130px);
 }
 
 .board-divider {

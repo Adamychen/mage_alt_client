@@ -3,8 +3,10 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 4px 8px;
-  gap: 4px;
+  padding: 6px 14px 4px 14px;
+  gap: 8px;
+  overflow: hidden;
+  justify-content: space-between;
 }
 
 .opponent-zone.empty {
@@ -13,31 +15,36 @@
 
 .oz-row {
   display: flex;
-  gap: 6px;
+  gap: 10px;
   min-height: 0;
+  width: 100%;
 }
 
-/* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */
+/* Row 1: Unified top row [Life | Hand | Mana | Deck | Grave | Exile] (at top edge) */
 .oz-top-row {
-  flex: 2;
-  align-items: center;
-  gap: 6px;
+  flex: 0.85;
   min-height: 0;
+  align-items: flex-start;
+  justify-content: space-between;
 }
 
-/* Row 2: Lands + Others */
+/* Row 2: Lands + Others (Backline) */
 .oz-permanents-row {
-  flex: 4;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
 }
 
-/* Row 3: Creatures */
+/* Row 3: Creatures (Combat zone adjacent to the center divider) */
 .oz-creatures-row {
-  flex: 5;
+  flex: 1.2;
+  min-height: 0;
+  align-items: center;
 }
 
 /* Commander zone (1 card width) */
 .oz-commander {
-  width: var(--card-w, 90px);
+  width: var(--card-w, 110px);
   flex-shrink: 0;
   border-radius: 8px;
   border: none;
@@ -49,8 +56,8 @@
   height: 100%;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 4px;
+  gap: 10px;
+  padding: 2px;
   overflow: visible;
   border-radius: 8px;
   border: none;

@@ -1,24 +1,24 @@
 .card-slot {
   position: relative;
-  width: var(--card-w, 90px);
-  height: calc(var(--card-w, 90px) * 1.4);
-  border-radius: 6px;
-  overflow: hidden;
+  width: var(--card-w, 116px);
+  height: calc(var(--card-w, 116px) * 1.4);
+  border-radius: 8px;
+  background: #14182e;
+  border: 1.5px solid #2e3560;
+  box-sizing: border-box;
   flex-shrink: 0;
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-  will-change: transform;
   user-select: none;
-  background: #16181f;
-  border: 1px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(220, 220, 225, 0.55);
-  transform-origin: center center;
+  cursor: default;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
+/* Clickable */
 .card-slot.clickable {
   cursor: pointer;
 }
 
-/* Hover */
+/* Hover glow */
+.card-slot.clickable:hover,
 .card-slot:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
   z-index: 40;
@@ -27,9 +27,9 @@
 
 /* Tapped */
 .card-slot.tapped {
-  transform: rotate(90deg) scale(0.85);
+  transform: rotate(90deg) scale(0.9);
   transform-origin: center center;
-  margin: 12px 0;
+  margin: 8px 0;
 }
 .card-slot.tapped:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), inset 0 0 0 2px rgba(255, 208, 112, 0.9);
@@ -37,27 +37,27 @@
   border-color: rgba(255, 208, 112, 0.8);
 }
 .card-slot.tapped.playable {
-  box-shadow: 0 0 14px 4px rgba(99, 230, 190, 0.7);
+  box-shadow: 0 0 16px 4px rgba(99, 230, 190, 0.75);
   border-color: #63e6be;
 }
 .card-slot.tapped.chosen {
-  box-shadow: 0 0 16px 5px rgba(255, 100, 100, 0.85), inset 0 0 0 2px #ff6464;
+  box-shadow: 0 0 18px 6px rgba(255, 100, 100, 0.9), inset 0 0 0 2px #ff6464;
   border-color: #ff6464;
 }
 
 /* Playable glow */
 .card-slot.playable {
-  box-shadow: 0 0 12px 3px rgba(99, 230, 190, 0.5);
+  box-shadow: 0 0 14px 3px rgba(99, 230, 190, 0.6);
   border-color: #63e6be;
 }
 .card-slot.playable.clickable:hover {
-  box-shadow: 0 0 20px 6px rgba(99, 230, 190, 0.8);
+  box-shadow: 0 0 22px 6px rgba(99, 230, 190, 0.85);
 }
 
 /* Targeting pulse */
 @keyframes targetPulse {
-  0%, 100% { box-shadow: 0 0 8px 2px rgba(255, 176, 58, 0.4); }
-  50% { box-shadow: 0 0 20px 6px rgba(255, 176, 58, 0.7); }
+  0%, 100% { box-shadow: 0 0 10px 2px rgba(255, 176, 58, 0.5); }
+  50% { box-shadow: 0 0 22px 6px rgba(255, 176, 58, 0.85); }
 }
 
 .card-slot.targetable {
@@ -68,7 +68,7 @@
 
 /* Chosen target / Attacking in combat */
 .card-slot.chosen {
-  box-shadow: 0 0 16px 5px rgba(255, 100, 100, 0.85), inset 0 0 0 2px #ff6464;
+  box-shadow: 0 0 18px 5px rgba(255, 100, 100, 0.9), inset 0 0 0 2px #ff6464;
   border-color: #ff6464;
   animation: none;
 }
@@ -85,7 +85,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 6px;
+  border-radius: 7px;
 }
 
 /* Placeholder */
@@ -95,13 +95,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 8px;
   background: linear-gradient(135deg, #1e2348 0%, #14182e 100%);
-  border-radius: 6px;
+  border-radius: 7px;
 }
 
 .card-placeholder-name {
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   color: #c8cae6;
   text-align: center;
   word-break: break-word;
@@ -113,75 +114,73 @@
 .counter-badge,
 .damage-badge {
   position: absolute;
-  bottom: 3px;
-  right: 3px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
+  bottom: 4px;
+  right: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 800;
   font-family: var(--font-display);
-  line-height: 1.2;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  line-height: 1.1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   pointer-events: none;
+  z-index: 5;
 }
 
 .pt-badge {
-  background: rgba(20, 24, 48, 0.9);
-  border: 1px solid #3a4270;
-  color: #e8eaf6;
+  background: rgba(16, 20, 42, 0.95);
+  border: 1.5px solid #4a548c;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 .counter-badge {
-  bottom: 3px;
-  left: 3px;
+  bottom: 4px;
+  left: 4px;
   right: auto;
-  background: rgba(255, 176, 58, 0.9);
+  background: rgba(255, 176, 58, 0.95);
   color: #10131f;
+  border: 1px solid rgba(255, 208, 112, 0.8);
 }
 
 .damage-badge {
-  bottom: auto;
-  top: 50%;
+  bottom: 4px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(255, 92, 108, 0.9);
-  color: #fff;
-  font-size: 14px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  transform: translateX(-50%);
+  right: auto;
+  background: rgba(235, 68, 54, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(255, 120, 110, 0.8);
 }
 
-/* Copy badge — top-left for copy tokens */
 .copy-badge {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  padding: 1px 5px;
+  top: 4px;
+  left: 4px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   font-family: var(--font-display);
-  letter-spacing: 0.06em;
-  background: rgba(124, 92, 255, 0.85);
-  color: #fff;
+  background: rgba(124, 92, 255, 0.9);
+  color: #ffffff;
+  border: 1px solid rgba(160, 132, 255, 0.6);
+  z-index: 5;
   pointer-events: none;
 }
 
 .token-badge {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  padding: 1px 5px;
+  top: 4px;
+  left: 4px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 9px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 800;
   font-family: var(--font-display);
-  letter-spacing: 0.06em;
-  background: rgba(212, 175, 55, 0.9);
-  color: #12141e;
+  background: rgba(255, 176, 58, 0.9);
+  color: #10131f;
+  border: 1px solid rgba(255, 208, 112, 0.8);
+  z-index: 5;
   pointer-events: none;
 }

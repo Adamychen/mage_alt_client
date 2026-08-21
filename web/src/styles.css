@@ -17,8 +17,8 @@
   --stack-w: 80px;
   --top-h: 200px;
   --bottom-h: 220px;
-  --hand-h: 160px;
-  --card-w: 96px;
+  --hand-h: 180px;
+  --card-w: clamp(112px, 8.5vw, 142px);
   --card-aspect: 0.714;
 
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
