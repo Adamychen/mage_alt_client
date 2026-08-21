@@ -3,6 +3,9 @@
   align-items: center;
   justify-content: center;
   padding: 8px 12px;
+  flex-shrink: 0;
+  background: #0a0d1a;
+  border-top: 1px solid #1e2444;
 }
 
 .big-action-btn {
