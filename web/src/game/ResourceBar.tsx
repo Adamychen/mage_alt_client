@@ -28,7 +28,7 @@ interface ResourceBarProps {
 
 export default function ResourceBar({ player, side, compact = false, crossZonePlayables, onPlayCrossZone }: ResourceBarProps) {
   const [manaOpen, setManaOpen] = useState(false)
-  const [openPile, setOpenPile] = useState<'graveyard' | 'exile' | 'crosszone' | null>(null)
+  const [openPile, setOpenPile] = useState<'graveyard' | 'exile' | 'crosszone' | 'library' | null>(null)
   const pool = player.manaPool ?? {}
   const manaTotal = MANA_COLORS.reduce((sum, c) => sum + (pool[c.key] ?? 0), 0)
   const graveyardCount = Object.keys(player.graveyard ?? {}).length
@@ -38,12 +38,43 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
   const playableByZone = useMemo(() => {
     const map: Record<string, Set<string>> = {}
     for (const p of crossZone) {
-      const key = p.zone === 'graveyard' ? 'graveyard' : 'exile'
+      const key = p.zone === 'graveyard' ? 'graveyard' : p.zone === 'library' ? 'library' : 'exile'
       if (!map[key]) map[key] = new Set()
       map[key].add(p.id)
     }
     return map
   }, [crossZone])
+
+  const libraryCards = useMemo(() => {
+    const res: Record<string, any> = {}
+    const count = player.libraryCount ?? 0
+    if (count <= 0) return res
+
+    // 1. If player has topCard revealed, position #1 is visible with full art
+    if (player.topCard) {
+      const topId = player.topCard.id || `lib-top-${player.playerId}`
+      res[topId] = {
+        ...player.topCard,
+        id: topId,
+        faceDown: false,
+      }
+    }
+
+    // 2. Generate remaining cards as face-down cards with official Magic card back
+    const startIndex = player.topCard ? 2 : 1
+    for (let i = startIndex; i <= count; i++) {
+      const id = `lib-${player.playerId}-${i}`
+      res[id] = {
+        id,
+        name: `Carta #${i}`,
+        manaValue: 0,
+        expansionSetCode: '',
+        cardNumber: '0',
+        faceDown: true,
+      }
+    }
+    return res
+  }, [player.libraryCount, player.topCard, player.playerId])
 
   return (
      <div className={`resource-bar ${side} ${compact ? 'compact' : ''}`}>
@@ -70,9 +101,11 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
       </div>
 
       <div className="resource-piles">
-        <div
-          className={`resource-stack library-stack ${player.topCard ? 'has-top-revealed' : ''}`}
-          title={player.topCard ? `Biblioteca: ${player.libraryCount} (Top: ${player.topCard.name})` : `Biblioteca: ${player.libraryCount}`}
+        <button
+          type="button"
+          className={`resource-stack library-stack clickable-pile ${player.topCard ? 'has-top-revealed' : ''}`}
+          title={player.topCard ? `Biblioteca: ${player.libraryCount} cartas (Superior: ${player.topCard.name}) · Clic para ver` : `Biblioteca: ${player.libraryCount} cartas · Clic para ver`}
+          onClick={() => setOpenPile('library')}
         >
           {player.topCard ? (
             <CardSlot card={player.topCard} className="library-top-card" />
@@ -81,7 +114,7 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
           )}
           <span className="stack-count">{player.libraryCount}</span>
           {player.topCard && <span className="top-card-badge" title="Carta superior revelada">👁️</span>}
-        </div>
+        </button>
         <button
           type="button"
           className={`resource-stack graveyard-stack clickable-pile ${counts.graveyard > 0 ? 'has-playable' : ''}`}
@@ -125,6 +158,16 @@ export default function ResourceBar({ player, side, compact = false, crossZonePl
           )}
       </div>
 
+        {openPile === 'library' && (
+          <PileOverlay
+           title={`Biblioteca de ${player.name || 'Jugador'}`}
+           cards={libraryCards}
+           onClose={() => setOpenPile(null)}
+           playableIds={playableByZone.library}
+           onPlayCard={onPlayCrossZone}
+           isLibrary={true}
+          />
+        )}
         {openPile === 'graveyard' && (
           <PileOverlay
            title="Cementerio"
