@@ -6,7 +6,6 @@ import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
 import CombatArrowsOverlay from './CombatArrowsOverlay'
 import FloatingCardPreview from './FloatingCardPreview'
-import CardFlightOverlay from './CardFlightOverlay'
 import { useSceneBridge } from './sceneBridge'
 import type { CrossZonePlayable } from './crossZone'
 import './GameBoard.css'
@@ -217,10 +216,6 @@ export default function GameBoard({
         chosenTargetIds={chosenTargetIds}
         combatChosen={combatChosen}
         combatMode={combatMode}
-      />
-      <CardFlightOverlay
-        game={game}
-        boardRef={boardRef}
       />
       <FloatingCardPreview
         card={floatingCard}

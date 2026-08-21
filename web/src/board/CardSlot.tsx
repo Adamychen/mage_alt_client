@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName } from '../cards/cardImages'
+import { getFallbackSourceRect, getPreviousCardPosition, recordCardPosition } from './cardPositionRegistry'
 import './CardSlot.css'
 
 const CARD_BACK_URL = 'https://cards.scryfall.io/back.png'
@@ -39,6 +40,57 @@ export default function CardSlot({
   showDamage = false,
 }: CardSlotProps) {
   const [imgUrl, setImgUrl] = useState<string | null>(null)
+  const slotRef = useRef<HTMLDivElement>(null)
+  const isFirstMountRef = useRef(true)
+
+  const effectiveId = cardId || (card as any).id
+
+  useLayoutEffect(() => {
+    const el = slotRef.current
+    if (!el || !effectiveId) return
+
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false
+      const lastRect = el.getBoundingClientRect()
+      if (lastRect.width > 0 && lastRect.height > 0) {
+        const prevRect = getPreviousCardPosition(effectiveId) || getFallbackSourceRect(el)
+        if (prevRect && prevRect.width > 0) {
+          const dx = prevRect.left + prevRect.width / 2 - (lastRect.left + lastRect.width / 2)
+          const dy = prevRect.top + prevRect.height / 2 - (lastRect.top + lastRect.height / 2)
+
+          if (Math.hypot(dx, dy) > 20) {
+            const scale = Math.min(1.15, Math.max(0.65, prevRect.width / lastRect.width))
+            el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${scale})`
+            el.style.transition = 'none'
+            el.style.zIndex = '50'
+
+            const raf = requestAnimationFrame(() => {
+              el.style.transition = 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
+              el.style.transform = ''
+
+              const timer = setTimeout(() => {
+                if (el) {
+                  el.style.transition = ''
+                  el.style.transform = ''
+                  el.style.zIndex = ''
+                }
+              }, 250)
+
+              return () => clearTimeout(timer)
+            })
+
+            return () => cancelAnimationFrame(raf)
+          }
+        }
+      }
+    }
+
+    return () => {
+      if (el && effectiveId) {
+        recordCardPosition(effectiveId, el.getBoundingClientRect())
+      }
+    }
+  }, [effectiveId])
 
   useEffect(() => {
     if (faceDown) return
@@ -68,6 +120,7 @@ export default function CardSlot({
 
   return (
     <div
+      ref={slotRef}
       data-card-id={cardId}
       className={[
         'card-slot',
