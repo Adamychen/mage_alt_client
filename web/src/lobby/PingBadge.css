@@ -1,0 +1,70 @@
+.ping-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 18, 38, 0.6);
+  user-select: none;
+}
+
+.ping-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ping-good {
+  color: #63e6be;
+  border-color: rgba(99, 230, 190, 0.3);
+  background: rgba(99, 230, 190, 0.08);
+}
+.ping-good .ping-dot {
+  background: #63e6be;
+  box-shadow: 0 0 6px #63e6be;
+}
+
+.ping-medium {
+  color: #ffd070;
+  border-color: rgba(255, 208, 112, 0.3);
+  background: rgba(255, 208, 112, 0.08);
+}
+.ping-medium .ping-dot {
+  background: #ffd070;
+  box-shadow: 0 0 6px #ffd070;
+}
+
+.ping-slow {
+  color: #ff7675;
+  border-color: rgba(255, 118, 117, 0.3);
+  background: rgba(255, 118, 117, 0.08);
+}
+.ping-slow .ping-dot {
+  background: #ff7675;
+  box-shadow: 0 0 6px #ff7675;
+}
+
+.ping-disconnected {
+  color: #8c96c0;
+  border-color: rgba(140, 150, 192, 0.3);
+  background: rgba(140, 150, 192, 0.08);
+}
+.ping-disconnected .ping-dot {
+  background: #8c96c0;
+}
+
+.ping-unknown {
+  color: #8c96c0;
+}
+.ping-unknown .ping-dot {
+  background: #8c96c0;
+}
+
+.ping-compact {
+  padding: 1px 5px;
+  font-size: 10px;
+}

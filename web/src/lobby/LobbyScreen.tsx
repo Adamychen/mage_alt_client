@@ -9,6 +9,7 @@ import DeckManager from './DeckManager'
 import CountryFlag from './CountryFlag'
 import RankBadge from './RankBadge'
 import AvatarImage from './AvatarImage'
+import PingBadge from './PingBadge'
 import LeaderboardModal from './LeaderboardModal'
 import UserActionModal from './UserActionModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
@@ -319,7 +320,10 @@ export default function LobbyScreen() {
           >
             <AvatarImage avatarId={conn?.avatarId ?? 10} username={conn?.username} size="medium" />
             <div className="lobby-user-col">
-              <span className="lobby-username">{conn?.username}</span>
+              <div className="lobby-user-name-line" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="lobby-username">{conn?.username}</span>
+                {myUser?.infoPing && <PingBadge infoPing={myUser.infoPing} compact />}
+              </div>
               <RankBadge elo={myUser?.constructedRating ?? 1500} compact />
             </div>
           </div>
@@ -671,6 +675,7 @@ export default function LobbyScreen() {
                         {u.flagName && <CountryFlag flagName={u.flagName} className="user-list-flag" showTextFallback />}
                         <span className="user-name-text">{u.userName}</span>
                         <RankBadge elo={u.constructedRating} compact showElo />
+                        {u.infoPing && <PingBadge infoPing={u.infoPing} compact />}
                       </div>
                       {u.matchHistory && (
                         <span className="user-history-text">Historial: {u.matchHistory}</span>

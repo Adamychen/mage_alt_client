@@ -5,6 +5,7 @@ import { appendLocalChatMessage } from '../state/store'
 import RankBadge from './RankBadge'
 import CountryFlag from './CountryFlag'
 import AvatarImage from './AvatarImage'
+import PingBadge from './PingBadge'
 import './UserActionModal.css'
 
 interface UserActionModalProps {
@@ -84,6 +85,7 @@ export default function UserActionModal({
               {user.matchHistory && (
                 <span className="user-action-history-pill">🏆 {user.matchHistory}</span>
               )}
+              {user.infoPing && <PingBadge infoPing={user.infoPing} compact />}
             </div>
 
             <div className="user-action-status-row">

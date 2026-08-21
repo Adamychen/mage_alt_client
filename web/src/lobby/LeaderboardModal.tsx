@@ -6,6 +6,7 @@ import { appendLocalChatMessage } from '../state/store'
 import RankBadge from './RankBadge'
 import CountryFlag from './CountryFlag'
 import AvatarImage from './AvatarImage'
+import PingBadge from './PingBadge'
 import './LeaderboardModal.css'
 
 interface LeaderboardModalProps {
@@ -219,6 +220,7 @@ export default function LeaderboardModal({
                                 {u.userName}
                                 {isMe && <span className="me-badge">Tú</span>}
                               </span>
+                              {u.infoPing && <PingBadge infoPing={u.infoPing} compact />}
                             </div>
                           </td>
                           <td>
@@ -294,6 +296,7 @@ export default function LeaderboardModal({
                       {targetUser?.flagName && <CountryFlag flagName={targetUser.flagName} />}
                       <h3 className="profile-rank-username">{targetUser?.userName}</h3>
                       {isMyProfile && <span className="me-badge">Tú</span>}
+                      {targetUser?.infoPing && <PingBadge infoPing={targetUser.infoPing} compact />}
                     </div>
                     <span className="profile-rank-tier" style={{ color: displayedRank.color }}>
                       {displayedRank.label}
