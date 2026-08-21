@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import * as cmds from '../net/commands'
 import { useStore } from '../state/store'
 import QuickReactions from './QuickReactions'
 import FormattedText from './FormattedText'
+import FloatingCardPreview from '../board/FloatingCardPreview'
+import type { CardView } from '../net/types'
 import './GameChat.css'
 
 // Set corto para el selector de emoji del chat (icono 😊 a la izquierda del input,
@@ -15,10 +17,17 @@ export default function GameChat() {
   const log = useStore((s) => s.log)
   const [input, setInput] = useState('')
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [hoverCard, setHoverCard] = useState<CardView | null>(null)
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const chatId = gameChatId || roomChatId
+
+  const handleHover = useCallback((card: CardView | null, rect?: DOMRect) => {
+    setHoverCard(card)
+    setHoverRect(rect ?? null)
+  }, [])
 
   // Only show real player/user chat messages in the Chat tab (not engine inform lines like "Upkeep - Waiting for...")
   const chatEntries = useMemo(() => {
@@ -62,13 +71,20 @@ export default function GameChat() {
             <div key={entry.id} className="game-chat-entry">
               {entry.from && <span className="game-chat-player">{entry.from}:</span>}
               <span className="game-chat-text">
-                <FormattedText text={entry.text} />
+                <FormattedText text={entry.text} onHover={handleHover} />
               </span>
             </div>
           ))
         )}
         <div ref={endRef} />
       </div>
+
+      {/* Floating Card Preview when hovering over card names in chat */}
+      <FloatingCardPreview
+        card={hoverCard}
+        anchorRect={hoverRect}
+        fixedSide="left"
+      />
 
       <form className="game-chat-input" onSubmit={send}>
         <div className="game-chat-emoji-wrap">

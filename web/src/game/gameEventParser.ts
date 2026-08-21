@@ -34,7 +34,7 @@ export function cleanMageText(text: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&amp;/g, '&')
-    .replace(/\s*\[[0-9a-fA-F]{3}\]/g, '') // remove XMage 3-hex object IDs like [a1b]
+    .replace(/\s*\[[0-9a-fA-F]{2,8}\]/g, '') // remove XMage object IDs like [dcf], [a1b], [373], [9b4]
     .replace(/\s+/g, ' ')
     .trim()
 }

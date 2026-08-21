@@ -1,9 +1,11 @@
 import React from 'react'
+import type { CardView } from '../net/types'
 import './FormattedText.css'
 
 interface FormattedTextProps {
   text: string | null | undefined
   className?: string
+  onHover?: (card: CardView | null, rect?: DOMRect) => void
 }
 
 /**
@@ -39,31 +41,34 @@ export function decodeHtmlEntities(raw: string): string {
 }
 
 /**
- * Limpia tags HTML de XMage y hashes de objeto como [373]
+ * Limpia tags HTML de XMage y hashes de objeto como [373] o [dcf]
  */
 export function cleanMageHtml(raw: string): string {
   if (!raw) return ''
   let str = decodeHtmlEntities(raw)
 
-  // Elimina hashes de objeto de XMage: ej. [373] o [a4f]
-  str = str.replace(/\s*\[[0-9a-fA-F]{2,6}\]/g, '')
+  // Elimina hashes de objeto de XMage: ej. [373], [dcf] o [9b4]
+  str = str.replace(/\s*\[[0-9a-fA-F]{2,8}\]/g, '')
 
   // Elimina tags de estilo o formato envolventes como <div...>, </div>, <br/>
   str = str.replace(/<\/?div[^>]*>/gi, ' ')
   str = str.replace(/<br\s*\/?>/gi, ' ')
 
-  // Convierte <font color='...'> en texto limpio o estructurado
-  str = str.replace(/<font[^>]*>(.*?)<\/font>/gi, '$1')
+  // Convierte <font ...>...</font> en su contenido textual limpio
+  str = str.replace(/<font\b[^>]*>(.*?)<\/font>/gi, '$1')
+  // Elimina cualquier otro tag HTML remanente
   str = str.replace(/<\/?[a-z][^>]*>/gi, '')
 
   // Limpia espacios duplicados
   return str.replace(/\s+/g, ' ').trim()
 }
 
-interface TextToken {
+export interface TextToken {
   type: 'text' | 'colored' | 'mana'
   content: string
   color?: string
+  isCard?: boolean
+  isPlayer?: boolean
 }
 
 /**
@@ -73,26 +78,43 @@ export function parseMageTextTokens(raw: string): TextToken[] {
   if (!raw) return []
   const decoded = decodeHtmlEntities(raw)
     // Limpia hashes de objeto de XMage
-    .replace(/\s*\[[0-9a-fA-F]{2,6}\]/g, '')
+    .replace(/\s*\[[0-9a-fA-F]{2,8}\]/g, '')
     // Reemplaza divs y brs por espacios
     .replace(/<\/?div[^>]*>/gi, ' ')
     .replace(/<br\s*\/?>/gi, ' ')
 
   const tokens: TextToken[] = []
 
-  // Divide por tags <font color='...'>...</font>
-  const fontRegex = /<font(?:\s+color=['"]([^'"]+)['"])?[^>]*>(.*?)<\/font>/gi
+  // Divide por tags <font ...>...</font> soportando atributos en cualquier orden (color, object_id, etc.)
+  const fontRegex = /<font\b([^>]*)>(.*?)<\/font>/gi
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   while ((match = fontRegex.exec(decoded)) !== null) {
     if (match.index > lastIndex) {
-      const beforeText = decoded.substring(lastIndex, match.index)
+      const beforeText = decoded.substring(lastIndex, match.index).replace(/<\/?[a-z][^>]*>/gi, '')
       tokens.push(...parseManaTokens(beforeText))
     }
-    const color = match[1]
+    const attrString = match[1] || ''
+    const colorMatch = /color=['"]?([^'"\s>]+)/i.exec(attrString)
+    const color = colorMatch ? colorMatch[1] : undefined
+    const hasObjectId = /object_id=/i.test(attrString)
     const content = match[2].replace(/<\/?[a-z][^>]*>/gi, '')
-    tokens.push({ type: 'colored', content, color })
+    
+    // Clasifica si es un jugador o una carta
+    const isPlayerColor = !!color && /^#(?:20b2aa|00ffff|00ff00|ff0000|ff69b4)$/i.test(color)
+    const isPlayer = !hasObjectId && isPlayerColor
+    const isCard = hasObjectId || !isPlayer
+
+    if (content) {
+      tokens.push({
+        type: 'colored',
+        content,
+        color,
+        isCard,
+        isPlayer,
+      })
+    }
     lastIndex = fontRegex.lastIndex
   }
 
@@ -143,7 +165,7 @@ export function ManaBadge({ symbol }: { symbol: string }) {
   )
 }
 
-export default function FormattedText({ text, className = '' }: FormattedTextProps) {
+export default function FormattedText({ text, className = '', onHover }: FormattedTextProps) {
   if (!text) return null
 
   const tokens = parseMageTextTokens(text)
@@ -155,11 +177,33 @@ export default function FormattedText({ text, className = '' }: FormattedTextPro
           return <ManaBadge key={idx} symbol={token.content} />
         }
         if (token.type === 'colored') {
+          const isCard = token.isCard !== false
+          const isPlayer = token.isPlayer === true
+
           return (
             <span
               key={idx}
-              className="formatted-colored"
+              className={`formatted-colored ${isCard ? 'is-card' : ''} ${isPlayer ? 'is-player' : ''}`.trim()}
               style={token.color ? { color: token.color } : undefined}
+              title={isPlayer ? `👤 Jugador: ${token.content}` : `🃏 Carta: ${token.content}`}
+              onMouseEnter={(e) => {
+                if (isCard && onHover) {
+                  onHover(
+                    {
+                      name: token.content,
+                      manaValue: 0,
+                      expansionSetCode: '',
+                      cardNumber: '0',
+                    } as CardView,
+                    e.currentTarget.getBoundingClientRect()
+                  )
+                }
+              }}
+              onMouseLeave={() => {
+                if (isCard && onHover) {
+                  onHover(null)
+                }
+              }}
             >
               {token.content}
             </span>

@@ -6,6 +6,27 @@
 .formatted-colored {
   font-weight: 600;
   text-shadow: 0 0 8px currentColor;
+  transition: all 0.15s ease;
+}
+
+.formatted-colored.is-card {
+  cursor: pointer;
+  border-bottom: 1px dotted currentColor;
+}
+
+.formatted-colored.is-card:hover {
+  text-shadow: 0 0 12px currentColor, 0 0 18px currentColor;
+  border-bottom-style: solid;
+  filter: brightness(1.2);
+}
+
+.formatted-colored.is-player {
+  cursor: default;
+}
+
+.formatted-colored.is-player:hover {
+  text-shadow: 0 0 12px currentColor;
+  filter: brightness(1.2);
 }
 
 /* Mana badges */

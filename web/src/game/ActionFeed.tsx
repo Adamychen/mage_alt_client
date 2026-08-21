@@ -121,7 +121,7 @@ export default function ActionFeed({ onHover }: ActionFeedProps) {
               <div key={entry.id ?? i} className="game-log-entry">
                 {entry.from && <span className="game-log-player">{entry.from}</span>}
                 <span className="game-log-text">
-                  <FormattedText text={entry.text} />
+                  <FormattedText text={entry.text} onHover={handleCardHover} />
                 </span>
               </div>
             ))}

@@ -1,5 +1,5 @@
-import { render } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { render, fireEvent } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import FormattedText, { cleanMageHtml, decodeHtmlEntities } from './FormattedText'
 
 describe('FormattedText', () => {
@@ -43,5 +43,45 @@ describe('FormattedText', () => {
   it('renders chat message entities', () => {
     const { container } = render(<FormattedText text="player1: &iexcl;Hola desde el cliente web!" />)
     expect(container.textContent).toBe('player1: ¡Hola desde el cliente web!')
+  })
+
+  it('renders complex multi-font XMage chat actions with object_id attributes cleanly without raw tags or hashes', () => {
+    const raw = "<font color='#20B2AA'>ForsakenOne</font> discards <font color='#87CEFA' object_id='dcf48010-80b0-45a6-bf5b-f3997042784a'>Murktide Regent</font> [dcf] (source: <font color='#DAA520' object_id='9b43937e-1d89-405c-a630-e796de0eaa17'>Psychic Frog</font> [9b4])"
+
+    expect(cleanMageHtml(raw)).toBe('ForsakenOne discards Murktide Regent (source: Psychic Frog)')
+
+    const { container } = render(<FormattedText text={raw} />)
+    expect(container.textContent).toBe('ForsakenOne discards Murktide Regent (source: Psychic Frog)')
+    expect(container.textContent).not.toContain('<font')
+    expect(container.textContent).not.toContain('object_id')
+    expect(container.textContent).not.toContain('[dcf]')
+    expect(container.textContent).not.toContain('[9b4]')
+
+    const coloredSpans = container.querySelectorAll('.formatted-colored')
+    expect(coloredSpans).toHaveLength(3)
+    expect(coloredSpans[0].textContent).toBe('ForsakenOne')
+    expect(coloredSpans[1].textContent).toBe('Murktide Regent')
+    expect(coloredSpans[2].textContent).toBe('Psychic Frog')
+  })
+
+  it('triggers onHover when mouse enters card elements and clears on leave', () => {
+    const onHover = vi.fn()
+    const raw = "<font color='#20B2AA'>ForsakenOne</font> discards <font color='#87CEFA' object_id='dcf48010-80b0-45a6-bf5b-f3997042784a'>Murktide Regent</font>"
+
+    const { container } = render(<FormattedText text={raw} onHover={onHover} />)
+    const cardSpan = container.querySelector('.formatted-colored.is-card')
+    expect(cardSpan).toBeTruthy()
+    expect(cardSpan?.textContent).toBe('Murktide Regent')
+
+    // Mouse enter card
+    fireEvent.mouseEnter(cardSpan!)
+    expect(onHover).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Murktide Regent' }),
+      expect.anything()
+    )
+
+    // Mouse leave card
+    fireEvent.mouseLeave(cardSpan!)
+    expect(onHover).toHaveBeenCalledWith(null)
   })
 })
