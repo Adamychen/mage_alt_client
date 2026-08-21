@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import GameBoard from '../board/GameBoard'
+import OpponentSwitcherBar from '../board/OpponentSwitcherBar'
 import * as cmds from '../net/commands'
 import { maybeAutoPass, setSetting, setStoreError, useGame, useSettings, useStore } from '../state/store'
 import FeedbackDialog from './FeedbackDialog'
@@ -78,6 +79,23 @@ export default function GameScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [canPass, feedback, onResolveClick])
 
+  const opps = game?.players?.filter((p) => !p.controlled) ?? []
+  const isSpectator = !me && opps.length >= 2
+  const topOpps = isSpectator ? opps.slice(0, opps.length - 1) : opps
+
+  const [selectedOppId, setSelectedOppId] = useState<string | null>(null)
+
+  const currentOpp = useMemo(() => {
+    if (topOpps.length <= 1) return topOpps[0]
+    if (selectedOppId) {
+      const found = topOpps.find((p) => p.playerId === selectedOppId)
+      if (found) return found
+    }
+    const activeOpp = topOpps.find((p) => p.playerId === game?.activePlayerId)
+    if (activeOpp) return activeOpp
+    return topOpps[0]
+  }, [topOpps, selectedOppId, game?.activePlayerId])
+
   return (
     <div className="game">
       <header className="game-top">
@@ -87,6 +105,19 @@ export default function GameScreen() {
               <span className="game-turn">Turn {game.turn}</span>
               <PhaseBar step={game.step} />
             </div>
+          )}
+        </div>
+        <div className="game-top-center">
+          {topOpps.length > 1 && (
+            <OpponentSwitcherBar
+              opponents={topOpps}
+              selectedOppId={currentOpp?.playerId || ''}
+              onSelectOpponent={(id) => setSelectedOppId(id)}
+              activePlayerId={game?.activePlayerId}
+              targetIds={new Set(targetIds)}
+              onTargetClick={onTargetClick}
+              combat={game?.combat ?? []}
+            />
           )}
         </div>
         <div className="game-controls">
@@ -130,6 +161,7 @@ export default function GameScreen() {
             onResolveClick={onResolveClick}
             crossZonePlayables={crossZone}
             onPlayCrossZone={onPlayableClick}
+            focusedOpponentId={currentOpp?.playerId}
           />
         </div>
         <div className="game-right-panel">

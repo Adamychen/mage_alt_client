@@ -5,7 +5,6 @@ import PlayerZone from './PlayerZone'
 import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
 import CombatArrowsOverlay from './CombatArrowsOverlay'
-import CommanderPodRow from './CommanderPodRow'
 import FloatingCardPreview from './FloatingCardPreview'
 import { useSceneBridge } from './sceneBridge'
 import type { CrossZonePlayable } from './crossZone'
@@ -27,6 +26,7 @@ interface GameBoardProps {
   onResolveClick?: () => void
   crossZonePlayables?: CrossZonePlayable[]
   onPlayCrossZone?: (id: string) => void
+  focusedOpponentId?: string
 }
 
 /** Convierte una SimpleCardsView (mano de espectador) a CardsView para PlayerZone. */
@@ -86,6 +86,7 @@ export default function GameBoard({
   onResolveClick,
   crossZonePlayables = [],
   onPlayCrossZone,
+  focusedOpponentId,
 }: GameBoardProps) {
   const me = game?.players?.find((p) => p.controlled)
   const opps = game?.players?.filter((p) => !p.controlled) ?? []
@@ -164,26 +165,27 @@ export default function GameBoard({
     return map
   }, [game])
 
+  const currentOpp = useMemo(() => {
+    if (topOpps.length <= 1) return topOpps[0]
+    if (focusedOpponentId) {
+      const found = topOpps.find((p) => p.playerId === focusedOpponentId)
+      if (found) return found
+    }
+    const activeOpp = topOpps.find((p) => p.playerId === game?.activePlayerId)
+    if (activeOpp) return activeOpp
+    return topOpps[0]
+  }, [topOpps, focusedOpponentId, game?.activePlayerId])
+
   return (
     <div className={`game-board ${topOpps.length > 1 ? 'commander-pod-mode' : ''}`} ref={boardRef}>
-      {topOpps.length <= 1 ? (
-        <OpponentZone
-          player={topOpps[0]}
-          onCardClick={onTargetClick}
-          onCardHover={handleCardHover}
-          targetIds={targetIdSet}
-          revealedCards={getOpponentRevealedCards(game, topOpps[0]?.playerId, topOpps[0]?.name)}
-        />
-      ) : (
-        <CommanderPodRow
-          opponents={topOpps}
-          onCardClick={onTargetClick}
-          onCardHover={handleCardHover}
-          targetIds={targetIdSet}
-          getRevealedCards={(opp) => getOpponentRevealedCards(game, opp.playerId, opp.name)}
-          activePlayerId={game?.activePlayerId}
-        />
-      )}
+      <OpponentZone
+        key={currentOpp?.playerId}
+        player={currentOpp}
+        onCardClick={onTargetClick}
+        onCardHover={handleCardHover}
+        targetIds={targetIdSet}
+        revealedCards={getOpponentRevealedCards(game, currentOpp?.playerId, currentOpp?.name)}
+      />
       <div className="board-divider" />
       <PlayerZone
         player={isSpectator ? oppBottom : me}
