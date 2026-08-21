@@ -634,5 +634,35 @@ describe('active game persistence in store', () => {
     reset()
     expect(loadActiveGame()).toBeNull()
   })
+
+  it('rejects stale events from previous/orphan gameId while in an active game', () => {
+    handleMessage({
+      type: 'event',
+      method: 'START_GAME',
+      messageId: 1,
+      objectId: 'g-active-2',
+      data: {
+        gameId: 'g-active-2',
+        gameView: makeGameView({ turn: 3, step: 'PRECOMBAT_MAIN' }),
+      },
+    })
+    expect(getState().gameId).toBe('g-active-2')
+    expect(getState().game?.turn).toBe(3)
+
+    // Stale lingering packet from previous game 'g-active-1' arrives
+    handleMessage({
+      type: 'event',
+      method: 'GAME_UPDATE',
+      messageId: 2,
+      objectId: 'g-active-1',
+      data: {
+        gameView: makeGameView({ turn: 1, step: 'UPKEEP' }),
+      },
+    })
+
+    // Active game remains on g-active-2 (turn 3), NOT overwritten by g-active-1
+    expect(getState().gameId).toBe('g-active-2')
+    expect(getState().game?.turn).toBe(3)
+  })
 })
 

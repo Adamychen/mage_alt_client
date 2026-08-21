@@ -148,8 +148,11 @@ export function isOlderThanCurrentGame(
   currentGameId: string | null,
 ): boolean {
   if (!currentGame) return false
-  const sameGame = objectId != null && objectId === currentGameId
-  if (!sameGame || currentGame.myPlayerId !== next.myPlayerId) return false
+  // If event belongs to a different game, reject overwriting active game
+  if (objectId != null && currentGameId != null && objectId !== currentGameId) {
+    return true
+  }
+  if (currentGame.myPlayerId !== next.myPlayerId) return false
   if (next.turn < currentGame.turn) return true
   if (next.turn > currentGame.turn) return false
   return (STEP_RANK[next.step] ?? 0) < (STEP_RANK[currentGame.step] ?? 0)

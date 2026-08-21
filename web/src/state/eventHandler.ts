@@ -42,6 +42,13 @@ export function handleMessage(msg: ProxyMessage) {
 
 function handleEvent(method: string, objectId: string | null, data: unknown) {
   const s = getState()
+
+  // Guard: If we are in an active game, ignore game-specific events belonging to another gameId
+  const isGameEvent = method.startsWith('GAME_')
+  if (s.gameId && objectId && objectId !== s.gameId && isGameEvent && method !== 'START_GAME') {
+    return
+  }
+
   const embeddedGame = gameViewFrom(data)
   if (embeddedGame && !isOlderThanCurrentGame(embeddedGame, objectId, s.game, s.gameId)) {
     setState({ game: embeddedGame, phase: 'game', gameId: objectId ?? s.gameId })
