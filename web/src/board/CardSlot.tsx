@@ -59,22 +59,25 @@ export default function CardSlot({
           const dy = prevRect.top + prevRect.height / 2 - (lastRect.top + lastRect.height / 2)
 
           if (Math.hypot(dx, dy) > 20) {
-            const scale = Math.min(1.15, Math.max(0.65, prevRect.width / lastRect.width))
+            const scale = Math.min(1.15, Math.max(0.7, prevRect.width / lastRect.width))
             el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${scale})`
             el.style.transition = 'none'
-            el.style.zIndex = '50'
+            el.style.zIndex = '60'
+            el.style.boxShadow = '0 16px 36px rgba(0, 0, 0, 0.85), 0 0 16px rgba(255, 208, 112, 0.35)'
 
             const raf = requestAnimationFrame(() => {
-              el.style.transition = 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
+              el.style.transition = 'transform 460ms cubic-bezier(0.19, 1, 0.22, 1), box-shadow 460ms ease'
               el.style.transform = ''
+              el.style.boxShadow = ''
 
               const timer = setTimeout(() => {
                 if (el) {
                   el.style.transition = ''
                   el.style.transform = ''
                   el.style.zIndex = ''
+                  el.style.boxShadow = ''
                 }
-              }, 250)
+              }, 480)
 
               return () => clearTimeout(timer)
             })
