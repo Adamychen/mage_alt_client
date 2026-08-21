@@ -120,8 +120,12 @@ export default function PlayerZone({
             const attachments = perm.attachments ?? []
 
             if (attachments.length > 0) {
+              const hasClass = attachments.length >= 4 ? 'has-4'
+                : attachments.length === 3 ? 'has-3'
+                : attachments.length === 2 ? 'has-2'
+                : ''
               return (
-                <div key={id} className="card-attachment-group">
+                <div key={id} className={`card-attachment-group${hasClass ? ` ${hasClass}` : ''}`}>
                   <div className="attachments-list">
                     {attachments.map((attId, ai) => {
                       const attCard = battlefield[attId]
@@ -136,7 +140,7 @@ export default function PlayerZone({
                           isTarget={targetIds.has(attId)}
                           isPlayable={playableIds.has(attId)}
                           className="attachment-subcard"
-                          style={{ top: `${-(ai + 1) * 14}px` }}
+                          style={{ left: `calc(var(--card-w, 100px) * ${(ai + 1) * 0.58})` }}
                         />
                       )
                     })}

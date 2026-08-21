@@ -269,34 +269,63 @@
 }
 
 /* Card Attachment Group (Auras & Equipment attached to host creature) */
+
+/*
+ * Horizontal-fan layout:
+ * - .card-attachment-group wraps host + all attachments in a row.
+ * - The host sits at position 0.
+ * - Each .attachment-subcard is positioned absolutely, offset to the right
+ *   by (index+1) × 58% of the card width, so cards fan out and are all
+ *   readable. The group's right-padding reserves room for the fan.
+ * - On hover an attachment slides up and scales to full size.
+ */
 .card-attachment-group {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
   overflow: visible;
+  /* Reserve horizontal space for the fan: 58% × max attachments.
+     We use a generous fixed offset so items never clip in the zone. */
+  padding-right: calc(var(--card-w, 100px) * 0.62);
 }
 
+.card-attachment-group.has-2 { padding-right: calc(var(--card-w, 100px) * 1.22); }
+.card-attachment-group.has-3 { padding-right: calc(var(--card-w, 100px) * 1.82); }
+.card-attachment-group.has-4 { padding-right: calc(var(--card-w, 100px) * 2.42); }
+
 .attachments-list {
+  /* Stretches over the full fan area (absolute, left=0, height=100%) */
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  height: 100%;
+  /* Width grows with the fan; overflow is visible so cards show */
+  width: 100%;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
 }
 
 .attachment-subcard {
   position: absolute !important;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
+  top: 0;
+  /* 'left' is set inline per-card: (ai+1) × 58% of --card-w */
+  width: var(--card-w, 100px) !important;
+  height: calc(var(--card-w, 100px) * 1.4) !important;
   pointer-events: auto;
-  opacity: 0.85;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.6);
-  border-bottom: 2px solid rgba(255, 208, 112, 0.6);
-  transition: transform 0.2s ease, opacity 0.2s ease, z-index 0.2s ease;
+  opacity: 0.92;
+  border-radius: 7px;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.4);
+  border-left: 2px solid rgba(255, 208, 112, 0.55);
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1),
+              opacity 0.18s ease,
+              box-shadow 0.18s ease;
+  overflow: hidden;
 }
 
 .attachment-subcard:hover {
   opacity: 1;
   z-index: 30;
-  transform: translateY(-8px) scale(1.05) !important;
+  transform: translateY(-10px) scale(1.08) !important;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.55), 0 12px 28px rgba(0, 0, 0, 0.75),
+              0 0 16px rgba(255, 208, 112, 0.5);
 }
