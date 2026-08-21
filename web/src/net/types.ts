@@ -39,7 +39,10 @@ export interface LobbyEnvelope {
   type: 'lobby'
   roomId?: UUID
   tables: import('./types.generated').TableView[]
-  users: import('./types.generated').RoomUsersView
+  users:
+    | import('./types.generated').RoomUsersView
+    | import('./types.generated').RoomUsersView[]
+    | import('./types.generated').UsersView[]
   serverMessages: string[]
 }
 

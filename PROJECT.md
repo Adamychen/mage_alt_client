@@ -251,6 +251,7 @@ web/
 | 2026-08-21 | Fix/UI | Sanitized global system messages in ChatBox and join/leave notification toggle | vitest 217/217 ✅; typecheck ✅; build ✅ |
 | 2026-08-21 | Fix | Chat room isolation and automatic `leaveChat` cleanup on table exit | vitest 219/219 ✅; typecheck ✅; build ✅ |
 | 2026-08-21 | Feature/UX | Quick Deck Selector on Join Table Dialog with inline text decklist importer | vitest 222/222 ✅; typecheck ✅; build ✅ |
+| 2026-08-21 | Fix | Robust lobby user list extraction supporting Array of RoomUsersView and direct UsersView wire formats | vitest 226/226 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
 
 ---
 

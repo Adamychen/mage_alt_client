@@ -55,6 +55,29 @@ function getSkillBadge(skill?: string): { label: string; icon: string; className
   }
 }
 
+export function extractLobbyUsers(rawUsers: unknown): import('../net/types').UsersView[] {
+  if (!rawUsers) return []
+  if (Array.isArray(rawUsers)) {
+    const list: import('../net/types').UsersView[] = []
+    for (const item of rawUsers) {
+      if (item && typeof item === 'object') {
+        if (Array.isArray((item as any).usersView)) {
+          list.push(...(item as any).usersView)
+        } else if (typeof (item as any).userName === 'string') {
+          list.push(item as import('../net/types').UsersView)
+        }
+      }
+    }
+    return list
+  }
+  if (typeof rawUsers === 'object') {
+    if (Array.isArray((rawUsers as any).usersView)) {
+      return (rawUsers as any).usersView
+    }
+  }
+  return []
+}
+
 export type LobbyTab = 'tables' | 'decks' | 'community'
 
 export default function LobbyScreen() {
@@ -72,7 +95,7 @@ export default function LobbyScreen() {
   const [notice, setNotice] = useState<string | null>(null)
 
   const tables = lobby?.tables ?? []
-  const users = lobby?.users.usersView ?? []
+  const users = useMemo(() => extractLobbyUsers(lobby?.users), [lobby?.users])
 
   const filteredTables = useMemo(() => {
     return filterTables(tables, filters)
@@ -521,12 +544,25 @@ export default function LobbyScreen() {
             </section>
 
             <section className="panel users-panel">
-              <h2>👥 Jugadores Conectados ({users.length})</h2>
+              <div className="users-panel-header">
+                <h2>👥 Jugadores Conectados ({users.length})</h2>
+              </div>
               <ul className="users-list">
                 {users.map((u) => (
                   <li key={u.userName} className="user-list-item">
                     <span className={`dot ${u.infoGames ? 'playing' : 'online'}`} />
-                    <span className="user-name-text">{u.userName}</span>
+                    <div className="user-info-col">
+                      <div className="user-name-row">
+                        {u.flagName && <span className="user-flag-tag">{u.flagName}</span>}
+                        <span className="user-name-text">{u.userName}</span>
+                        {u.constructedRating > 0 && (
+                          <span className="user-rating-pill">⭐ {u.constructedRating}</span>
+                        )}
+                      </div>
+                      {u.matchHistory && (
+                        <span className="user-history-text">Historial: {u.matchHistory}</span>
+                      )}
+                    </div>
                     {u.infoGames ? (
                       <span className="game-info-badge">⚔️ {u.infoGames}</span>
                     ) : (
@@ -534,6 +570,11 @@ export default function LobbyScreen() {
                     )}
                   </li>
                 ))}
+                {users.length === 0 && (
+                  <li className="users-empty-item">
+                    <span className="empty">Esperando jugadores en la sala…</span>
+                  </li>
+                )}
               </ul>
             </section>
           </div>
