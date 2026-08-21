@@ -73,12 +73,14 @@ export default function GameScreen() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
         e.preventDefault()
+        // No enviar pass a ciegas si hay un diálogo de maná o target abierto
+        if (feedback && feedback.mode !== 'combat') return
         if (canPass) void onResolveClick()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [canPass, onResolveClick])
+  }, [canPass, feedback, onResolveClick])
 
   return (
     <div className="game">

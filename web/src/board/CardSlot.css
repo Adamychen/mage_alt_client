@@ -36,6 +36,14 @@
   z-index: 40;
   border-color: rgba(255, 208, 112, 0.8);
 }
+.card-slot.tapped.playable {
+  box-shadow: 0 0 14px 4px rgba(99, 230, 190, 0.7);
+  border-color: #63e6be;
+}
+.card-slot.tapped.chosen {
+  box-shadow: 0 0 16px 5px rgba(255, 100, 100, 0.85), inset 0 0 0 2px #ff6464;
+  border-color: #ff6464;
+}
 
 /* Playable glow */
 .card-slot.playable {
@@ -58,10 +66,10 @@
   border-color: #ffb03a;
 }
 
-/* Chosen target */
+/* Chosen target / Attacking in combat */
 .card-slot.chosen {
-  box-shadow: 0 0 14px 4px rgba(126, 231, 135, 0.6);
-  border-color: #7ee787;
+  box-shadow: 0 0 16px 5px rgba(255, 100, 100, 0.85), inset 0 0 0 2px #ff6464;
+  border-color: #ff6464;
   animation: none;
 }
 

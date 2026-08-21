@@ -59,18 +59,34 @@ export function gameViewFrom(value: unknown): GameView | null {
 }
 
 export function combatChosenFrom(game: GameView | null): string[] {
-  if (!game || !Array.isArray(game.combat)) return []
-  const chosen: string[] = []
-  for (const group of game.combat) {
-    const record = group as Record<string, unknown>
-    for (const key of ['attackers', 'blockers']) {
-      const view = record[key]
-      if (view && typeof view === 'object' && !Array.isArray(view)) {
-        chosen.push(...Object.keys(view))
+  if (!game) return []
+  const chosen = new Set<string>()
+
+  // 1. From game.combat groups
+  if (Array.isArray(game.combat)) {
+    for (const group of game.combat) {
+      const record = group as Record<string, unknown>
+      for (const key of ['attackers', 'blockers']) {
+        const view = record[key]
+        if (Array.isArray(view)) {
+          for (const id of view) chosen.add(String(id))
+        } else if (view && typeof view === 'object') {
+          for (const id of Object.keys(view)) chosen.add(id)
+        }
       }
     }
   }
-  return chosen
+
+  // 2. From battlefield permanents marked as attacking or blocking
+  for (const player of game.players ?? []) {
+    for (const [id, perm] of Object.entries(player.battlefield ?? {})) {
+      if ((perm as any).attacking === true || (perm as any).blocking === true) {
+        chosen.add(id)
+      }
+    }
+  }
+
+  return Array.from(chosen)
 }
 
 /** Ventana de combate del GAME_SELECT: options.possibleAttackers (declarar
@@ -83,18 +99,18 @@ export function combatFromSelect(data: unknown, currentGame: GameView | null): C
   const blockers = stringList(options.possibleBlockers)
   if (attackers.length === 0 && blockers.length === 0) return null
   const selectable = attackers.length > 0 ? attackers : blockers
+  const chosenFromGame = combatChosenFrom(currentGame)
+  const chosenFromOptions = stringList(options.chosen ?? options.chosenTargets ?? options.attackers)
+  const chosen = Array.from(new Set([...chosenFromGame, ...chosenFromOptions]))
   return {
     mode: attackers.length > 0 ? 'attack' : 'block',
     selectable,
     special: attackers.length > 0 && typeof options.specialButton === 'string',
-    chosen: combatChosenFrom(currentGame),
+    chosen,
   }
 }
 
-/** Ids jugables consolidados. El servidor solo manda canPlayObjects completo en
- *  GAME_SELECT (y en los views de pago de maná); los GAME_UPDATE intermedios
- *  llegan sin él y además con hasPriority poco fiable (a menudo false en mi
- *  propio turno). */
+/** Ids jugables consolidados. */
 export function consolidatePlayables(
   game: GameView,
   method: string,

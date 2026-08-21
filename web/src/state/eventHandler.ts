@@ -104,8 +104,12 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         if (method === 'GAME_SELECT') {
           const selectFeedback = parseFeedback(method, objectId ?? s.gameId, data)
           patch.feedback = selectFeedback ?? null
+        } else if ((method === 'GAME_UPDATE' || method === 'GAME_UPDATE_AND_INFORM') && fresh.feedback?.method === 'GAME_PLAY_MANA') {
+          if (Object.keys(embeddedGame.stack ?? {}).length > 0) {
+            patch.feedback = null
+          }
         }
-        const combat = method === 'GAME_SELECT' ? combatFromSelect(data, s.game) : null
+        const combat = method === 'GAME_SELECT' ? combatFromSelect(data, embeddedGame) : null
         patch.combat = combat
         if (!combat && embeddedGame && isCombatStep(embeddedGame)) {
           patch.combat = { ...(s.combat ?? emptyCombat()), chosen: combatChosenFrom(embeddedGame) }
