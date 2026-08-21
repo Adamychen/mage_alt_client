@@ -36,9 +36,9 @@
 
 /* Row 3: Unified bottom row [Life | Hand | Mana | Deck | Grave | Exile] (at bottom edge) */
 .pz-bottom-row {
-  flex: 0.9;
-  min-height: 52px;
-  max-height: 72px;
+  flex: 1.1;
+  min-height: 70px;
+  max-height: 120px;
   align-items: flex-end;
   justify-content: space-between;
 }

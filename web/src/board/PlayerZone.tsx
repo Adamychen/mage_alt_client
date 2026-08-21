@@ -217,7 +217,6 @@ export default function PlayerZone({
           onHover={onCardHover}
           playableIds={playableIds}
           targetIds={targetIds}
-          compact
         />
         <ResourceBar
           player={player}

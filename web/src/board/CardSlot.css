@@ -29,6 +29,7 @@
 
 .card-slot.tapped {
   transform: rotate(90deg);
+  margin: 0 calc(var(--card-w, 116px) * 0.2);
 }
 
 .card-slot.tapped.clickable:hover {
