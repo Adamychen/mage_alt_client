@@ -7,6 +7,8 @@ import JoinTableDialog from './JoinTableDialog'
 import ChatBox from './ChatBox'
 import DeckManager from './DeckManager'
 import CountryFlag from './CountryFlag'
+import RankBadge from './RankBadge'
+import LeaderboardModal from './LeaderboardModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import { AI_OPPONENT_DECK, STABLE_DECK, type Deck } from './decks'
 import './LobbyScreen.css'
@@ -89,6 +91,7 @@ export default function LobbyScreen() {
   const events = useStore((s) => s.events)
   const [activeTab, setActiveTab] = useState<LobbyTab>('tables')
   const [showCreate, setShowCreate] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [joiningTable, setJoiningTable] = useState<TableView | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
@@ -97,6 +100,10 @@ export default function LobbyScreen() {
 
   const tables = lobby?.tables ?? []
   const users = useMemo(() => extractLobbyUsers(lobby?.users), [lobby?.users])
+  const myUser = useMemo(
+    () => users.find((u) => u.userName.toLowerCase() === (conn?.username ?? '').toLowerCase()),
+    [users, conn?.username],
+  )
 
   const filteredTables = useMemo(() => {
     return filterTables(tables, filters)
@@ -282,13 +289,29 @@ export default function LobbyScreen() {
             <span className="tab-icon">👥</span>
             <span>Comunidad & Chat</span>
           </button>
+          <button
+            type="button"
+            className="nav-tab-btn leaderboard-nav-tab"
+            onClick={() => setShowLeaderboard(true)}
+            title="Ver clasificación de la sala y rangos de liga"
+          >
+            <span className="tab-icon">🏆</span>
+            <span>Leaderboard</span>
+          </button>
         </nav>
 
         {/* User Identity & Disconnect */}
         <div className="lobby-user-actions">
-          <div className="lobby-user-badge">
+          <div
+            className="lobby-user-badge"
+            onClick={() => setShowLeaderboard(true)}
+            title="Haz clic para ver tu perfil competitivo y clasificación"
+          >
             <div className="lobby-avatar-pill">{userInitial}</div>
-            <span className="lobby-username">{conn?.username}</span>
+            <div className="lobby-user-col">
+              <span className="lobby-username">{conn?.username}</span>
+              <RankBadge elo={myUser?.constructedRating ?? 1500} compact />
+            </div>
           </div>
           <button className="lobby-disconnect-btn" onClick={reset} title="Cerrar sesión">
             Desconectar
@@ -558,6 +581,14 @@ export default function LobbyScreen() {
             <section className="panel users-panel">
               <div className="users-panel-header">
                 <h2>👥 Jugadores Conectados ({users.length})</h2>
+                <button
+                  type="button"
+                  className="view-leaderboard-btn"
+                  onClick={() => setShowLeaderboard(true)}
+                  title="Abrir clasificación de la sala"
+                >
+                  🏆 Leaderboard
+                </button>
               </div>
               <ul className="users-list">
                 {users.map((u) => (
@@ -567,9 +598,7 @@ export default function LobbyScreen() {
                       <div className="user-name-row">
                         {u.flagName && <CountryFlag flagName={u.flagName} className="user-list-flag" showTextFallback />}
                         <span className="user-name-text">{u.userName}</span>
-                        {u.constructedRating > 0 && (
-                          <span className="user-rating-pill">⭐ {u.constructedRating}</span>
-                        )}
+                        <RankBadge elo={u.constructedRating} compact showElo />
                       </div>
                       {u.matchHistory && (
                         <span className="user-history-text">Historial: {u.matchHistory}</span>
@@ -624,6 +653,13 @@ export default function LobbyScreen() {
       </div>
 
       {showCreate && <CreateTableDialog onClose={() => setShowCreate(false)} />}
+      {showLeaderboard && (
+        <LeaderboardModal
+          users={users}
+          currentUsername={conn?.username ?? ''}
+          onClose={() => setShowLeaderboard(false)}
+        />
+      )}
       {joiningTable && (
         <JoinTableDialog
           table={joiningTable}

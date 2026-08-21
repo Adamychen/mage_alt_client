@@ -1,0 +1,70 @@
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s ease;
+  vertical-align: middle;
+}
+
+.rank-badge.compact {
+  padding: 1px 5px;
+  font-size: 10px;
+  gap: 3px;
+}
+
+.rank-badge-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.rank-badge.compact .rank-badge-icon {
+  font-size: 9.5px;
+}
+
+.rank-badge-name {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.rank-badge-elo {
+  font-size: 9.5px;
+  opacity: 0.85;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+}
+
+/* Specific Tier Glows */
+.rank-badge.mythic {
+  box-shadow: 0 0 10px rgba(251, 146, 60, 0.4);
+  animation: pulse-mythic 3s infinite alternate;
+}
+
+.rank-badge.diamond {
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.35);
+}
+
+.rank-badge.platinum {
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.3);
+}
+
+.rank-badge.gold {
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.3);
+}
+
+@keyframes pulse-mythic {
+  0% {
+    box-shadow: 0 0 6px rgba(251, 146, 60, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 14px rgba(251, 146, 60, 0.7);
+  }
+}
