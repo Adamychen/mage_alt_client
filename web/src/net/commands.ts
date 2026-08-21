@@ -54,6 +54,10 @@ export async function joinChat(chatId: string) {
   return getGateway().send('joinChat', { chatId })
 }
 
+export async function leaveChat(chatId: string) {
+  return getGateway().send('leaveChat', { chatId })
+}
+
 export async function sendChatMessage(chatId: string, text: string) {
   return getGateway().send('sendChatMessage', { chatId, text })
 }

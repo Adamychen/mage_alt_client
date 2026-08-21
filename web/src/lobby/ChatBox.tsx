@@ -60,9 +60,13 @@ export default function ChatBox() {
   }, [])
 
   const filteredMessages = useMemo(() => {
-    if (!hideConnections) return messages
-    return messages.filter((m) => !isConnectionEvent(m.message))
-  }, [messages, hideConnections])
+    return messages.filter((m) => {
+      // If message specifies a chatId that doesn't match this room chat, exclude it
+      if (m.chatId && chatId && m.chatId !== chatId) return false
+      if (hideConnections && isConnectionEvent(m.message)) return false
+      return true
+    })
+  }, [messages, chatId, hideConnections])
 
   useEffect(() => {
     if (listRef.current && typeof listRef.current.scrollTo === 'function') {

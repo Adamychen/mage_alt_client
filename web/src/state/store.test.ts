@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { joinGame, sendPlayerBoolean, sendPlayerUUID } from '../net/commands'
 import { makeCard, makeGameView, makePermanent, makePlayer, minimalGameView } from '../__fixtures__/gameViews'
 import { getState, setState } from './state'
-import { handleMessage, maybeAutoPass, reset, setSetting } from './store'
+import { handleMessage, maybeAutoPass, reset, setSetting, returnToLobby } from './store'
+import { leaveChat } from '../net/commands'
 import { loadActiveGame } from './persistence'
 
 vi.mock('../net/commands', () => ({
@@ -15,6 +16,8 @@ vi.mock('../net/commands', () => ({
   getDeckTypes: vi.fn(),
   getRoomChatId: vi.fn(),
   getGameChatId: vi.fn().mockResolvedValue(undefined),
+  joinChat: vi.fn(),
+  leaveChat: vi.fn(),
   sendChatMessage: vi.fn(),
   createTable: vi.fn(),
   joinTable: vi.fn(),
@@ -663,6 +666,52 @@ describe('active game persistence in store', () => {
     // Active game remains on g-active-2 (turn 3), NOT overwritten by g-active-1
     expect(getState().gameId).toBe('g-active-2')
     expect(getState().game?.turn).toBe(3)
+  })
+
+  it('returnToLobby leaves gameChat and clears game chat messages', () => {
+    setState({
+      phase: 'game',
+      gameId: 'g-chat-1',
+      gameChatId: 'chat-game-1',
+      roomChatId: 'chat-room-global',
+      chatMessages: [
+        { chatId: 'chat-room-global', username: 'Alice', message: 'Lobby hello' },
+        { chatId: 'chat-game-1', username: 'Bob', message: 'In-game message' },
+      ],
+    })
+
+    returnToLobby()
+
+    expect(leaveChat).toHaveBeenCalledWith('chat-game-1')
+    expect(getState().phase).toBe('lobby')
+    expect(getState().gameChatId).toBeNull()
+    // Preserved only lobby room chat messages
+    expect(getState().chatMessages).toEqual([
+      { chatId: 'chat-room-global', username: 'Alice', message: 'Lobby hello' },
+    ])
+  })
+
+  it('ignores CHATMESSAGE from game chats when currently in the lobby', () => {
+    setState({
+      phase: 'lobby',
+      roomChatId: 'chat-room-global',
+      chatMessages: [],
+    })
+
+    // Stray game message arrives while in lobby
+    handleMessage({
+      type: 'event',
+      method: 'CHATMESSAGE',
+      messageId: 1,
+      objectId: 'chat-game-old',
+      data: {
+        chatId: 'chat-game-old',
+        username: 'OldOpponent',
+        message: 'GG',
+      },
+    })
+
+    expect(getState().chatMessages).toEqual([])
   })
 })
 

@@ -72,6 +72,14 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
   switch (method) {
     case 'CHATMESSAGE': {
       const m = data as ChatMessageEvent
+      // If we are in the lobby/staging and message is from a game chat, ignore it
+      if (s.phase !== 'game' && m.chatId && s.roomChatId && m.chatId !== s.roomChatId) {
+        break
+      }
+      // If we are in a game and message is from another game, ignore it
+      if (s.phase === 'game' && m.chatId && s.gameChatId && s.roomChatId && m.chatId !== s.gameChatId && m.chatId !== s.roomChatId) {
+        break
+      }
       setState({ chatMessages: [...s.chatMessages, m].slice(-300) })
       addLog(m.username, m.message, objectId ?? undefined)
       break

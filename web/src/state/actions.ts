@@ -46,15 +46,23 @@ export function returnToLobby() {
       void cmds.quitMatch(gameId)
     }
   }
+  if (s.gameChatId) {
+    void cmds.leaveChat(s.gameChatId)
+  }
   if (s.watchingTable) {
     void cmds.leaveTable(s.watchingTable.tableId)
   }
+  // Filter out match-specific chat messages, preserving only lobby room chat
+  const preservedChat = s.roomChatId
+    ? s.chatMessages.filter((m) => !m.chatId || m.chatId === s.roomChatId)
+    : s.chatMessages
   setState({
     phase: 'lobby',
     watchingTable: null,
     game: null,
     gameId: null,
     gameChatId: null,
+    chatMessages: preservedChat,
     playableIds: [],
     playableWindow: null,
     combat: null,
