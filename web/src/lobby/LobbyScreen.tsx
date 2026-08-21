@@ -752,6 +752,7 @@ export default function LobbyScreen() {
             openLeaderboard(username, 'profile')
           }}
           onSendChatCommand={(cmd) => {
+            setActiveTab('community')
             if (roomChatId) {
               void cmds.sendChatMessage(roomChatId, cmd)
             }
