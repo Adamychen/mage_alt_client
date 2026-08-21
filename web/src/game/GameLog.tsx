@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from '../state/store'
+import FormattedText from './FormattedText'
 import './GameLog.css'
 
 export default function GameLog() {
@@ -16,7 +17,7 @@ export default function GameLog() {
       <div className="gamelog-list" ref={ref}>
         {log.map((e) => (
           <div key={e.id} className="gamelog-entry">
-            <span className="gamelog-from">{e.from}</span> {e.text}
+            <span className="gamelog-from">{e.from}</span> <FormattedText text={e.text} />
           </div>
         ))}
       </div>

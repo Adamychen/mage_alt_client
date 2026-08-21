@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import * as cmds from '../net/commands'
 import { useStore } from '../state/store'
 import QuickReactions from './QuickReactions'
+import FormattedText from './FormattedText'
 import './GameChat.css'
 
 // Set corto para el selector de emoji del chat (icono 😊 a la izquierda del input,
@@ -44,7 +45,9 @@ export default function GameChat() {
         {gameLog.map((entry) => (
           <div key={entry.id} className="game-chat-entry">
             {entry.from && <span className="game-chat-player">{entry.from}</span>}
-            <span className="game-chat-text">{entry.text}</span>
+            <span className="game-chat-text">
+              <FormattedText text={entry.text} />
+            </span>
           </div>
         ))}
         <div ref={endRef} />

@@ -9,6 +9,7 @@ import Sidebar from './Sidebar'
 import CardPreview from './CardPreview'
 import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
+import FormattedText from './FormattedText'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
 import type { CardView } from '../net/types'
@@ -123,7 +124,9 @@ export default function GameScreen() {
               {log?.slice(-50).map((entry, i) => (
                 <div key={entry.id ?? i} className="game-log-entry">
                   {entry.from && <span className="game-log-player">{entry.from}</span>}
-                  <span className="game-log-text">{entry.text}</span>
+                  <span className="game-log-text">
+                    <FormattedText text={entry.text} />
+                  </span>
                 </div>
               ))}
             </div>

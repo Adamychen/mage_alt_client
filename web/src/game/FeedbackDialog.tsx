@@ -3,6 +3,7 @@ import * as cmds from '../net/commands'
 import { clearFeedback, setStoreError, useStore } from '../state/store'
 import type { FeedbackOption, FeedbackPrompt } from './feedback'
 import CardGrid from './CardGrid'
+import FormattedText from './FormattedText'
 
 const POOL_COLORS = ['white', 'blue', 'black', 'red', 'green', 'colorless'] as const
 
@@ -60,21 +61,88 @@ export default function FeedbackDialog() {
     return <CardGrid prompt={prompt} selected={selected} setSelected={setSelected} send={send} cancel={cancel} busy={busy} />
   }
 
-  // ── GAME_TARGET sin cardsView1: barra flotante (el tablero maneja los clicks)
+  // ── GAME_TARGET sin cardsView1: barra flotante no-modal
   if (prompt.method === 'GAME_TARGET') {
     const chosenCount = prompt.chosenTargets?.length ?? 0
     return (
-      <div className="targeting-bar">
-        <span className="targeting-source">{prompt.sourceName ?? 'Objetivo'}</span>
-        <span className="targeting-hint">
-          {chosenCount > 0
-            ? `${chosenCount} seleccionado(s)`
-            : 'Haz clic en el tablero'}
-        </span>
-        {prompt.required === false && (
-          <button disabled={busy} onClick={finishOptionalTarget}>Terminar</button>
-        )}
-        <button disabled={busy} onClick={cancel}>Cancelar</button>
+      <div className="action-prompt-bar targeting-bar">
+        <div className="action-prompt-info">
+          <span className="action-prompt-title">
+            <FormattedText text={prompt.sourceName ?? 'Objetivo'} />
+          </span>
+          <span className="action-prompt-hint">
+            {chosenCount > 0
+              ? `${chosenCount} seleccionado(s)`
+              : 'Haz clic en el objetivo en el tablero'}
+          </span>
+        </div>
+        <div className="action-prompt-actions">
+          {prompt.required === false && (
+            <button disabled={busy} onClick={finishOptionalTarget}>Terminar</button>
+          )}
+          <button disabled={busy} onClick={cancel} className="cancel-btn">Cancelar</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── GAME_PLAY_MANA: barra flotante no-modal (el tablero maneja los clicks a las tierras)
+  if (prompt.mode === 'mana') {
+    return (
+      <div className="action-prompt-bar mana-prompt-bar">
+        <div className="action-prompt-info">
+          <span className="action-prompt-title">Pagar maná:</span>
+          <span className="action-prompt-msg">
+            <FormattedText text={prompt.message} />
+          </span>
+          <span className="action-prompt-hint">Haz clic en tus fuentes de maná del tablero</span>
+        </div>
+        <div className="action-prompt-actions">
+          {prompt.playerId && poolMana(game).map((mana) => (
+            <button
+              key={mana.color}
+              className="mana-pool-btn"
+              disabled={busy}
+              onClick={() => void send(() => cmds.sendPlayerManaType(prompt.gameId, prompt.playerId as string, mana.color), 'No se pudo usar la reserva de maná')}
+            >
+              Pagar reserva: {mana.label}
+            </button>
+          ))}
+          <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo activar el pago especial')}>
+            Acción especial
+          </button>
+          <button disabled={busy} onClick={cancel} className="cancel-btn">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Declaración de combate: barra flotante no-modal
+  if (prompt.mode === 'combat') {
+    return (
+      <div className="action-prompt-bar combat-bar">
+        <div className="action-prompt-info">
+          <span className="action-prompt-title">{prompt.title}</span>
+          <span className="action-prompt-hint">
+            Haz clic en tus criaturas del tablero para declararlas
+          </span>
+        </div>
+        <div className="action-prompt-actions">
+          {prompt.special && (
+            <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo declarar el ataque')}>
+              Atacar con todos
+            </button>
+          )}
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() => void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo confirmar el combate')}
+          >
+            {prompt.title === 'Declara atacantes' ? 'Confirmar atacantes' : 'Confirmar bloqueadores'}
+          </button>
+        </div>
       </div>
     )
   }
@@ -119,11 +187,11 @@ export default function FeedbackDialog() {
   }
 
   return (
-    <div className={`feedback-backdrop ${prompt.method === 'GAME_PLAY_MANA' ? 'mana' : ''}`} role="presentation">
+    <div className="feedback-backdrop" role="presentation">
       <section className="feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
         <div className="feedback-kicker">{prompt.method}</div>
-        <h2 id="feedback-title">{prompt.title}</h2>
-        <p>{prompt.message}</p>
+        <h2 id="feedback-title"><FormattedText text={prompt.title} /></h2>
+        <p><FormattedText text={prompt.message} /></p>
 
         {prompt.mode === 'integer' && (
           <div className="feedback-amount">
@@ -144,7 +212,7 @@ export default function FeedbackDialog() {
           <div className="feedback-multi-amount">
             {(prompt.items ?? []).map((item) => (
               <label key={item.id}>
-                {item.label}
+                <FormattedText text={item.label} />
                 <input
                   aria-label={item.label}
                   type="number"
@@ -169,7 +237,9 @@ export default function FeedbackDialog() {
                 return (
                   <div key={id} className="feedback-order-item">
                     <span className="feedback-order-pos">{index + 1}</span>
-                    <span className="feedback-order-label">{option?.label ?? id}</span>
+                    <span className="feedback-order-label">
+                      <FormattedText text={option?.label ?? id} />
+                    </span>
                     <div className="feedback-order-arrows">
                       <button
                         disabled={busy || index === 0}
@@ -205,49 +275,7 @@ export default function FeedbackDialog() {
           </div>
         )}
 
-        {prompt.mode === 'mana' && (
-          <p className="feedback-hint">Haz clic en tus fuentes de maná del tablero para pagar el coste.</p>
-        )}
-
-        {prompt.mode === 'mana' && (
-          <div className="feedback-options">
-            {prompt.playerId && poolMana(game).map((mana) => (
-              <button
-                key={mana.color}
-                disabled={busy}
-                onClick={() => void send(() => cmds.sendPlayerManaType(prompt.gameId, prompt.playerId as string, mana.color), 'No se pudo usar la reserva de maná')}
-              >
-                Pagar reserva: {mana.label}
-              </button>
-            ))}
-            <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo activar el pago especial')}>
-              Acción especial
-            </button>
-            <button disabled={busy} onClick={cancel}>Cancelar</button>
-          </div>
-        )}
-
-        {prompt.mode === 'combat' && (
-          <div className="feedback-options">
-            <p className="feedback-hint">
-              Haz clic en tus criaturas del tablero para declararlas (clic de nuevo para deseleccionar).
-            </p>
-            {prompt.special && (
-              <button disabled={busy} onClick={() => void send(() => cmds.sendPlayerString('special', prompt.gameId), 'No se pudo declarar el ataque')}>
-                Atacar con todos
-              </button>
-            )}
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => void send(() => cmds.sendPlayerBoolean(false, prompt.gameId), 'No se pudo confirmar el combate')}
-            >
-              {prompt.title === 'Declara atacantes' ? 'Confirmar atacantes' : 'Confirmar bloqueadores'}
-            </button>
-          </div>
-        )}
-
-        {prompt.mode !== 'integer' && prompt.mode !== 'multiString' && prompt.mode !== 'combat' && (
+        {prompt.mode !== 'integer' && prompt.mode !== 'multiString' && prompt.mode !== 'order' && (
           <div className="feedback-options">
             {prompt.options.map((option) => (
               <button
@@ -256,7 +284,7 @@ export default function FeedbackDialog() {
                 disabled={busy}
                 onClick={() => selectOption(option)}
               >
-                {option.label}
+                <FormattedText text={option.label} />
               </button>
             ))}
             {prompt.mode === 'uuid' && prompt.max > 1 && (
@@ -285,7 +313,8 @@ function poolMana(game: { players?: unknown[] | null } | null) {
     .map((color) => ({ color: color.toUpperCase(), label: `${COLOR_SYMBOLS[color]}${pool[color] ?? 0}` }))
 }
 
-function sendValue(prompt: FeedbackPrompt, value: string) {  switch (prompt.mode) {
+function sendValue(prompt: FeedbackPrompt, value: string) {
+  switch (prompt.mode) {
     case 'boolean':
       return cmds.sendPlayerBoolean(value === 'true', prompt.gameId)
     case 'string':

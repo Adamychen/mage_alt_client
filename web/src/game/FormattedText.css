@@ -1,0 +1,85 @@
+.formatted-text {
+  display: inline;
+  word-break: break-word;
+}
+
+.formatted-colored {
+  font-weight: 600;
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* Mana badges */
+.mana-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--font-display, sans-serif);
+  line-height: 1;
+  margin: 0 2px;
+  vertical-align: -2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  user-select: none;
+}
+
+/* Red (Fire / Mountain) */
+.mana-badge.mana-r {
+  background: linear-gradient(135deg, #f05030 0%, #c42c10 100%);
+  color: #ffffff;
+  border-color: #781808;
+}
+
+/* Blue (Water / Island) */
+.mana-badge.mana-u {
+  background: linear-gradient(135deg, #2090ea 0%, #0d60b5 100%);
+  color: #ffffff;
+  border-color: #083c74;
+}
+
+/* White (Sun / Plains) */
+.mana-badge.mana-w {
+  background: linear-gradient(135deg, #fff2c4 0%, #e0c888 100%);
+  color: #382e14;
+  border-color: #a08440;
+}
+
+/* Black (Skull / Swamp) */
+.mana-badge.mana-b {
+  background: linear-gradient(135deg, #443852 0%, #201a28 100%);
+  color: #e8dcf5;
+  border-color: #120e18;
+}
+
+/* Green (Tree / Forest) */
+.mana-badge.mana-g {
+  background: linear-gradient(135deg, #28a850 0%, #167030 100%);
+  color: #ffffff;
+  border-color: #0c421c;
+}
+
+/* Colorless (Diamond / Waste) */
+.mana-badge.mana-c {
+  background: linear-gradient(135deg, #c0c6d4 0%, #8890a4 100%);
+  color: #1c202c;
+  border-color: #586074;
+}
+
+/* Tap symbol */
+.mana-badge.mana-tap {
+  background: linear-gradient(135deg, #9da4b8 0%, #687084 100%);
+  color: #ffffff;
+  font-size: 13px;
+  border-color: #404858;
+}
+
+/* Generic number (1, 2, X, etc.) */
+.mana-badge.mana-generic {
+  background: linear-gradient(135deg, #a8b0c2 0%, #767e92 100%);
+  color: #141824;
+  border-color: #4c5468;
+}
