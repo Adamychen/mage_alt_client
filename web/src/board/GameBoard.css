@@ -34,3 +34,32 @@
   text-shadow: 0 0 8px rgba(255, 208, 112, 0.8);
   pointer-events: none;
 }
+
+/* 4-Player Commander Pod Layout */
+.opponents-pod-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  gap: 8px;
+  padding: 4px 10px 2px 10px;
+  overflow: hidden;
+}
+
+.opponents-pod-container .opponent-zone {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.opponents-pod-container .opponent-zone:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 10%;
+  right: -5px;
+  height: 80%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(124, 92, 255, 0.3), rgba(255, 208, 112, 0.4), rgba(124, 92, 255, 0.3), transparent);
+  pointer-events: none;
+}
+

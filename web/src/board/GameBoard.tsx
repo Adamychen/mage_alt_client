@@ -88,16 +88,12 @@ export default function GameBoard({
 }: GameBoardProps) {
   const me = game?.players?.find((p) => p.controlled)
   const opps = game?.players?.filter((p) => !p.controlled) ?? []
-  const opp0 = opps[0]
   const isSpectator = !me && opps.length >= 2
-  const oppBottom = isSpectator ? opps[1] : undefined
+  const oppBottom = isSpectator ? opps[opps.length - 1] : undefined
+  const topOpps = isSpectator ? opps.slice(0, opps.length - 1) : opps
 
   const targetIdSet = useMemo(() => new Set(targetIds), [targetIds])
   const playableIdSet = useMemo(() => new Set(playableIds), [playableIds])
-  const oppRevealed = useMemo(
-    () => getOpponentRevealedCards(game, opp0?.playerId, opp0?.name),
-    [game, opp0?.playerId, opp0?.name]
-  )
 
   const boardRef = useRef<HTMLDivElement>(null)
   const [floatingCard, setFloatingCard] = useState<CardView | PermanentView | null>(null)
@@ -168,14 +164,30 @@ export default function GameBoard({
   }, [game])
 
   return (
-    <div className="game-board" ref={boardRef}>
-      <OpponentZone
-        player={opp0}
-        onCardClick={onTargetClick}
-        onCardHover={handleCardHover}
-        targetIds={targetIdSet}
-        revealedCards={oppRevealed}
-      />
+    <div className={`game-board ${topOpps.length > 1 ? 'commander-pod-mode' : ''}`} ref={boardRef}>
+      {topOpps.length <= 1 ? (
+        <OpponentZone
+          player={topOpps[0]}
+          onCardClick={onTargetClick}
+          onCardHover={handleCardHover}
+          targetIds={targetIdSet}
+          revealedCards={getOpponentRevealedCards(game, topOpps[0]?.playerId, topOpps[0]?.name)}
+        />
+      ) : (
+        <div className={`opponents-pod-container pod-count-${topOpps.length}`}>
+          {topOpps.map((opp) => (
+            <OpponentZone
+              key={opp.playerId}
+              player={opp}
+              onCardClick={onTargetClick}
+              onCardHover={handleCardHover}
+              targetIds={targetIdSet}
+              revealedCards={getOpponentRevealedCards(game, opp.playerId, opp.name)}
+              compactPod
+            />
+          ))}
+        </div>
+      )}
       <div className="board-divider" />
       <PlayerZone
         player={isSpectator ? oppBottom : me}

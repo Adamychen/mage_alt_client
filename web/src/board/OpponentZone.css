@@ -98,3 +98,25 @@
 .oz-band.lands-band {
   background: transparent;
 }
+
+/* Compact Pod Style (Commander FFA 3-pod row) */
+.opponent-zone.compact-pod {
+  --card-w: clamp(52px, 4.8vw, 84px);
+  padding: 3px 6px;
+  gap: 4px;
+  background: rgba(14, 18, 38, 0.45);
+  border-radius: 6px;
+}
+
+.opponent-zone.compact-pod .oz-row {
+  gap: 4px;
+}
+
+.opponent-zone.compact-pod .oz-band {
+  gap: 4px;
+}
+
+.opponent-zone.compact-pod .oz-commander {
+  width: var(--card-w, 75px);
+}
+

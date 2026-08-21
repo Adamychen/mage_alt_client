@@ -12,6 +12,7 @@ interface OpponentZoneProps {
   onCardHover?: (card: any, rect?: DOMRect) => void
   targetIds?: Set<string>
   revealedCards?: Record<string, CardView>
+  compactPod?: boolean
 }
 
 function permanentKind(perm: PermanentView): 'creatures' | 'lands' | 'other' {
@@ -27,8 +28,9 @@ export default function OpponentZone({
   onCardHover,
   targetIds = new Set(),
   revealedCards,
+  compactPod = false,
 }: OpponentZoneProps) {
-  if (!player) return <div className="opponent-zone empty" />
+  if (!player) return <div className={`opponent-zone empty ${compactPod ? 'compact-pod' : ''}`} />
 
   const handCount = player.handCount ?? 0
   const knownCards = Object.entries(revealedCards ?? {})
@@ -75,7 +77,7 @@ export default function OpponentZone({
   const lands = permanents.filter(([id, p]) => permanentKind(p) === 'lands' && !attachedIds.has(id))
 
   return (
-    <div className="opponent-zone">
+    <div className={`opponent-zone ${compactPod ? 'compact-pod' : ''}`}>
       {/* Row 1: Unified row [life | hand | mana | deck | G | X] (at top) */}
       <div className="oz-row oz-top-row">
         <PlayerInfoBar
