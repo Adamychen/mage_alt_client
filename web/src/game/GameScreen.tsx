@@ -9,7 +9,7 @@ import CardPreview from './CardPreview'
 import GameChat from './GameChat'
 import PhaseBar from './PhaseBar'
 import ActionButton from './ActionButton'
-import FormattedText from './FormattedText'
+import ActionFeed from './ActionFeed'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
 import type { CardView } from '../net/types'
@@ -22,7 +22,6 @@ export default function GameScreen() {
   const feedback = useStore((s) => s.feedback)
   const playableIds = useStore((s) => s.playableIds)
   const combat = useStore((s) => s.combat)
-  const log = useStore((s) => s.log)
   const [previewCard, setPreviewCard] = useState<CardView | null>(null)
   const [rightTab, setRightTab] = useState<'log' | 'chat'>('log')
   const [busy, setBusy] = useState(false)
@@ -146,7 +145,7 @@ export default function GameScreen() {
               className={`right-tab-btn ${rightTab === 'log' ? 'active' : ''}`}
               onClick={() => setRightTab('log')}
             >
-              Log de Partida
+              Feed / Log
             </button>
             <button
               type="button"
@@ -159,18 +158,7 @@ export default function GameScreen() {
 
           <div className="right-panel-content">
             {rightTab === 'log' ? (
-              <div className="game-log-section">
-                <div className="game-log-entries">
-                  {log?.slice(-60).map((entry, i) => (
-                    <div key={entry.id ?? i} className="game-log-entry">
-                      {entry.from && <span className="game-log-player">{entry.from}</span>}
-                      <span className="game-log-text">
-                        <FormattedText text={entry.text} />
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ActionFeed onHover={setPreviewCard} />
             ) : (
               <GameChat />
             )}

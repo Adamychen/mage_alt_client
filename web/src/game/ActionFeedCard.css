@@ -1,0 +1,192 @@
+.action-feed-turn-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px 0;
+  width: 100%;
+}
+
+.turn-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 208, 112, 0.1), rgba(255, 208, 112, 0.4), rgba(255, 208, 112, 0.1));
+}
+
+.turn-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(30, 24, 12, 0.85);
+  border: 1px solid rgba(255, 208, 112, 0.5);
+  color: #ffd070;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.action-feed-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(18, 22, 44, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.action-feed-card:hover {
+  transform: translateX(-2px);
+  border-color: rgba(255, 208, 112, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.action-card-bg {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 55%;
+  background-size: cover;
+  background-position: center 25%;
+  opacity: 0.25;
+  mask-image: linear-gradient(to right, transparent, black 70%);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 70%);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.action-feed-card:hover .action-card-bg {
+  opacity: 0.45;
+}
+
+.action-card-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-icon {
+  font-size: 13px;
+}
+
+.action-player-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.action-player-tag.me {
+  background: rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.action-player-tag.opp {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.action-damage-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.9);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.action-life-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.action-life-badge.loss {
+  background: rgba(239, 68, 68, 0.8);
+  color: #ffffff;
+}
+
+.action-life-badge.gain {
+  background: rgba(16, 185, 129, 0.8);
+  color: #ffffff;
+}
+
+.action-card-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.action-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-family: var(--font-display);
+}
+
+.action-target-pill {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 208, 112, 0.15);
+  color: #ffd070;
+  border: 1px solid rgba(255, 208, 112, 0.35);
+}
+
+.action-desc-text {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+/* Card Types Borders */
+.action-feed-card.type-cast {
+  border-left: 3px solid #60a5fa;
+}
+
+.action-feed-card.type-land {
+  border-left: 3px solid #34d399;
+}
+
+.action-feed-card.type-attack {
+  border-left: 3px solid #f87171;
+}
+
+.action-feed-card.type-block {
+  border-left: 3px solid #38bdf8;
+}
+
+.action-feed-card.type-damage {
+  border-left: 3px solid #ef4444;
+  background: rgba(35, 15, 20, 0.85);
+}
+
+.action-feed-card.type-ability {
+  border-left: 3px solid #fbbf24;
+}
+
+.action-feed-card.type-draw {
+  border-left: 3px solid #a78bfa;
+}
+
+.action-feed-card.type-discard {
+  border-left: 3px solid #94a3b8;
+}

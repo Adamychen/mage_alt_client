@@ -78,7 +78,10 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
       addLog('partida', `¡Partida arrancada!${d?.tableName ? ` (${d.tableName})` : ''}`)
       if (isNewGame) {
         void cmds.joinGame(d!.gameId!)
-        void cmds.getGameChatId(d!.gameId!).then((cid) => setState({ gameChatId: cid ?? null }))
+        void cmds.getGameChatId(d!.gameId!).then((cid) => {
+          setState({ gameChatId: cid ?? null })
+          if (cid) void cmds.joinChat(cid)
+        })
       }
       break
     }
@@ -88,6 +91,9 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
     case 'GAME_SELECT':
     case 'GAME_PLAY_MANA':
       if (objectId) saveActiveGame(objectId)
+      if (method === 'GAME_UPDATE_AND_INFORM' && (data as any)?.message) {
+        addLog('partida', (data as any).message, objectId ?? undefined)
+      }
       if (embeddedGame) {
         const fresh = getState()
         const { ids, window: playableWindow } = consolidatePlayables(
@@ -98,7 +104,10 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
           patch.gameEnd = null
           patch.feedback = null
           if (objectId && !fresh.gameChatId) {
-            void cmds.getGameChatId(objectId).then((cid) => setState({ gameChatId: cid ?? null }))
+            void cmds.getGameChatId(objectId).then((cid) => {
+              setState({ gameChatId: cid ?? null })
+              if (cid) void cmds.joinChat(cid)
+            })
           }
         }
         if (method === 'GAME_SELECT') {
@@ -123,6 +132,13 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         void cmds.watchGame(objectId)
       }
       addLog('partida', `Espectador: mirando la partida ${objectId?.slice(0, 8) ?? ''}…`)
+      break
+    }
+    case 'GAME_INFORM':
+    case 'GAME_INFORM_PERSONAL': {
+      const d = data as { message?: string } | string | null
+      const msg = typeof d === 'string' ? d : d?.message
+      if (msg) addLog('partida', msg, objectId ?? undefined)
       break
     }
     case 'GAME_OVER': {
