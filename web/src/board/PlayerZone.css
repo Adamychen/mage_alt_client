@@ -3,8 +3,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 4px 14px 6px 14px;
-  gap: 8px;
+  padding: 2px 14px 4px 14px;
+  gap: 4px;
   overflow: hidden;
   justify-content: space-between;
 }
@@ -15,14 +15,14 @@
 
 .pz-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   width: 100%;
 }
 
 /* Row 1: Creatures (Combat zone adjacent to the center divider) */
 .pz-creatures-row {
-  flex: 1.2;
+  flex: 1.1;
   min-height: 0;
   align-items: center;
 }
@@ -36,8 +36,9 @@
 
 /* Row 3: Unified bottom row [Life | Hand | Mana | Deck | Grave | Exile] (at bottom edge) */
 .pz-bottom-row {
-  flex: 1.15;
-  min-height: 0;
+  flex: 0.9;
+  min-height: 52px;
+  max-height: 72px;
   align-items: flex-end;
   justify-content: space-between;
 }

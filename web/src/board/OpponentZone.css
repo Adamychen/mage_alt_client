@@ -3,8 +3,8 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: 4px 14px 4px 14px;
-  gap: 8px;
+  padding: 4px 14px 2px 14px;
+  gap: 4px;
   overflow: hidden;
   justify-content: space-between;
 }
@@ -15,37 +15,40 @@
 
 .oz-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   width: 100%;
 }
 
 /* Row 1: Unified top row [Life | Hand | Mana | Deck | Grave | Exile] (at top edge) */
 .oz-top-row {
-  flex: 0.85;
-  min-height: 0;
-  align-items: flex-start;
+  flex: 0.8;
+  min-height: 48px;
+  max-height: 62px;
+  align-items: center;
   justify-content: space-between;
 }
 
 .opponent-zone .player-info-bar {
-  align-self: flex-start;
+  align-self: center;
 }
 
 .opponent-zone .hand-zone {
-  align-items: flex-start;
+  align-items: center;
+  height: 100%;
 }
 
 .opponent-zone .hand-card-slot {
-  align-items: flex-start;
+  align-items: center;
+  height: 100%;
 }
 
 .opponent-zone .hand-card-slot .hand-card {
-  transform-origin: top center;
+  transform-origin: center center;
 }
 
 .opponent-zone .hand-card-slot:hover .hand-card {
-  transform: translateY(8px);
+  transform: translateY(4px);
 }
 
 /* Row 2: Lands + Others (Backline) */
