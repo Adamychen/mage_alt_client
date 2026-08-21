@@ -5,6 +5,7 @@ import PlayerZone from './PlayerZone'
 import StackZone from './StackZone'
 import TargetingOverlay from './TargetingOverlay'
 import CombatArrowsOverlay from './CombatArrowsOverlay'
+import CommanderPodRow from './CommanderPodRow'
 import FloatingCardPreview from './FloatingCardPreview'
 import { useSceneBridge } from './sceneBridge'
 import type { CrossZonePlayable } from './crossZone'
@@ -174,19 +175,14 @@ export default function GameBoard({
           revealedCards={getOpponentRevealedCards(game, topOpps[0]?.playerId, topOpps[0]?.name)}
         />
       ) : (
-        <div className={`opponents-pod-container pod-count-${topOpps.length}`}>
-          {topOpps.map((opp) => (
-            <OpponentZone
-              key={opp.playerId}
-              player={opp}
-              onCardClick={onTargetClick}
-              onCardHover={handleCardHover}
-              targetIds={targetIdSet}
-              revealedCards={getOpponentRevealedCards(game, opp.playerId, opp.name)}
-              compactPod
-            />
-          ))}
-        </div>
+        <CommanderPodRow
+          opponents={topOpps}
+          onCardClick={onTargetClick}
+          onCardHover={handleCardHover}
+          targetIds={targetIdSet}
+          getRevealedCards={(opp) => getOpponentRevealedCards(game, opp.playerId, opp.name)}
+          activePlayerId={game?.activePlayerId}
+        />
       )}
       <div className="board-divider" />
       <PlayerZone
