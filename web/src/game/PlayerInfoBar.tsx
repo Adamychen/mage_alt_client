@@ -23,6 +23,7 @@ export default function PlayerInfoBar({ player, side, compact = false, onClick, 
 
   return (
     <div
+      data-player-id={player.playerId}
       className={`player-info-bar ${side} ${compact ? 'compact' : ''} ${isTarget ? 'targetable' : ''} ${hasPriority ? 'has-priority' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}

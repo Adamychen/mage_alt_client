@@ -80,7 +80,7 @@ export default function StackZone({
 
       <div className="stack-items-list">
         {/* Top of the Stack (Active / Resolving next) */}
-        <div className="stack-item stack-item--top" key={topId}>
+        <div className="stack-item stack-item--top" key={topId} data-card-id={topId}>
           <div className="stack-top-badge-row">
             <span className="stack-top-indicator">▶ Siguiente en resolver</span>
             <span className="stack-type-badge">{topTypeLabel}</span>
@@ -88,6 +88,7 @@ export default function StackZone({
 
           {isTopAbility ? (
             <div
+              data-card-id={topId}
               className={[
                 'stack-top-card',
                 'stack-ability-card',
@@ -104,7 +105,7 @@ export default function StackZone({
               </div>
               <div className="ability-card-body">
                 <div className="ability-card-thumb-wrap">
-                  <CardSlot card={topCard} className="ability-card-thumb" />
+                  <CardSlot cardId={topId} card={topCard} className="ability-card-thumb" />
                 </div>
                 <div className="ability-card-text">
                   {topRulesText || topSourceName || 'Efecto en la pila'}
@@ -113,6 +114,7 @@ export default function StackZone({
             </div>
           ) : (
             <CardSlot
+              cardId={topId}
               card={topCard}
               onClick={onCardClick ? () => onCardClick(topId) : undefined}
               onHover={onHover}
@@ -138,6 +140,7 @@ export default function StackZone({
           return (
             <div
               key={id}
+              data-card-id={id}
               className={[
                 'stack-item',
                 'stack-item--underlying',

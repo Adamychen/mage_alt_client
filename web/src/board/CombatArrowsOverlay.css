@@ -1,0 +1,78 @@
+.combat-arrows-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 35;
+  overflow: visible;
+}
+
+.arrow-group {
+  opacity: 0.95;
+  transition: opacity 0.2s ease;
+}
+
+.arrow-shadow {
+  fill: none;
+  stroke: rgba(0, 0, 0, 0.7);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.arrow-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Attack Arrow (Crimson) */
+.arrow-path.arrow-attack {
+  stroke: #ff4757;
+  stroke-width: 3.5;
+  stroke-dasharray: 8 4;
+  animation: arrowFlowAttack 1.2s linear infinite;
+}
+
+@keyframes arrowFlowAttack {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Block Arrow (Cyan / Blue) */
+.arrow-path.arrow-block {
+  stroke: #38bdf8;
+  stroke-width: 3.5;
+  stroke-dasharray: 8 4;
+  animation: arrowFlowBlock 1.2s linear infinite;
+}
+
+@keyframes arrowFlowBlock {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Target Arrow (Gold / Amber) */
+.arrow-path.arrow-target {
+  stroke: #ffd070;
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+  animation: arrowFlowTarget 0.8s linear infinite;
+}
+
+@keyframes arrowFlowTarget {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
