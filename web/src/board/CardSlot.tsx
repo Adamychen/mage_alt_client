@@ -51,6 +51,9 @@ export default function CardSlot({
 
     if (isFirstMountRef.current) {
       isFirstMountRef.current = false
+      if (el.closest('.feedback-dialog, .library-order-dialog, .card-grid, .mechanics-tray')) {
+        return
+      }
       const lastRect = el.getBoundingClientRect()
       if (lastRect.width > 0 && lastRect.height > 0) {
         const prevRect = getPreviousCardPosition(effectiveId)

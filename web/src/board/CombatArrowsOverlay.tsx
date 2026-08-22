@@ -32,6 +32,7 @@ export default function CombatArrowsOverlay({
 }: CombatArrowsOverlayProps) {
   const [arrows, setArrows] = useState<ArrowItem[]>([])
 
+  const me = useMemo(() => game?.players?.find((p) => p.controlled), [game?.players])
   const opp = useMemo(() => game?.players?.find((p) => !p.controlled), [game?.players])
 
   const computeArrows = useCallback((): ArrowItem[] => {
@@ -78,26 +79,35 @@ export default function CombatArrowsOverlay({
           ? Object.keys(attackersObj)
           : []
 
-        const defenderId = (record.defenderId as string) || (opp ? opp.playerId : null)
+        attackerIds.forEach((attId) => {
+          let defenderId = (record.defenderId as string) || null
 
-        if (defenderId) {
-          const defCenter = getCenter(defenderId)
-          if (defCenter) {
-            attackerIds.forEach((attId) => {
-              const attCenter = getCenter(String(attId))
-              if (attCenter) {
-                newArrows.push({
-                  id: `att-${gi}-${attId}`,
-                  x1: attCenter.x,
-                  y1: attCenter.y,
-                  x2: defCenter.x,
-                  y2: defCenter.y,
-                  type: 'attack',
-                })
-              }
-            })
+          if (!defenderId) {
+            // If attacker is controlled by me or it's my turn, target opponent; otherwise target me (defending player)
+            const isMyAttacker = me && String(attId) in (me.battlefield ?? {})
+            const isMyTurn = game.activePlayerId === me?.playerId
+            if (isMyAttacker || isMyTurn) {
+              defenderId = opp ? opp.playerId : null
+            } else {
+              defenderId = me ? me.playerId : null
+            }
           }
-        }
+
+          if (defenderId) {
+            const defCenter = getCenter(defenderId)
+            const attCenter = getCenter(String(attId))
+            if (defCenter && attCenter) {
+              newArrows.push({
+                id: `att-${gi}-${attId}`,
+                x1: attCenter.x,
+                y1: attCenter.y,
+                x2: defCenter.x,
+                y2: defCenter.y,
+                type: 'attack',
+              })
+            }
+          }
+        })
 
         // 2. Block arrows from group.blockers -> attackers
         const blockersObj = record.blockers

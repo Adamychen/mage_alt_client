@@ -1,10 +1,6 @@
-/**
- * Combate HUMANO interactivo por la UI (cierre 1v1 real): el humano declara
- * atacantes y bloqueadores clicando sus criaturas en el tablero y confirmando
- * en el diálogo de combate. Corre en fake (escenarios deterministas del
- * FixtureServer) y en real (stack completo, mazos deterministas).
- */
-
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { test, expect } from './fixtures'
 import { FAKE_MODE } from './dual'
 
@@ -26,6 +22,8 @@ import {
 import { sceneClick, waitSceneCombat, type SceneCombat } from './support/scene'
 import { dumpE2E, payMana, waitPlayable } from './support/game-screen'
 import type { HumanHelper } from './wshelper'
+
+const SHOTS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'shots')
 
 /** Id del campo propio de la criatura por nombre (null si aún no está). */
 function myCreatureId(page: Page, name: string): string | null {
@@ -73,6 +71,7 @@ async function confirmMyAttackWindows(page: Page): Promise<SceneCombat> {
 }
 
 test('combate humano: el humano declara atacantes por la UI y el daño baja la vida del Sim', { tag: '@combat' }, async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => combatHumanAttackScenario(), async () => {
     const { helper, pageErrors } = await startGame(page, {
       prefix: 'cba',
@@ -99,9 +98,19 @@ test('combate humano: el humano declara atacantes por la UI y el daño baja la v
     }
     expect(combat.selectable, 'la criatura debería ser seleccionable como atacante').toContain(goblinId)
 
+    // Captura 1: Selección de atacantes activa
+    await page.waitForTimeout(200)
+    const attackSelectShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-01-attack-selection.png'), attackSelectShot)
+
     // clic en la criatura → declarada como atacante (✓ en el canvas)
     expect(await sceneClick(page, goblinId), 'clic para declarar atacante').toBeTruthy()
     await waitSceneCombat(page, (c) => c.chosen.includes(goblinId), 'atacante declarado')
+
+    // Captura 2: Atacante declarado (flecha roja / espada hacia el oponente)
+    await page.waitForTimeout(200)
+    const attackDeclaredShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-02-attack-declared.png'), attackDeclaredShot)
 
     // confirmar el paso de combate
     await page.getByRole('button', { name: 'Confirmar atacantes', exact: true }).click()
@@ -111,19 +120,20 @@ test('combate humano: el humano declara atacantes por la UI y el daño baja la v
     ).toBeTruthy()
 
     // el daño de combate del humano baja la vida del Sim (20 → 19)
-    const deadline = Date.now() + 20_000
-    while (Date.now() < deadline) {
-      const view = lastGameView(parseFrames(framesOf(page)))
-      const opp = opponentPlayer(view)
-      if ((opp?.life ?? -1) === 19) break
-      await page.waitForTimeout(250)
-    }
+    await expect(page.locator('.player-info-bar.opp .life-value')).toHaveText('19', { timeout: 20_000 })
     expect(opponentPlayer(lastGameView(parseFrames(framesOf(page))))?.life, 'el daño de combate debería bajar al Sim a 19').toBe(19)
+
+    // Captura 3: Daño de combate resuelto (vida del oponente en 19)
+    await page.waitForTimeout(150)
+    const attackResolvedShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-03-attack-damage-resolved.png'), attackResolvedShot)
+
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })
 
 test('combate humano: el humano bloquea por la UI y el ataque del Sim no hace daño', { tag: '@combat' }, async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => combatHumanBlockScenario(), async () => {
     const { helper, pageErrors } = await startGame(page, {
       prefix: 'cbb',
@@ -145,19 +155,27 @@ test('combate humano: el humano bloquea por la UI y el ataque del Sim no hace da
     expect(combat.mode, 'la ventana de bloqueo debería estar activa').toBe('block')
     expect(combat.selectable, 'la criatura debería ser seleccionable como bloqueador').toContain(blockerId)
 
+    // Captura 4: Ataque entrante del Sim (ventana de bloqueo abierta)
+    await page.waitForTimeout(200)
+    const incomingSimShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-04-incoming-sim-attack.png'), incomingSimShot)
+
     // vida justo antes de bloquear (en real el Sim ya hizo 1 de daño sin
     // bloqueador en su turno 1; en fake el daño llega solo con el ataque bloqueado)
     const lifeBefore = controlledPlayer(lastGameView(parseFrames(framesOf(page))))?.life as number
 
-    // clic en el bloqueador → bloquea al atacante. OJO: en real el servidor
-    // re-pregunta con possibleBlockers VACÍO (el bloqueador ya está asignado) y la
-    // ventana se cierra al instante (el helper confirma el re-select); el ✓ del
-    // canvas solo es visible ~100ms, así que la aserción es el ENVÍO del UUID.
+    // clic en el bloqueador → bloquea al atacante
     expect(await sceneClick(page, blockerId), 'clic para declarar bloqueador').toBeTruthy()
     expect(
       parseSent(sentOf(page)).some((s) => s.action === 'sendPlayerUUID' && String(s.args?.value) === blockerId),
       'el UUID del bloqueador debería haberse enviado al proxy',
     ).toBeTruthy()
+
+    // Captura 5: Bloqueador declarado
+    await page.waitForTimeout(200)
+    const blockDeclaredShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-05-block-declared.png'), blockDeclaredShot)
+
     // en fake la ventana persiste (posibleBlockers sigue listando al bloqueador):
     // confirmarla con el botón; en real el helper ya confirmó el re-select vacío
     const confirmButton = page.getByRole('button', { name: 'Confirmar bloqueadores', exact: true })
@@ -175,6 +193,12 @@ test('combate humano: el humano bloquea por la UI y el ataque del Sim no hace da
     }
     const me = controlledPlayer(lastGameView(parseFrames(framesOf(page))))
     expect((me as { life?: number } | undefined)?.life, 'el bloqueo debería evitar el daño de combate').toBe(lifeBefore)
+
+    // Captura 6: Resolución de bloqueo (sin daño recibido)
+    await page.waitForTimeout(200)
+    const blockResolvedShot = await page.screenshot({ fullPage: true })
+    fs.writeFileSync(path.join(SHOTS_DIR, 'combat-06-block-resolved.png'), blockResolvedShot)
+
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })

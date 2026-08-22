@@ -27,14 +27,14 @@ describe('LibraryOrderDialog', () => {
       max: 3,
     }
 
-    const { container, getByText } = render(
+    const { container, getByText, getAllByText } = render(
       <LibraryOrderDialog prompt={prompt} send={send} cancel={cancel} busy={false} />
     )
 
     expect(getByText('Adivinar (Scry 3)')).not.toBeNull()
-    expect(getByText('Lightning Bolt')).not.toBeNull()
-    expect(getByText('Counterspell')).not.toBeNull()
-    expect(getByText('Brainstorm')).not.toBeNull()
+    expect(getAllByText('Lightning Bolt').length).toBeGreaterThanOrEqual(1)
+    expect(getAllByText('Counterspell').length).toBeGreaterThanOrEqual(1)
+    expect(getAllByText('Brainstorm').length).toBeGreaterThanOrEqual(1)
 
     // Move second card (Counterspell) left (to position #1)
     const arrowBtns = container.querySelectorAll('.btn-arrow')

@@ -153,8 +153,12 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
     case 'GAME_GET_AMOUNT':
     case 'GAME_SELECT_AMOUNT':
       return prompt(method, gameId, 'Elige cantidad', message, 'integer', [], bounds)
-    case 'GAME_GET_MULTI_AMOUNT':
-      return prompt(method, gameId, 'Elige cantidades', message, 'multiString', [], bounds, multiAmountItems(data.messages))
+    case 'GAME_GET_MULTI_AMOUNT': {
+      const items = multiAmountItems(data.messages)
+      const minSum = typeof data.min === 'number' ? data.min : items.reduce((acc, it) => acc + it.min, 0)
+      const maxSum = typeof data.max === 'number' ? data.max : items.reduce((acc, it) => acc + it.max, 999999)
+      return prompt(method, gameId, 'Elige cantidades', message, 'multiString', [], { min: minSum, max: maxSum }, items)
+    }
     case 'GAME_CHOOSE_MODE': {
       const abilities = asRecord(raw)
       return prompt(method, gameId, 'Elige modo', stringValue(abilities.message) ?? message, 'uuid', optionEntries(abilities.choices ?? abilities.options), bounds)
@@ -182,7 +186,7 @@ export function parseFeedback(method: string, objectId: string | null, raw: unkn
     }
     case 'GAME_CHOOSE_CARDS_ORDER': {
       const cards = cardOptions(data.cardsView1 ?? data.options)
-      return prompt(method, gameId, 'Ordena las cartas', message, 'order', cards, bounds)
+      return prompt(method, gameId, 'Ordena las cartas', message, 'order', cards, bounds, undefined, undefined, true, undefined, undefined, undefined, feedbackCards(data))
     }
     case 'GAME_TARGET_AMOUNT': {
       return prompt(method, gameId, 'Elige cantidad para objetivo', message, 'integer', [], bounds)
