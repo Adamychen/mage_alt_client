@@ -29,6 +29,7 @@ export class HumanGame {
   private myBattle: PermanentView[] = []
   private simBattle: PermanentView[] = []
   private crossZone: Array<{ id: string; name: string; zone: 'graveyard' | 'exile' }> = []
+  private simGraveyard: Array<{ id: string; name: string }> = []
   private humanLife = 20
   private simLife = 20
   private turn = 1
@@ -212,6 +213,12 @@ export class HumanGame {
     }
     human.graveyard = graveyard
     human.exile = exile
+
+    const simGraveMap: Record<string, CardView> = {}
+    for (const c of this.simGraveyard) {
+      simGraveMap[c.id] = makeCard({ name: c.name, parentId: c.id })
+    }
+    sim.graveyard = simGraveMap
 
     const playableIds = this.playableIds()
     const crossZoneIds = this.crossZoneIds()
@@ -619,6 +626,14 @@ export class HumanGame {
   }
 
   private finishHumanBlock(): void {
+    for (const c of this.myBattle) {
+      this.crossZone.push({ id: c.id, name: c.name, zone: 'graveyard' })
+    }
+    for (const c of this.simBattle) {
+      this.simGraveyard.push({ id: c.id, name: c.name })
+    }
+    this.myBattle = []
+    this.simBattle = []
     this.combat = []
     this.step = 'PRECOMBAT_MAIN'
     this.phase = 'PRECOMBAT_MAIN'
@@ -647,6 +662,8 @@ export class HumanGame {
         case 1:
           if (this.options.simAttack) {
             const simAttackerId = this.simAttackerId()
+            const simAtt = this.simBattle.find((c) => c.parentId === simAttackerId || c.id === simAttackerId)
+            if (simAtt) simAtt.tapped = true
             this.combat = [{ attackers: { [simAttackerId]: {} } }]
             this.emitUpdate()
             if (this.options.humanBlock && this.myBattle.length > 0) { this.startHumanBlock(); return }

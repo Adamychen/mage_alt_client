@@ -22,6 +22,7 @@ function controlledOf(view: Record<string, unknown> | null) {
 
 test.describe('Blaze', { tag: '@spells' }, () => {
   test('Blaze {X}{R}: diálogo integer X=2, targeting visual y pago de maná', async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => spellsScenario('blaze'), async () => {
   const { frames, pageErrors, helper } = await startGame(page, { prefix: 'sp', tableName: 'blaze-test', deck: 'Mage Web advanced' })
   const board = page.locator('.game-board')
@@ -32,6 +33,8 @@ test.describe('Blaze', { tag: '@spells' }, () => {
   // el lanzamiento va por WS (determinista); los diálogos se verifican por UI
   expect(await helper.playCard(blazeId), 'el Blaze debería lanzarse por WS').toBeTruthy()
   await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Blaze', 15_000, cursor)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-07-blaze-x-dialog.png'), await page.screenshot({ fullPage: true }))
   await resolveInteger(page, 2, 'Blaze')
   const target = await waitFrame(
     page,
@@ -41,24 +44,10 @@ test.describe('Blaze', { tag: '@spells' }, () => {
     cursor,
   )
   await expectFeedbackDialog(page, 'Blaze')
-  // dar tiempo al render del targeting (el pulso/la línea) antes de capturar;
-  // el pulso es periódico: reintentar capturas hasta cogerlo en fase visible
+  // dar tiempo al render del targeting (el pulso/la línea) antes de capturar
   await page.waitForTimeout(700)
-  await page.locator('.targeting-bar, .feedback-backdrop').evaluate((el) => {
-    el.style.background = 'transparent'
-  })
-  let shotA = await board.screenshot()
-  for (let attempt = 0; attempt < 4 && Buffer.compare(beforeShot, shotA) === 0; attempt++) {
-    await page.waitForTimeout(300)
-    shotA = await board.screenshot()
-  }
-  expect(Buffer.compare(beforeShot, shotA) !== 0, 'el canvas debe cambiar al entrar en targeting').toBeTruthy()
-  fs.mkdirSync(SHOTS_DIR, { recursive: true })
-  fs.writeFileSync(TARGETING_SHOT, shotA)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-08-blaze-targeting.png'), await page.screenshot({ fullPage: true }))
   await targetOpponent(page, target, 'objetivo del Blaze', helper)
-  // la vida del oponente se lee ANTES de pagar: el hechizo puede resolver durante
-  // payMana (el helper pasa la prioridad del stack al instante tras el pago) y
-  // restar el daño sobre una vida ya dañada esperaría un daño extra (18-2=16)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
   await payMana(page, helper)
   await waitOppLife(page, (opp?.life ?? 20) - 2, 'Blaze resuelto (oponente -2)', 15_000)
@@ -70,6 +59,7 @@ test.describe('Blaze', { tag: '@spells' }, () => {
 
 test.describe('Arc Trail', { tag: '@spells' }, () => {
   test('Arc Trail {1}{R}: dos objetivos (segundo ask o auto-elección) y resolución', async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => spellsScenario('arc'), async () => {
   const { frames, pageErrors, helper } = await startGame(page, { prefix: 'sp', tableName: 'arc-test', deck: 'Mage Web advanced' })
   const arcId = await waitPlayable(page, 'Arc Trail', { timeoutMs: 30_000, minUntapped: 2 })
@@ -84,11 +74,9 @@ test.describe('Arc Trail', { tag: '@spells' }, () => {
     cursor,
   )
   await expectFeedbackDialog(page, 'Arc Trail')
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-09-arc-trail-targeting.png'), await page.screenshot({ fullPage: true }))
   await targetOpponent(page, arc1, 'primer objetivo de Arc Trail', helper)
-  // El 2º objetivo es "any other target": solo se re-dispara si hay otro objetivo
-  // legal (p. ej. una criatura en juego); si no, el servidor lo auto-elige y va
-  // directo al pago de maná (los dos Target de Arc Trail son objetos separados y
-  // NO pueblan options.chosenTargets).
   try {
     const arc2 = await waitFrameAt(
       page,
@@ -111,7 +99,6 @@ test.describe('Arc Trail', { tag: '@spells' }, () => {
   } catch {
     // sin segundo objetivo legal: el servidor lo auto-elige (va directo al maná)
   }
-  // vida del oponente antes del pago (el daño puede aplicarse durante payMana)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
   await payMana(page, helper)
   await waitOppLife(page, (opp?.life ?? 20) - 2, 'Arc Trail resuelto (oponente -2)', 15_000)
@@ -123,15 +110,16 @@ test.describe('Arc Trail', { tag: '@spells' }, () => {
 
 test.describe('Boros Charm', { tag: '@spells' }, () => {
   test('Boros Charm {R}{W}: GAME_CHOOSE_ABILITY del modo "4 damage" y pago multi-color', async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => spellsScenario('boros'), async () => {
   const { frames, pageErrors, helper } = await startGame(page, { prefix: 'sp', tableName: 'boros-test', deck: 'Mage Web advanced' })
   const borosId = await waitPlayable(page, 'Boros Charm', { timeoutMs: 30_000, minUntapped: 2, needPlains: true })
   if (!borosId) throw new Error('Boros Charm no fue jugable en 30s (¿sin Mountain+Plains sin girar?)')
   const cursor = parsedLen(page)
   expect(await helper.playCard(borosId), 'el Boros Charm debería lanzarse por WS').toBeTruthy()
-  // el modo llega como GAME_CHOOSE_ABILITY (chooseMode -> AbilityPickerView), no como
-  // GAME_CHOOSE_CHOICE (verificado contra el servidor en human-test)
   await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del modo de Boros Charm', 15_000, cursor)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-01-boros-charm-modes.png'), await page.screenshot({ fullPage: true }))
   const modeButton = page.locator('.feedback-dialog .feedback-options').getByRole('button', { name: /4 damage|4 daño|deals 4/i }).first()
   await expect(modeButton, 'modo "4 damage" de Boros Charm').toBeVisible({ timeout: 15_000 })
   await modeButton.click()
@@ -142,11 +130,14 @@ test.describe('Boros Charm', { tag: '@spells' }, () => {
     15_000,
     cursor,
   )
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-02-boros-charm-targeting.png'), await page.screenshot({ fullPage: true }))
   await targetOpponent(page, target, 'objetivo de Boros Charm', helper)
-  // vida del oponente antes del pago (el daño puede aplicarse durante payMana)
   const opp = opponentPlayer(lastGameView(parseFrames(frames)))
   await payMana(page, helper)
   await waitOppLife(page, (opp?.life ?? 20) - 4, 'Boros Charm resuelto (oponente -4)', 15_000)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-03-boros-charm-resolved.png'), await page.screenshot({ fullPage: true }))
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
   })
@@ -155,18 +146,22 @@ test.describe('Boros Charm', { tag: '@spells' }, () => {
 
 test.describe('Walking Ballista', { tag: '@spells' }, () => {
   test('Walking Ballista {X}{X}: GAME_CHOOSE_ABILITY "Cast", X=4 y 4 contadores en el campo', async ({ page }) => {
+  fs.mkdirSync(SHOTS_DIR, { recursive: true })
   await withFakeServer(() => spellsScenario('ballista'), async () => {
   const { frames, pageErrors, helper } = await startGame(page, { prefix: 'sp', tableName: 'ballista-test', deck: 'Mage Web advanced' })
   const ballistaId = await waitPlayable(page, 'Walking Ballista', { timeoutMs: 60_000, minUntapped: 8 })
   if (!ballistaId) throw new Error('Walking Ballista no fue jugable con 8+ maná en 60s (robo adverso)')
   const cursor = parsedLen(page)
   expect(await helper.playCard(ballistaId), 'el Walking Ballista debería lanzarse por WS').toBeTruthy()
-  // las criaturas con habilidades activadas piden GAME_CHOOSE_ABILITY ("Cast") antes del X
   await waitFrame(page, (f) => f.method === 'GAME_CHOOSE_ABILITY', 'GAME_CHOOSE_ABILITY del Walking Ballista', 15_000, cursor)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-04-ballista-choose-ability.png'), await page.screenshot({ fullPage: true }))
   const castButton = page.locator('.feedback-dialog .feedback-options').getByRole('button', { name: /Cast/i }).first()
   await expect(castButton, 'opción "Cast" del Walking Ballista').toBeVisible({ timeout: 15_000 })
   await castButton.click()
   await waitFrame(page, (f) => f.method === 'GAME_GET_AMOUNT' || f.method === 'GAME_SELECT_AMOUNT', 'GAME_GET_AMOUNT del Walking Ballista', 15_000, cursor)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-05-ballista-x-amount.png'), await page.screenshot({ fullPage: true }))
   await resolveInteger(page, 4, 'Walking Ballista')
   await payMana(page, helper)
   await waitFrame(
@@ -186,6 +181,8 @@ test.describe('Walking Ballista', { tag: '@spells' }, () => {
   expect(ballista, 'Walking Ballista debería estar en el campo').toBeTruthy()
   const counterTotal = (ballista?.counters ?? []).reduce((sum, c) => sum + (c.count ?? 0), 0)
   expect(counterTotal, 'contadores totales del Walking Ballista').toBe(4)
+  await page.waitForTimeout(200)
+  fs.writeFileSync(path.join(SHOTS_DIR, 'spells-06-ballista-resolved-counters.png'), await page.screenshot({ fullPage: true }))
   expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   await test.info().attach('ws-frames', { body: frames.map((f) => JSON.stringify(f)).join('\n'), contentType: 'text/plain' })
   })

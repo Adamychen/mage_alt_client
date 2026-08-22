@@ -34,6 +34,18 @@ export function isTokenCard(card: CardView): boolean {
   return card.isToken === true || card.mageObjectType === 'TOKEN'
 }
 
+/** Returns true if the permanent/card has Vigilance (does not tap when attacking). */
+export function hasVigilance(card: CardView | unknown): boolean {
+  if (!card || typeof card !== 'object') return false
+  const c = card as Record<string, unknown>
+  const rules = Array.isArray(c.rules) ? c.rules.join(' ') : String(c.rules ?? '')
+  const abilities = Array.isArray(c.abilities)
+    ? c.abilities.map((a) => (typeof a === 'string' ? a : (a as any)?.rule || (a as any)?.name || '')).join(' ')
+    : ''
+  const fullText = `${rules} ${abilities} ${c.name ?? ''}`.toLowerCase()
+  return fullText.includes('vigilance') || fullText.includes('vigilancia')
+}
+
 export function getSourceCard(card: CardView): CardView | null {
   return card.sourceCard || card.ability || null
 }

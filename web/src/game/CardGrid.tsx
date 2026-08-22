@@ -52,45 +52,70 @@ export default function CardGrid({ prompt, selected, setSelected, send, cancel, 
   return (
     <div className="feedback-backdrop" role="presentation">
       <section className="feedback-dialog card-grid-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
-        <div className="feedback-kicker">{prompt.method}</div>
-        <h2 id="feedback-title">{prompt.title}</h2>
-        <p>{prompt.message}</p>
+        <header className="card-grid-header">
+          <div className="feedback-kicker">{prompt.method}</div>
+          <div className="card-grid-title-row">
+            <h2 id="feedback-title">{prompt.title}</h2>
+            <span className="card-grid-count-badge">
+              {filtered.length === cards.length
+                ? `${cards.length} carta${cards.length !== 1 ? 's' : ''}`
+                : `${filtered.length} de ${cards.length}`}
+            </span>
+          </div>
+          {prompt.message && <p className="card-grid-message">{prompt.message}</p>}
 
-        {cards.length > 8 && (
-          <input
-            className="card-grid-filter"
-            type="text"
-            placeholder="Filtrar por nombre, tipo o texto..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            autoFocus
-          />
-        )}
+          <div className="card-grid-search-wrap">
+            <span className="card-grid-search-icon">🔍</span>
+            <input
+              className="card-grid-filter"
+              type="text"
+              placeholder="Buscar por nombre, tipo de carta o texto de regla..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              autoFocus
+            />
+            {filter && (
+              <button
+                type="button"
+                className="card-grid-clear-btn"
+                onClick={() => setFilter('')}
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </header>
 
-        <div className="card-grid">
-          {filtered.map((card) => (
-            <button
-              key={card.id}
-              className={`card-grid-cell ${selected.includes(card.id) ? 'selected' : ''}`}
-              disabled={busy}
-              onClick={() => toggle(card.id)}
-              title={`${card.displayName ?? card.name}${card.power && card.toughness ? ` (${card.power}/${card.toughness})` : ''}`}
-            >
-              <CardSlot
-                card={card as never}
-                cardId={card.id}
-                isChosen={selected.includes(card.id)}
-              />
-              <span className="card-grid-label">{card.displayName ?? card.name}</span>
-            </button>
-          ))}
+        <div className="card-grid-scroll-area">
+          <div className="card-grid">
+            {filtered.map((card) => (
+              <button
+                key={card.id}
+                className={`card-grid-cell ${selected.includes(card.id) ? 'selected' : ''}`}
+                disabled={busy}
+                onClick={() => toggle(card.id)}
+                title={`${card.displayName ?? card.name}${card.power && card.toughness ? ` (${card.power}/${card.toughness})` : ''}`}
+              >
+                <CardSlot
+                  card={card as never}
+                  cardId={card.id}
+                  isChosen={selected.includes(card.id)}
+                />
+                <span className="card-grid-label">{card.displayName ?? card.name}</span>
+              </button>
+            ))}
+          </div>
+
+          {filtered.length === 0 && (
+            <div className="card-grid-empty">
+              <span>🔍</span>
+              <p>No se encontraron cartas que coincidan con "{filter}"</p>
+            </div>
+          )}
         </div>
 
-        {filtered.length === 0 && (
-          <p className="card-grid-empty">No se encontraron cartas</p>
-        )}
-
-        <div className="card-grid-actions">
+        <footer className="card-grid-actions">
           {isMulti && (
             <button
               className="primary"
@@ -108,7 +133,7 @@ export default function CardGrid({ prompt, selected, setSelected, send, cancel, 
             </button>
           )}
           <button disabled={busy} onClick={cancel}>Cancelar</button>
-        </div>
+        </footer>
       </section>
     </div>
   )

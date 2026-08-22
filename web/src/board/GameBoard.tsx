@@ -213,6 +213,7 @@ export default function GameBoard({
         targetIds={targetIdSet}
         playableIds={playableIdSet}
         combatSelectable={combatSelectable}
+        combatMode={combatMode}
         combatChosen={combatChosen}
         crossZonePlayables={isSpectator ? [] : crossZonePlayables}
         onPlayCrossZone={onPlayCrossZone}

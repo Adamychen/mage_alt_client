@@ -144,7 +144,7 @@ export default function LibraryOrderDialog({ prompt, send, cancel, busy }: Libra
                   : 'Se robarán en este orden (de izquierda a derecha)'}
               </span>
             </div>
-            <div className="order-cards-list">
+            <div className={`order-cards-list ${topCards.length === 0 ? 'is-empty' : 'has-cards'}`}>
               {topCards.length === 0 ? (
                 <div className="empty-zone-placeholder">
                   {isBlockerOrder ? 'No hay bloqueadores seleccionados' : 'Ninguna carta se quedará en la parte superior'}
@@ -205,10 +205,12 @@ export default function LibraryOrderDialog({ prompt, send, cancel, busy }: Libra
                   {isSurveil ? 'Estas cartas irán al cementerio' : 'Estas cartas irán al fondo del mazo'}
                 </span>
               </div>
-              <div className="order-cards-list">
+              <div className={`order-cards-list ${bottomCards.length === 0 ? 'is-empty' : 'has-cards'}`}>
                 {bottomCards.length === 0 ? (
                   <div className="empty-zone-placeholder">
-                    {isSurveil ? 'Ninguna carta irá al cementerio' : 'Ninguna carta irá al fondo'}
+                    {isSurveil
+                      ? '☠️ Ninguna carta irá al cementerio'
+                      : '⬇️ Ninguna carta irá al fondo (pulsa "⬇️ Al Fondo" en una carta arriba)'}
                   </div>
                 ) : (
                   bottomCards.map((item, idx) => (

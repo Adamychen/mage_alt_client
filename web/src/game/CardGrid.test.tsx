@@ -36,17 +36,10 @@ describe('CardGrid', () => {
     expect(container.textContent).toContain('Choose a creature card')
   })
 
-  it('shows a filter input when more than 8 cards', () => {
-    const cards = Array.from({ length: 10 }, (_, i) => ({
-      id: `c-${i}`, name: `Card ${i}`, expansionSetCode: 'TEST', cardNumber: String(i),
-    }))
-    const { container } = render(<CardGrid prompt={makePrompt({ cards })} selected={[]} setSelected={vi.fn()} send={vi.fn()} cancel={vi.fn()} busy={false} />)
-    expect(container.querySelector('input[placeholder]')).toBeTruthy()
-  })
-
-  it('does not show filter when 8 or fewer cards', () => {
+  it('shows the search filter input and card count badge', () => {
     const { container } = render(<CardGrid prompt={makePrompt()} selected={[]} setSelected={vi.fn()} send={vi.fn()} cancel={vi.fn()} busy={false} />)
-    expect(container.querySelector('input[placeholder]')).toBeNull()
+    expect(container.querySelector('input[placeholder]')).toBeTruthy()
+    expect(container.querySelector('.card-grid-count-badge')?.textContent).toContain('3 cartas')
   })
 
   it('filters cards by name', () => {

@@ -178,6 +178,7 @@ export interface StartGameOptions extends CreateTableOptions {
   maxFrames?: number
   /** El helper no toca las ventanas de combate (el humano las ejerce por la UI). */
   skipCombat?: boolean
+  skipAsks?: boolean
 }
 
 /** Monta la partida (login → mesa → Sim → arranque), arranca el HumanHelper
@@ -194,7 +195,7 @@ export async function startGame(page: Page, opts: StartGameOptions = {}): Promis
   await waitTableReady(page, tableName)
   // el helper se conecta ANTES de arrancar la partida para capturar el
   // START_GAME/GAME_INIT desde el primer evento (el waitGameId espera)
-  const helper = new HumanHelper(username, 'x', { skipCombat: opts.skipCombat })
+  const helper = new HumanHelper(username, 'x', { skipCombat: opts.skipCombat, skipAsks: opts.skipAsks })
   registerHelper(helper)
   await helper.start()
   await startMatch(page, tableName)

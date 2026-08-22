@@ -5,6 +5,7 @@ import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
 import CommandZone from './CommandZone'
 import { useZoneScale } from './useZoneScale'
+import { hasVigilance } from '../cards/cardImages'
 import './OpponentZone.css'
 
 interface OpponentZoneProps {
@@ -163,6 +164,8 @@ export default function OpponentZone({
         </div>
         <div className="oz-band creatures-band">
           {creatures.map(([id, perm]) => {
+            const isAttacking = (perm as any).attacking === true
+            const isTapped = perm.tapped === true || (isAttacking && !hasVigilance(perm))
             const attachments = perm.attachments ?? []
 
             if (attachments.length > 0) {
@@ -196,7 +199,7 @@ export default function OpponentZone({
                     onClick={onCardClick ? () => onCardClick(id) : undefined}
                     onHover={onCardHover}
                     isTarget={targetIds.has(id)}
-                    tapped={perm.tapped === true}
+                    tapped={isTapped}
                     showPt
                     showCounters
                     showDamage
@@ -213,7 +216,7 @@ export default function OpponentZone({
                 onClick={onCardClick ? () => onCardClick(id) : undefined}
                 onHover={onCardHover}
                 isTarget={targetIds.has(id)}
-                tapped={perm.tapped === true}
+                tapped={isTapped}
                 showPt
                 showCounters
                 showDamage

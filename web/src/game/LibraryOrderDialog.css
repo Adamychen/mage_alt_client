@@ -95,10 +95,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 24px;
   overflow-x: auto;
-  padding: 16px 12px;
-  min-height: 250px;
+  padding: 8px 12px;
+}
+
+.order-cards-list.has-cards {
+  min-height: 220px;
+}
+
+.order-cards-list.is-empty {
+  min-height: unset;
+  padding: 4px 0;
 }
 
 .empty-zone-placeholder {
@@ -106,10 +114,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.35);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.45);
   font-style: italic;
-  min-height: 120px;
+  padding: 14px 16px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
 }
 
 .order-card-card {
@@ -117,7 +128,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -137,8 +148,8 @@
 }
 
 .order-card-slot {
-  width: 150px !important;
-  height: 210px !important;
+  width: 136px !important;
+  height: 190px !important;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }

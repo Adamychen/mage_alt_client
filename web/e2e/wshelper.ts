@@ -50,13 +50,15 @@ export class HumanHelper {
    *  ejerce por la UI en los tests de combate): pasar ahí confirmaría el paso de
    *  combate sin declarar nada. */
   private skipCombat: boolean
+  private skipAsks: boolean
 
   constructor(
     private readonly username: string,
     private readonly password: string,
-    opts: { skipCombat?: boolean } = {},
+    opts: { skipCombat?: boolean; skipAsks?: boolean } = {},
   ) {
     this.skipCombat = opts.skipCombat ?? false
+    this.skipAsks = opts.skipAsks ?? false
   }
 
   get isStarted(): boolean {
@@ -286,7 +288,7 @@ export class HumanHelper {
   }
 
   private handleAsk(data: EventDataLike) {
-    if (!this.gameId) return
+    if (!this.gameId || this.skipAsks) return
     const question = String(data.question ?? data.message ?? '')
     // XMage: false = mantener la mano en el mulligan; true = aceptar el resto.
     // El auto-keep del web ya responde el mulligan: responderlo aquí también

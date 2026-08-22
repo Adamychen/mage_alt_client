@@ -467,6 +467,32 @@ describe('playables consolidados', () => {
     expect(getState().playableIds).toEqual(['p-untapped'])
   })
 
+  it('GAME_SELECT lists battlefield mana sources and hand cards for floating mana during priority', () => {
+    handleMessage({
+      type: 'event',
+      method: 'GAME_SELECT',
+      messageId: 1,
+      objectId: 'g-1',
+      data: {
+        message: 'Select a card or ability to play',
+        gameView: makeGameView({
+          players: [
+            makePlayer({
+              playerId: 'p1',
+              name: 'Alice',
+              controlled: true,
+              hasPriority: true,
+              battlefield: { 'p-mountain': makePermanent({ name: 'Mountain', parentId: 'p-mountain' }) },
+            }),
+          ],
+          myHand: { 'h-bolt': makeCard({ name: 'Lightning Bolt', parentId: 'h-bolt' }) },
+          canPlayObjects: { objects: { 'p-mountain': {}, 'h-bolt': {} } },
+        }),
+      },
+    })
+    expect(getState().playableIds).toEqual(['p-mountain', 'h-bolt'])
+  })
+
   it('a GAME_SELECT clears a stale GAME_TARGET dialog', () => {
     handleMessage({
       type: 'event',

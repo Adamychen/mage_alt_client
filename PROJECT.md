@@ -2,7 +2,7 @@
 
 > This document is the **project source of truth**: roadmap, phases, decisions, and
 > verified actual state. It is updated at every work step, not just at the end of phases.
-> Last updated: 2026-08-22 (Comprehensive Mechanic Badges & HD Token/Reminder Hover Previews in PlayerInfoBar)
+> Last updated: 2026-08-22 (Universal Playable Objects Audit & Mana Floating from Battlefield Permanents)
 
 ---
 
@@ -179,7 +179,9 @@ web/
 
 | Date | Step | Description | Verification |
 |---|---|---|---|
-| 2026-08-22 | F2/F3 | Multi-Blocker Combat & Damage Assignment: added support for multi-blocker visual arrows convergence, damage assignment ordering (`LibraryOrderDialog` in blocker mode), numeric damage distribution (`FeedbackDialog` multiString), and automated E2E screenshots | vitest 285/285 ✅; typecheck ✅; e2e 20/20 ✅ |
+| 2026-08-22 | F2/F3 | Comprehensive MTG Interactions Suite & Visual Showcase: built E2E test scenario covering `GAME_ASK` (Shockland binary prompts), `GAME_CHOOSE_COLOR` (mana color picker), `GAME_CHOOSE_PILE` (Fact or Fiction split piles), `CardGrid` (Demonic Tutor search with Scryfall HD art), `LibraryOrderDialog` (Scry 3 Top/Bottom order), and Command Zone Commander Tax (+2 badge & cast); updated `GAME_ASK` fallback and added `skipAsks` flag to `HumanHelper` | vitest 286/286 ✅; typecheck ✅; e2e interactions 1/1 ✅ (5.7s) |
+| 2026-08-22 | F2/F3 | Universal Playable Objects Audit & Mana Floating: audited and unified `canPlayObjects` resolution across all zones (Hand, Battlefield lands & activated abilities, Command Zone commanders & companions, Graveyard, Exile, Library top card); fixed land tapping during regular priority to float mana before casting spells | vitest 286/286 ✅; typecheck ✅; e2e combat 4/4 ✅ |
+| 2026-08-22 | F2/F3 | Combat Visuals & Mechanics Polish: multi-blocker arrows convergence, damage assignment ordering (`LibraryOrderDialog` in blocker mode), numeric damage distribution, 90° tapping rotation on attack with Vigilance exception handling, vertical blocker orientation, and automated E2E screenshots | vitest 285/285 ✅; typecheck ✅; e2e combat 4/4 ✅ |
 | 2026-08-22 | F2/F3 | Mechanics & Reminder Tray Widget: added dedicated 2x2 tab in right-panel for global states (The Ring 4-level progressive breakdown & bearer, Active Dungeons room flow & tracker, Day/Night banner & transition rules, Monarch, Initiative, City's Blessing, Speed) with responsive 250px layout | vitest 285/285 ✅; typecheck ✅; build ✅; e2e mechanics 1/1 ✅ |
 | 2026-08-22 | F2/F3 | Comprehensive Mechanic Badges & HD Token Previews: added The Ring (level 1-4), active Dungeons, Day/Night, Curses, specialized designations (City's Blessing, Speed, Enduring Story) and connected interactive hover preview for all badges and counters via Scryfall | vitest 279/279 ✅; typecheck ✅; build ✅; e2e 18/18 ✅ |
 | 2026-08-21 | T | Repaired e2e suite after lobby rework: best-of-3/5 cursor bugs (`waitFrame` has no `.index`; NaN cursors skipped every frame), fixture `END_GAME_INFO` aligned with real `GameEndView` (`<sim> won the match!`, "You need N more wins…" also after losing a game) | fake e2e 18/18 ✅ |

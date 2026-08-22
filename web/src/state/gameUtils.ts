@@ -58,7 +58,7 @@ export function gameViewFrom(value: unknown): GameView | null {
   return null
 }
 
-export function combatChosenFrom(game: GameView | null): string[] {
+export function combatChosenFrom(game: GameView | null, mode?: 'attack' | 'block'): string[] {
   if (!game) return []
   const chosen = new Set<string>()
 
@@ -66,7 +66,8 @@ export function combatChosenFrom(game: GameView | null): string[] {
   if (Array.isArray(game.combat)) {
     for (const group of game.combat) {
       const record = group as Record<string, unknown>
-      for (const key of ['attackers', 'blockers']) {
+      const keys = mode === 'attack' ? ['attackers'] : mode === 'block' ? ['blockers'] : ['attackers', 'blockers']
+      for (const key of keys) {
         const view = record[key]
         if (Array.isArray(view)) {
           for (const id of view) chosen.add(String(id))
@@ -80,7 +81,11 @@ export function combatChosenFrom(game: GameView | null): string[] {
   // 2. From battlefield permanents marked as attacking or blocking
   for (const player of game.players ?? []) {
     for (const [id, perm] of Object.entries(player.battlefield ?? {})) {
-      if ((perm as any).attacking === true || (perm as any).blocking === true) {
+      if (mode === 'attack' && (perm as any).attacking === true) {
+        chosen.add(id)
+      } else if (mode === 'block' && (perm as any).blocking === true) {
+        chosen.add(id)
+      } else if (!mode && ((perm as any).attacking === true || (perm as any).blocking === true)) {
         chosen.add(id)
       }
     }
@@ -98,14 +103,15 @@ export function combatFromSelect(data: unknown, currentGame: GameView | null): C
   const attackers = stringList(options.possibleAttackers)
   const blockers = stringList(options.possibleBlockers)
   if (attackers.length === 0 && blockers.length === 0) return null
-  const selectable = attackers.length > 0 ? attackers : blockers
-  const chosenFromGame = combatChosenFrom(currentGame)
+  const mode: 'attack' | 'block' = attackers.length > 0 ? 'attack' : 'block'
+  const selectable = mode === 'attack' ? attackers : blockers
+  const chosenFromGame = combatChosenFrom(currentGame, mode)
   const chosenFromOptions = stringList(options.chosen ?? options.chosenTargets ?? options.attackers)
   const chosen = Array.from(new Set([...chosenFromGame, ...chosenFromOptions]))
   return {
-    mode: attackers.length > 0 ? 'attack' : 'block',
+    mode,
     selectable,
-    special: attackers.length > 0 && typeof options.specialButton === 'string',
+    special: mode === 'attack' && typeof options.specialButton === 'string',
     chosen,
   }
 }

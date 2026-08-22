@@ -155,7 +155,8 @@ function handleEvent(method: string, objectId: string | null, data: unknown) {
         const combat = method === 'GAME_SELECT' ? combatFromSelect(data, embeddedGame) : null
         patch.combat = combat
         if (!combat && embeddedGame && isCombatStep(embeddedGame)) {
-          patch.combat = { ...(s.combat ?? emptyCombat()), chosen: combatChosenFrom(embeddedGame) }
+          const mode: 'attack' | 'block' = embeddedGame.step === 'DECLARE_BLOCKERS' ? 'block' : 'attack'
+          patch.combat = { ...(s.combat ?? emptyCombat()), mode, chosen: combatChosenFrom(embeddedGame, mode) }
         }
         setState(patch)
       }

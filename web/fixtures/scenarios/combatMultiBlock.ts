@@ -168,7 +168,8 @@ export function combatMultiBlockScenario(): Scenario {
         }
         case 'sendPlayerUUID': {
           conn.ok(requestId, action, {})
-          // Declaring Colossal Dreadmaw as attacker
+          // Declaring Colossal Dreadmaw as attacker (taps because no vigilance)
+          myAttacker.tapped = true
           const combatGroups = [{ attackers: { [myAttacker.parentId!]: {} } }]
           conn.broadcast('GAME_UPDATE', { gameView: getGameView(combatGroups) }, GAME_ID)
           conn.broadcast(

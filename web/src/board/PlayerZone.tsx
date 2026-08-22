@@ -6,6 +6,7 @@ import ResourceBar from '../game/ResourceBar'
 import PlayerInfoBar from '../game/PlayerInfoBar'
 import CommandZone from './CommandZone'
 import { useZoneScale } from './useZoneScale'
+import { hasVigilance } from '../cards/cardImages'
 import type { CrossZonePlayable } from './crossZone'
 import './PlayerZone.css'
 
@@ -18,6 +19,7 @@ interface PlayerZoneProps {
   targetIds?: Set<string>
   playableIds?: Set<string>
   combatSelectable?: string[]
+  combatMode?: 'attack' | 'block' | null
   combatChosen?: string[]
   crossZonePlayables?: CrossZonePlayable[]
   onPlayCrossZone?: (id: string) => void
@@ -40,6 +42,7 @@ export default function PlayerZone({
   targetIds = new Set(),
   playableIds = new Set(),
   combatSelectable = [],
+  combatMode = null,
   combatChosen = [],
   crossZonePlayables,
   onPlayCrossZone,
@@ -148,6 +151,8 @@ export default function PlayerZone({
           {creatures.map(([id, perm]) => {
             const isSelectable = combatSelectableSet.has(id)
             const isChosen = combatChosenSet.has(id)
+            const isAttacking = (perm as any).attacking === true || (isChosen && combatMode === 'attack')
+            const isTapped = perm.tapped === true || (isAttacking && !hasVigilance(perm))
             const attachments = perm.attachments ?? []
 
             if (attachments.length > 0) {
@@ -184,7 +189,7 @@ export default function PlayerZone({
                     isTarget={targetIds.has(id)}
                     isPlayable={playableIds.has(id) || isSelectable || isChosen}
                     isChosen={isChosen}
-                    tapped={perm.tapped === true}
+                    tapped={isTapped}
                     showPt
                     showCounters
                     showDamage
@@ -203,7 +208,7 @@ export default function PlayerZone({
                 isTarget={targetIds.has(id)}
                 isPlayable={playableIds.has(id) || isSelectable || isChosen}
                 isChosen={isChosen}
-                tapped={perm.tapped === true}
+                tapped={isTapped}
                 showPt
                 showCounters
                 showDamage

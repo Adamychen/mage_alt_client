@@ -78,18 +78,20 @@ export default function CombatArrowsOverlay({
           : attackersObj && typeof attackersObj === 'object'
           ? Object.keys(attackersObj)
           : []
-
         attackerIds.forEach((attId) => {
           let defenderId = (record.defenderId as string) || null
 
           if (!defenderId) {
-            // If attacker is controlled by me or it's my turn, target opponent; otherwise target me (defending player)
+            // If attacker is controlled by me, target opponent; if controlled by opponent, target me
             const isMyAttacker = me && String(attId) in (me.battlefield ?? {})
-            const isMyTurn = game.activePlayerId === me?.playerId
-            if (isMyAttacker || isMyTurn) {
+            const isOppAttacker = opp && String(attId) in (opp.battlefield ?? {})
+            if (isMyAttacker) {
               defenderId = opp ? opp.playerId : null
-            } else {
+            } else if (isOppAttacker) {
               defenderId = me ? me.playerId : null
+            } else {
+              const isMyTurn = game.activePlayerId === me?.playerId
+              defenderId = isMyTurn ? (opp ? opp.playerId : null) : (me ? me.playerId : null)
             }
           }
 
@@ -139,24 +141,31 @@ export default function CombatArrowsOverlay({
     }
 
     // 3. Attack arrows from combatChosen during DECLARE_ATTACKERS
-    if (combatMode === 'attack' && combatChosen.length > 0 && opp) {
-      const oppCenter = getCenter(opp.playerId)
-      if (oppCenter) {
-        combatChosen.forEach((attId) => {
-          if (!newArrows.some((a) => a.id.includes(attId) && a.type === 'attack')) {
-            const attCenter = getCenter(attId)
-            if (attCenter) {
-              newArrows.push({
-                id: `chosen-att-${attId}`,
-                x1: attCenter.x,
-                y1: attCenter.y,
-                x2: oppCenter.x,
-                y2: oppCenter.y,
-                type: 'attack',
-              })
+    if (game.step === 'DECLARE_ATTACKERS' && combatMode === 'attack' && combatChosen.length > 0) {
+      const activePlayer = game.players?.find((p) => p.playerId === game.activePlayerId)
+      const defendingPlayer = game.players?.find((p) => p.playerId !== game.activePlayerId)
+      if (activePlayer && defendingPlayer) {
+        const defCenter = getCenter(defendingPlayer.playerId)
+        if (defCenter) {
+          combatChosen.forEach((attId) => {
+            const isAttackerCard = String(attId) in (activePlayer.battlefield ?? {})
+            if (!isAttackerCard) return
+
+            if (!newArrows.some((a) => a.id.includes(attId) && a.type === 'attack')) {
+              const attCenter = getCenter(attId)
+              if (attCenter) {
+                newArrows.push({
+                  id: `chosen-att-${attId}`,
+                  x1: attCenter.x,
+                  y1: attCenter.y,
+                  x2: defCenter.x,
+                  y2: defCenter.y,
+                  type: 'attack',
+                })
+              }
             }
-          }
-        })
+          })
+        }
       }
     }
 
