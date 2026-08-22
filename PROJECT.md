@@ -2,7 +2,7 @@
 
 > This document is the **project source of truth**: roadmap, phases, decisions, and
 > verified actual state. It is updated at every work step, not just at the end of phases.
-> Last updated: 2026-08-21 (e2e suite repair: fake 18/18, real-mode triage, port split fix, demo startMatch contract)
+> Last updated: 2026-08-22 (Comprehensive Mechanic Badges & HD Token/Reminder Hover Previews in PlayerInfoBar)
 
 ---
 
@@ -179,6 +179,8 @@ web/
 
 | Date | Step | Description | Verification |
 |---|---|---|---|
+| 2026-08-22 | F2/F3 | Mechanics & Reminder Tray Widget: added dedicated 2x2 tab in right-panel for global states (The Ring 4-level progressive breakdown & bearer, Active Dungeons room flow & tracker, Day/Night banner & transition rules, Monarch, Initiative, City's Blessing, Speed) with responsive 250px layout | vitest 285/285 ✅; typecheck ✅; build ✅; e2e mechanics 1/1 ✅ |
+| 2026-08-22 | F2/F3 | Comprehensive Mechanic Badges & HD Token Previews: added The Ring (level 1-4), active Dungeons, Day/Night, Curses, specialized designations (City's Blessing, Speed, Enduring Story) and connected interactive hover preview for all badges and counters via Scryfall | vitest 279/279 ✅; typecheck ✅; build ✅; e2e 18/18 ✅ |
 | 2026-08-21 | T | Repaired e2e suite after lobby rework: best-of-3/5 cursor bugs (`waitFrame` has no `.index`; NaN cursors skipped every frame), fixture `END_GAME_INFO` aligned with real `GameEndView` (`<sim> won the match!`, "You need N more wins…" also after losing a game) | fake e2e 18/18 ✅ |
 | 2026-08-21 | T | Fixed real-mode e2e blockers: (1) page+HumanHelper pointed at fake port instead of proxy WS 8787 (`PROXY_PORT` in `e2e/dual.ts`); (2) demo launcher lost the explicit `startMatch` — the server never auto-starts IA-vs-IA tables (the fake scenario was emulating it); (3) empty-lobby second "Crear Nueva Mesa" button broke `/Nueva mesa/i` selector; (4) spectator Log tab auto-switches to Stack on live games | full-flow + combat + lobby-chat green in `E2E_BACKEND=real` |
 | 2026-08-21 | T | Port split fix: fake FixtureServer moved **8788→8789** — 8788 is the Java proxy's HTTP test page and collides whenever the stack is up (fake suite silently depended on the proxy being stopped) | fake 18/18 with stack up ✅ |

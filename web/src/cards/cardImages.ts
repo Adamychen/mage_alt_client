@@ -114,7 +114,7 @@ export function cardKey(card: CardView): string | null {
     return `${tokenSet}/${slug}`
   }
 
-  // Card with only a name (e.g. from game log feed or action history)
+  // Card with only a name (e.g. from game log feed or action history or reminder tokens)
   const name = card.displayName || card.name
   if (name && name.trim()) {
     return `named:${name.trim()}${backSuffix}`
@@ -169,6 +169,8 @@ function candidateUrls(key: string): string[] {
     return [
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}`,
       `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`,
+      `https://api.scryfall.com/cards/search?q=${encodeURIComponent(name)}+include:extras`,
+      `https://api.scryfall.com/cards/search?q=t:token+name:%22${encodeURIComponent(name)}%22+include:extras`,
     ]
   }
 
@@ -178,7 +180,8 @@ function candidateUrls(key: string): string[] {
     return [
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(clean + ' Token')}`,
       `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(clean)}`,
-      `https://api.scryfall.com/cards/search?q=t:token+name:%22${encodeURIComponent(clean)}%22`,
+      `https://api.scryfall.com/cards/search?q=t:token+name:%22${encodeURIComponent(clean)}%22+include:extras`,
+      `https://api.scryfall.com/cards/search?q=${encodeURIComponent(clean)}+include:extras`,
     ]
   }
 

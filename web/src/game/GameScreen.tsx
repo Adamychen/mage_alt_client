@@ -12,6 +12,7 @@ import ActionButton from './ActionButton'
 import ActionFeed from './ActionFeed'
 import StackZone from '../board/StackZone'
 import CombatArrowsOverlay from '../board/CombatArrowsOverlay'
+import MechanicsTray from './MechanicsTray'
 import { resolveTargetSourceId } from './resolveTargetSourceId'
 import { crossZonePlayables } from '../board/crossZone'
 import './GameScreen.css'
@@ -24,7 +25,7 @@ export default function GameScreen() {
   const playableIds = useStore((s) => s.playableIds)
   const combat = useStore((s) => s.combat)
   const gameBodyRef = useRef<HTMLDivElement>(null)
-  const [rightTab, setRightTab] = useState<'stack' | 'log' | 'chat'>('log')
+  const [rightTab, setRightTab] = useState<'stack' | 'log' | 'mechanics' | 'chat'>('log')
   const [busy, setBusy] = useState(false)
   const stackCount = Object.keys(game?.stack ?? {}).length
   const prevStackCountRef = useRef(0)
@@ -107,6 +108,25 @@ export default function GameScreen() {
     if (activeOpp) return activeOpp
     return topOpps[0]
   }, [topOpps, selectedOppId, game?.activePlayerId])
+
+  const hasActiveMechanics = useMemo(() => {
+    if (!game?.players) return false
+    return game.players.some((p) => {
+      const items = Array.isArray(p.commandList)
+        ? p.commandList
+        : Object.values(p.commandList ?? {})
+      const hasRing = items.some((c: any) => String(c?.name ?? '').toLowerCase().includes('the ring'))
+      const hasDungeon = items.some(
+        (c: any) => Array.isArray(c?.cardTypes) && c.cardTypes.map((t: string) => String(t).toLowerCase()).includes('dungeon')
+      )
+      const hasDayNight = p.designationNames?.some((d) => d.toLowerCase().includes('day') || d.toLowerCase().includes('night'))
+      const hasMonarch = !!p.monarch
+      const hasInitiative = !!p.initiative
+      const hasBlessing = p.designationNames?.some((d) => d.toLowerCase().includes('blessing'))
+      const hasSpeed = p.designationNames?.some((d) => d.toLowerCase().includes('speed'))
+      return hasRing || hasDungeon || hasDayNight || hasMonarch || hasInitiative || hasBlessing || hasSpeed
+    })
+  }, [game?.players])
 
   return (
     <div className="game">
@@ -206,6 +226,14 @@ export default function GameScreen() {
             </button>
             <button
               type="button"
+              className={`right-tab-btn ${rightTab === 'mechanics' ? 'active' : ''}`}
+              onClick={() => setRightTab('mechanics')}
+            >
+              Mecánicas
+              {hasActiveMechanics && <span className="right-tab-badge active-mechanics">★</span>}
+            </button>
+            <button
+              type="button"
               className={`right-tab-btn ${rightTab === 'chat' ? 'active' : ''}`}
               onClick={() => setRightTab('chat')}
             >
@@ -224,6 +252,8 @@ export default function GameScreen() {
               />
             ) : rightTab === 'log' ? (
               <ActionFeed />
+            ) : rightTab === 'mechanics' ? (
+              <MechanicsTray />
             ) : (
               <GameChat />
             )}

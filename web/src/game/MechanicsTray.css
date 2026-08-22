@@ -1,0 +1,489 @@
+.mechanics-tray {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  width: 100%;
+  background: #0d1020;
+  overflow: hidden;
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.mechanics-tray.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.mechanics-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  color: #94a3b8;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.mechanics-empty-box .empty-icon {
+  font-size: 28px;
+}
+
+.mechanics-empty-box h4 {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-display, serif);
+}
+
+.mechanics-empty-box p {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.mechanics-glossary-hint {
+  margin-top: 8px;
+  text-align: left;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mechanics-glossary-hint span {
+  font-weight: 700;
+  color: #ffd070;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.mechanics-glossary-hint ul {
+  margin: 0;
+  padding-left: 12px;
+  color: #94a3b8;
+}
+
+.mechanics-glossary-hint li {
+  margin-bottom: 3px;
+}
+
+/* Nav bar / category pills */
+.mechanics-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(10, 13, 26, 0.9);
+  border-bottom: 1px solid #1e2444;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mechanics-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.mechanic-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.mechanic-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.mechanic-tab-btn.active {
+  background: rgba(255, 208, 112, 0.2);
+  border-color: #ffd070;
+  color: #ffd070;
+  box-shadow: 0 0 8px rgba(255, 208, 112, 0.3);
+}
+
+.mechanics-content-scroll {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+}
+
+/* Generic Panel Header */
+.mechanic-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mechanic-header-card {
+  background: rgba(20, 26, 50, 0.85);
+  border: 1px solid rgba(255, 208, 112, 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.mechanic-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.mechanic-title-row h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffd070;
+  font-family: var(--font-display, serif);
+}
+
+.ring-level-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #ffd070;
+  color: #101322;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ring-bearer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.bearer-label {
+  color: #94a3b8;
+}
+
+.bearer-value {
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.player-tag {
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* Ring Levels List */
+.ring-levels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ring-level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(15, 20, 38, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.ring-level-card.unlocked {
+  background: rgba(35, 30, 15, 0.85);
+  border-color: rgba(255, 208, 112, 0.5);
+  box-shadow: 0 0 10px rgba(255, 208, 112, 0.15);
+}
+
+.ring-level-card.current {
+  border-color: #ffd070;
+  box-shadow: 0 0 14px rgba(255, 208, 112, 0.35);
+}
+
+.ring-level-card.locked {
+  opacity: 0.5;
+}
+
+.level-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.level-num-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.level-num {
+  font-size: 13px;
+  font-weight: 900;
+  font-family: var(--font-display, serif);
+  color: #ffd070;
+}
+
+.level-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.unlocked .level-title {
+  color: #ffd070;
+}
+
+.level-status {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.unlocked .level-status {
+  background: rgba(99, 230, 190, 0.15);
+  color: #63e6be;
+}
+
+.level-rule {
+  margin: 0;
+  font-size: 10px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.mechanic-token-preview {
+  display: flex;
+  justify-content: center;
+  padding: 6px;
+}
+
+.token-art-img {
+  width: 100px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 208, 112, 0.4);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.token-art-img:hover {
+  transform: scale(1.05);
+}
+
+/* Dungeon Panel */
+.panel-dungeon .dungeon-sub {
+  margin: 4px 0 0 0;
+  font-size: 10px;
+  color: #64748b;
+}
+
+.dungeon-rooms-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dungeon-room-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(15, 25, 45, 0.7);
+  border: 1px solid rgba(99, 230, 190, 0.2);
+  font-size: 10px;
+  color: #cbd5e1;
+}
+
+.dungeon-room-node.active-room {
+  background: rgba(20, 50, 60, 0.9);
+  border-color: #63e6be;
+  box-shadow: 0 0 10px rgba(99, 230, 190, 0.4);
+  font-weight: 700;
+  color: #63e6be;
+}
+
+.room-step {
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.current-marker {
+  margin-left: auto;
+  font-size: 9px;
+  font-weight: 800;
+  color: #63e6be;
+}
+
+/* Day // Night */
+.daynight-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.daynight-banner.day-active {
+  background: linear-gradient(135deg, rgba(80, 60, 20, 0.9), rgba(30, 20, 10, 0.9));
+  border: 1.5px solid #ffd070;
+  box-shadow: 0 0 16px rgba(255, 208, 112, 0.3);
+}
+
+.daynight-banner.night-active {
+  background: linear-gradient(135deg, rgba(30, 25, 65, 0.9), rgba(15, 12, 35, 0.9));
+  border: 1.5px solid #818cf8;
+  box-shadow: 0 0 16px rgba(129, 140, 248, 0.3);
+}
+
+.daynight-giant-icon {
+  font-size: 32px;
+}
+
+.daynight-giant-text h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.daynight-hint {
+  font-size: 10px;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.daynight-rules-box {
+  background: rgba(10, 14, 28, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.daynight-rules-box h4 {
+  margin: 0 0 6px 0;
+  font-size: 11px;
+  color: #ffd070;
+}
+
+.rule-card {
+  margin-bottom: 6px;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.rule-badge {
+  display: inline-block;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+/* Monarch & Initiative */
+.monarch-header,
+.initiative-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px;
+}
+
+.crown-large {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+
+.holder-row {
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  color: #e2e8f0;
+}
+
+.mechanic-rules-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rule-item {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(15, 20, 38, 0.7);
+  border-radius: 6px;
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.rule-item strong {
+  color: #e2e8f0;
+  display: block;
+}
+
+.rule-item p {
+  margin: 2px 0 0 0;
+}
+
+.rule-icon {
+  font-size: 16px;
+}
+
+/* City's Blessing & Speed */
+.blessing-players-list,
+.speed-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blessing-player-row,
+.speed-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(15, 20, 38, 0.7);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #e2e8f0;
+}
+
+.badge-ascended {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 208, 112, 0.2);
+  color: #ffd070;
+  border: 1px solid rgba(255, 208, 112, 0.4);
+}

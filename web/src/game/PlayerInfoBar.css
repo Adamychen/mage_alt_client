@@ -251,13 +251,58 @@
 
 .player-badges {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .player-badges .badge {
-  font-size: 13px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   color: #ffd070;
   filter: drop-shadow(0 0 4px rgba(255, 208, 112, 0.6));
+  transition: transform 0.15s cubic-bezier(0.19, 1, 0.22, 1), filter 0.15s ease;
+  user-select: none;
+}
+
+.interactive-badge {
+  cursor: pointer;
+}
+
+.interactive-badge:hover {
+  transform: scale(1.22);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+  z-index: 10;
+}
+
+.badge-sub-level {
+  font-size: 10px;
+  font-weight: 900;
+  font-family: var(--font-display);
+  color: #ffd070;
+  background: rgba(18, 22, 42, 0.9);
+  border: 1px solid rgba(255, 208, 112, 0.6);
+  border-radius: 6px;
+  padding: 0 3px;
+  margin-left: -2px;
+  line-height: 1.1;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+.badge-curse .badge-sub-level {
+  color: #ff5252;
+  border-color: rgba(255, 82, 82, 0.6);
+}
+
+.badge-daynight.is-day {
+  filter: drop-shadow(0 0 6px #ffd070);
+}
+
+.badge-daynight.is-night {
+  filter: drop-shadow(0 0 6px #818cf8);
 }
 
 /* Targeting pulse on player */

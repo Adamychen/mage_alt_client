@@ -252,6 +252,7 @@ export default function PlayerZone({
           side="my"
           onClick={onCardClick ? () => onCardClick(player.playerId) : undefined}
           isTarget={targetIds.has(player.playerId)}
+          onHover={onCardHover}
         />
         <HandZone
           cards={finalHand}

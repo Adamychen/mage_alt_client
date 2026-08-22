@@ -2,7 +2,7 @@
 export type { ConnectionInfo } from './persistence'
 export { loadConn, saveActiveGame, clearActiveGame } from './persistence'
 export type { LogEntry, CombatState, AppState } from './state'
-export { getState } from './state'
+export { getState, setState } from './state'
 export { useStore, usePhase, useLobby, useGame, useSettings } from './selectors'
 export { attachGateway, detachGateway, doConnect, reset } from './gateway'
 export { handleMessage } from './eventHandler'

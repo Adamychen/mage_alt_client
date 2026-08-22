@@ -120,22 +120,22 @@
 }
 
 .right-panel-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid #1e2444;
   background: #0a0d1a;
 }
 
 .right-tab-btn {
-  flex: 1;
-  padding: 8px 6px;
-  font-size: 11px;
+  padding: 7px 6px;
+  font-size: 10.5px;
   font-weight: 700;
   font-family: var(--font-display);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #6b759a;
   background: transparent;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-bottom: 2px solid transparent;
   cursor: pointer;
   display: flex;
@@ -148,13 +148,13 @@
 
 .right-tab-btn:hover {
   color: #c8d0ea;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .right-tab-btn.active {
   color: #ffffff;
   border-bottom-color: var(--accent);
-  background: rgba(124, 92, 255, 0.08);
+  background: rgba(124, 92, 255, 0.12);
 }
 
 .right-tab-badge {
