@@ -16,6 +16,7 @@ import UserActionModal from './UserActionModal'
 import TableFilterBar, { INITIAL_TABLE_FILTERS, filterTables, type TableFilters } from './TableFilterBar'
 import FinishedMatchesPanel from './FinishedMatchesPanel'
 import { AI_OPPONENT_DECK, type Deck } from './decks'
+import { useFullscreen } from '../utils/fullscreen'
 import './LobbyScreen.css'
 
 /** Las promesas del proxy no deben colgar la UI: todo con timeout explícito. */
@@ -144,6 +145,7 @@ export default function LobbyScreen() {
   const [filters, setFilters] = useState<TableFilters>(INITIAL_TABLE_FILTERS)
   const [busyTable, setBusyTable] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [isFullscreenActive, toggleFullscreen] = useFullscreen()
 
   const openLeaderboard = (target?: string, tab: 'room' | 'profile' | 'tiers' = 'room') => {
     setLeaderboardTarget(target)
@@ -340,8 +342,19 @@ export default function LobbyScreen() {
           </button>
         </nav>
 
-        {/* User Identity & Disconnect */}
+        {/* User Identity, Fullscreen & Disconnect */}
         <div className="lobby-user-actions">
+          <button
+            type="button"
+            className={`lobby-fullscreen-btn ${isFullscreenActive ? 'active' : ''}`}
+            onClick={toggleFullscreen}
+            title={isFullscreenActive ? 'Salir de pantalla completa (F11)' : 'Pantalla completa (F11)'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={isFullscreenActive ? 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3' : 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'} />
+            </svg>
+          </button>
+
           <div
             className="lobby-user-badge"
             onClick={() => openLeaderboard(conn?.username, 'profile')}

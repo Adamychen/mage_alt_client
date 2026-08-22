@@ -21,8 +21,8 @@ describe('HelpWikiModal', () => {
     const searchInput = screen.getByPlaceholderText(/Buscar palabra clave/i)
     fireEvent.change(searchInput, { target: { value: 'Trample' } })
 
-    expect(screen.getByText(/Trample/i)).toBeDefined()
-    expect(screen.getByText(/Arrollar/i)).toBeDefined()
+    expect(screen.getAllByText(/Trample/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Arrollar/i).length).toBeGreaterThan(0)
     expect(screen.queryByText(/^Flying$/i)).toBeNull()
   })
 

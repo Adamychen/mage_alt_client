@@ -1,5 +1,6 @@
 import type { CardView, GameView, PlayerView } from '../net/types'
 import { useStore } from '../state/store'
+import { formatTimer, useTickingTimer } from '../utils/timer'
 import AvatarImage from '../lobby/AvatarImage'
 import CountryFlag from '../lobby/CountryFlag'
 import './PlayerInfoBar.css'
@@ -11,13 +12,6 @@ interface PlayerInfoBarProps {
   onClick?: () => void
   isTarget?: boolean
   onHover?: (card: CardView | null, rect?: DOMRect) => void
-}
-
-function formatTimer(seconds: number): string {
-  if (seconds <= 0) return '00:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 
 function counterIcon(name: string): string {
@@ -241,8 +235,9 @@ export default function PlayerInfoBar({
   const flagName = rawUserData?.flagName
 
   const hasPriority = !!player.hasPriority
+  const timeLeft = useTickingTimer(player.priorityTimeLeftSecs, hasPriority)
   const hasTimer = (player.priorityTimeLeftSecs != null && player.priorityTimeLeftSecs > 0) || !!player.timerActive
-  const isTimeLow = hasTimer && (player.priorityTimeLeftSecs ?? 0) > 0 && (player.priorityTimeLeftSecs ?? 0) <= 30
+  const isTimeLow = hasTimer && timeLeft > 0 && timeLeft <= 30
 
   // Match wins dots (Bo1 / Bo3 / Bo5)
   const winsNeeded = player.winsNeeded ?? (player.wins ? player.wins : 0)
@@ -352,7 +347,7 @@ export default function PlayerInfoBar({
               title="Tiempo restante de prioridad"
             >
               <span className="timer-icon">⏱️</span>
-              <span className="timer-value">{formatTimer(player.priorityTimeLeftSecs ?? 0)}</span>
+              <span className="timer-value">{formatTimer(timeLeft)}</span>
             </span>
           )}
         </div>

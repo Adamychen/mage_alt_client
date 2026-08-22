@@ -2,7 +2,7 @@
 
 > This document is the **project source of truth**: roadmap, phases, decisions, and
 > verified actual state. It is updated at every work step, not just at the end of phases.
-> Last updated: 2026-08-22 (MTG Keywords Breakdown Hover Tooltips & In-Client MTG Rules Wiki Modal)
+> Last updated: 2026-08-22 (Fullscreen Browser Mode, Real-Time Priority Chess Clocks & 267 Engine-Extracted MTG Keywords)
 
 ---
 
@@ -265,6 +265,7 @@ web/
 | 2026-08-21 | Fix | Robust lobby user list extraction supporting Array of RoomUsersView and direct UsersView wire formats | vitest 226/226 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
 | 2026-08-21 | Feature/UX | Advanced Table Creation Dialog with categorized tabs (General, Clocks & Rules, Security & Passwords, Bot Seats with Custom Decks) | vitest 230/230 ✅; typecheck ✅; build ✅; java ✅; Playwright e2e ✅ |
 | 2026-08-22 | Feature/UX | MTG Keywords Hover Tooltips (Arena-style) & In-Client Rules Wiki Modal: dynamic rule parsing, bilingual glossary with live search, turn phases guide, keyboard shortcuts reference | vitest 293/293 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
+| 2026-08-22 | Feature/UX | Fullscreen Web Mode (in-game sidebar & lobby top bar), Real-time Dynamic Priority Chess Clocks (`useTickingTimer`, hours formatting `1:55:08`), and Automated Extraction of 267 MTG Keywords from XMage rules engine | vitest 302/302 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
 
 ---
 
