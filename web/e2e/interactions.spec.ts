@@ -100,6 +100,32 @@ test('interacciones completas de MTG: GAME_ASK, GAME_CHOOSE_COLOR, GAME_CHOOSE_P
     await page.waitForTimeout(300)
     fs.writeFileSync(path.join(SHOTS_DIR, 'interaction-06-commander-cast-tax.png'), await page.screenshot({ fullPage: true }))
 
+    // ─────────────────────────────────────────────────────────────
+    // 7. Hover en Carta con Desglose de Palabras Clave (MTG Keywords)
+    // ─────────────────────────────────────────────────────────────
+    const commanderCard = commanderZone.locator('.card-slot, .commander-slot').first()
+    await commanderCard.hover()
+    const floatingKeywords = page.locator('.floating-card-keywords')
+    await expect(floatingKeywords, 'panel de keywords flotante en hover').toBeVisible({ timeout: 10_000 })
+    await page.waitForTimeout(400)
+    fs.writeFileSync(path.join(SHOTS_DIR, 'interaction-07-card-hover-keywords.png'), await page.screenshot({ fullPage: true }))
+
+    // ─────────────────────────────────────────────────────────────
+    // 8. Modal de Glosario y Wiki de MTG (Botón de Ayuda ❓)
+    // ─────────────────────────────────────────────────────────────
+    // Move mouse away to close hover
+    await page.mouse.move(0, 0)
+    await page.waitForTimeout(200)
+
+    const helpBtn = page.locator('.sidebar-icon-btn[title*="Wiki"], .sidebar-icon-btn[title*="Ayuda"]')
+    await expect(helpBtn, 'botón de ayuda/wiki').toBeVisible({ timeout: 5_000 })
+    await helpBtn.click()
+
+    const wikiModal = page.locator('.wiki-dialog')
+    await expect(wikiModal, 'modal de wiki visible').toBeVisible({ timeout: 10_000 })
+    await page.waitForTimeout(300)
+    fs.writeFileSync(path.join(SHOTS_DIR, 'interaction-08-wiki-glossary-modal.png'), await page.screenshot({ fullPage: true }))
+
     expect(pageErrors, `pageerrors: ${pageErrors.map(String).join(' | ')}`).toEqual([])
   })
 })

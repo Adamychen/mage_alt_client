@@ -30,6 +30,10 @@ export function allInteractionsScenario(): Scenario {
     power: '4',
     toughness: '4',
     cardTypes: ['Creature'],
+    rules: [
+      'Flying, vigilance, deathtouch, lifelink',
+      'At the beginning of your end step, proliferate.',
+    ],
   })
 
   const getGameView = (): GameView => {

@@ -6,9 +6,104 @@
 
 .floating-card-preview {
   z-index: 9999;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-start;
   filter: drop-shadow(0 20px 48px rgba(0, 0, 0, 0.92)) drop-shadow(0 0 12px rgba(255, 208, 112, 0.35));
   animation: floatingCardIn 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity;
+}
+
+.floating-card-preview.flip-keywords {
+  flex-direction: row-reverse;
+}
+
+.floating-card-main {
+  position: relative;
+  width: 270px;
+  height: 378px;
+  flex-shrink: 0;
+}
+
+.floating-card-keywords {
+  width: 220px;
+  max-height: 378px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 2px 2px 0;
+}
+
+.floating-card-keywords::-webkit-scrollbar {
+  width: 4px;
+}
+
+.floating-card-keywords::-webkit-scrollbar-thumb {
+  background: rgba(255, 208, 112, 0.4);
+  border-radius: 4px;
+}
+
+.floating-card-kw-box {
+  background: rgba(12, 16, 32, 0.96);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.floating-card-kw-box.cat-combat {
+  border-color: rgba(239, 68, 68, 0.55);
+}
+.floating-card-kw-box.cat-evasion {
+  border-color: rgba(56, 189, 248, 0.55);
+}
+.floating-card-kw-box.cat-protection {
+  border-color: rgba(168, 85, 247, 0.55);
+}
+.floating-card-kw-box.cat-counters {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+.floating-card-kw-box.cat-mana {
+  border-color: rgba(234, 179, 8, 0.55);
+}
+.floating-card-kw-box.cat-graveyard {
+  border-color: rgba(217, 70, 239, 0.55);
+}
+.floating-card-kw-box.cat-cards {
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.kw-box-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.kw-box-icon {
+  font-size: 13px;
+}
+
+.kw-box-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffd070;
+  font-family: var(--font-display, serif);
+}
+
+.kw-box-es {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.kw-box-summary {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: #e2e8f0;
+  margin: 0;
 }
 
 @keyframes floatingCardIn {

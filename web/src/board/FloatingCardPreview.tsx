@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CardView, PermanentView } from '../net/types'
 import { awaitImageUrl, cardName, getSourceCardName, isAbilityCard } from '../cards/cardImages'
+import { extractKeywordsFromCard } from '../data/keywordExtractor'
+import FormattedText from '../game/FormattedText'
 import './FloatingCardPreview.css'
 
 interface FloatingCardPreviewProps {
@@ -12,6 +14,7 @@ interface FloatingCardPreviewProps {
 
 const PREVIEW_WIDTH = 270
 const PREVIEW_HEIGHT = 378
+const KEYWORDS_WIDTH = 230
 
 export default function FloatingCardPreview({
   card,
@@ -91,11 +94,14 @@ export default function FloatingCardPreview({
     showBackFace,
   ])
 
+  const keywords = useMemo(() => extractKeywordsFromCard(activeCard), [activeCard])
+
   if (!card || !anchorRect || card.faceDown || !activeCard) {
     return null
   }
 
   let style: React.CSSProperties = {}
+  const totalWidth = keywords.length > 0 ? PREVIEW_WIDTH + KEYWORDS_WIDTH + 10 : PREVIEW_WIDTH
 
   if (boardRect) {
     const relLeft = anchorRect.left - boardRect.left
@@ -110,22 +116,21 @@ export default function FloatingCardPreview({
       // Rise upwards directly above the hand
       const left = Math.max(
         12,
-        Math.min(boardRect.width - PREVIEW_WIDTH - 12, relLeft + anchorRect.width / 2 - PREVIEW_WIDTH / 2)
+        Math.min(boardRect.width - totalWidth - 12, relLeft + anchorRect.width / 2 - PREVIEW_WIDTH / 2)
       )
       const bottom = Math.max(12, boardRect.height - relTop + 12)
       style = {
         position: 'absolute',
         left: `${left}px`,
         bottom: `${bottom}px`,
-        width: `${PREVIEW_WIDTH}px`,
         height: `${PREVIEW_HEIGHT}px`,
       }
     } else {
       // Battlefield/Opponent/Stack: place to the right if fits, otherwise to the left
-      const fitsRight = relRight + 16 + PREVIEW_WIDTH <= boardRect.width - 12
+      const fitsRight = relRight + 16 + totalWidth <= boardRect.width - 12
       const left = fitsRight
         ? relRight + 16
-        : Math.max(12, relLeft - PREVIEW_WIDTH - 16)
+        : Math.max(12, relLeft - totalWidth - 16)
 
       const top = Math.max(
         12,
@@ -139,16 +144,15 @@ export default function FloatingCardPreview({
         position: 'absolute',
         left: `${left}px`,
         top: `${top}px`,
-        width: `${PREVIEW_WIDTH}px`,
         height: `${PREVIEW_HEIGHT}px`,
       }
     }
   } else {
     // Fixed viewport positioning (e.g. from ActionFeed sidebar)
-    const fitsLeft = anchorRect.left - PREVIEW_WIDTH - 16 >= 12
+    const fitsLeft = anchorRect.left - totalWidth - 16 >= 12
     const left = fixedSide === 'left' || fitsLeft
-      ? Math.max(12, anchorRect.left - PREVIEW_WIDTH - 16)
-      : Math.min(window.innerWidth - PREVIEW_WIDTH - 12, anchorRect.right + 16)
+      ? Math.max(12, anchorRect.left - totalWidth - 16)
+      : Math.min(window.innerWidth - totalWidth - 12, anchorRect.right + 16)
 
     const top = Math.max(
       12,
@@ -162,7 +166,6 @@ export default function FloatingCardPreview({
       position: 'fixed',
       left: `${left}px`,
       top: `${top}px`,
-      width: `${PREVIEW_WIDTH}px`,
       height: `${PREVIEW_HEIGHT}px`,
       zIndex: 10000,
     }
@@ -174,53 +177,79 @@ export default function FloatingCardPreview({
   const manaCost = (activeCard.manaCostLeftStr ?? []).join('')
   const rules = activeCard.rules ?? []
 
+  // Check if keywords should be on the left or right of the card
+  const isNearRightEdge = style.left ? parseInt(String(style.left), 10) + PREVIEW_WIDTH + KEYWORDS_WIDTH > (boardRect?.width ?? window.innerWidth) - 20 : false
+
   return (
-    <div className="floating-card-preview" style={style}>
-      <div className="floating-card-inner">
-        {/* Flip Hint Badge (Double-faced / Transform / MDFC) */}
-        {hasSecondFace && (
-          <div className="floating-card-flip-badge" title="Pulsa Shift o F para voltear">
-            <span className="flip-icon">🔄</span>
-            <span className="flip-label">{showBackFace ? 'Reverso' : 'Anverso'} (Shift / F)</span>
-          </div>
-        )}
-
-        {imgUrl ? (
-          <img src={imgUrl} alt={name} className="floating-card-img" draggable={false} />
-        ) : (
-          <div className="floating-card-fallback">
-            <div className="floating-card-header">
-              <span className="floating-card-name">{name}</span>
-              {manaCost && <span className="floating-card-mana">{manaCost}</span>}
+    <div
+      className={`floating-card-preview ${isNearRightEdge ? 'flip-keywords' : ''}`}
+      style={style}
+    >
+      <div className="floating-card-main">
+        <div className="floating-card-inner">
+          {/* Flip Hint Badge (Double-faced / Transform / MDFC) */}
+          {hasSecondFace && (
+            <div className="floating-card-flip-badge" title="Pulsa Shift o F para voltear">
+              <span className="flip-icon">🔄</span>
+              <span className="flip-label">{showBackFace ? 'Reverso' : 'Anverso'} (Shift / F)</span>
             </div>
-            {activeCard.cardTypes && activeCard.cardTypes.length > 0 && (
-              <div className="floating-card-type">{activeCard.cardTypes.join(' — ')}</div>
-            )}
-            {rules.length > 0 && (
-              <div className="floating-card-rules">{rules.join('\n')}</div>
-            )}
-          </div>
-        )}
+          )}
 
-        {/* P/T Badge (Creatures only) */}
-        {activeCard.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && perm.power && perm.toughness && (
-          <div className="floating-card-pt">
-            {perm.power}/{perm.toughness}
-          </div>
-        )}
+          {imgUrl ? (
+            <img src={imgUrl} alt={name} className="floating-card-img" draggable={false} />
+          ) : (
+            <div className="floating-card-fallback">
+              <div className="floating-card-header">
+                <span className="floating-card-name">{name}</span>
+                {manaCost && <span className="floating-card-mana">{manaCost}</span>}
+              </div>
+              {activeCard.cardTypes && activeCard.cardTypes.length > 0 && (
+                <div className="floating-card-type">{activeCard.cardTypes.join(' — ')}</div>
+              )}
+              {rules.length > 0 && (
+                <div className="floating-card-rules">{rules.join('\n')}</div>
+              )}
+            </div>
+          )}
 
-        {/* Counters Badge */}
-        {activeCard.counters && activeCard.counters.length > 0 && (
-          <div className="floating-card-counters">
-            +{activeCard.counters.reduce((sum, c) => sum + c.count, 0)} contadores
-          </div>
-        )}
+          {/* P/T Badge (Creatures only) */}
+          {activeCard.cardTypes?.some((t) => String(t).toLowerCase() === 'creature') && perm.power && perm.toughness && (
+            <div className="floating-card-pt">
+              {perm.power}/{perm.toughness}
+            </div>
+          )}
 
-        {/* Token Badge */}
-        {(perm.isToken || activeCard.mageObjectType === 'TOKEN') && !perm.copy && (
-          <div className="floating-card-token-badge">TOKEN</div>
-        )}
+          {/* Counters Badge */}
+          {activeCard.counters && activeCard.counters.length > 0 && (
+            <div className="floating-card-counters">
+              +{activeCard.counters.reduce((sum, c) => sum + c.count, 0)} contadores
+            </div>
+          )}
+
+          {/* Token Badge */}
+          {(perm.isToken || activeCard.mageObjectType === 'TOKEN') && !perm.copy && (
+            <div className="floating-card-token-badge">TOKEN</div>
+          )}
+        </div>
       </div>
+
+      {/* Keywords Breakdown Boxes (MTG Arena style) */}
+      {keywords.length > 0 && (
+        <aside className="floating-card-keywords" aria-label="Mecánicas de la carta">
+          {keywords.map((kw) => (
+            <div key={kw.id} className={`floating-card-kw-box cat-${kw.category}`}>
+              <div className="kw-box-header">
+                <span className="kw-box-icon">{kw.icon}</span>
+                <span className="kw-box-name">{kw.name}</span>
+                <span className="kw-box-es">({kw.nameEs})</span>
+              </div>
+              <p className="kw-box-summary">
+                <FormattedText text={kw.summary} />
+              </p>
+            </div>
+          ))}
+        </aside>
+      )}
     </div>
   )
 }

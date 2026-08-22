@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useGame, returnToLobby } from '../state/store'
+import HelpWikiModal from './HelpWikiModal'
 import './Sidebar.css'
 
 const ICON_PATHS = {
@@ -19,7 +20,7 @@ interface SidebarIcon {
 
 const NAV_ITEMS: SidebarIcon[] = [
   { id: 'settings', label: 'Ajustes', path: ICON_PATHS.settings },
-  { id: 'help', label: 'Atajos y Ayuda', path: ICON_PATHS.help },
+  { id: 'help', label: 'Wiki, Glosario y Ayuda', path: ICON_PATHS.help },
   { id: 'exit', label: 'Conceder / Volver al Lobby', path: ICON_PATHS.exit, danger: true },
 ]
 
@@ -34,6 +35,18 @@ export default function Sidebar() {
   const [showHelp, setShowHelp] = useState(false)
 
   const me = game?.players?.find((p) => p.controlled)
+
+  // Keyboard shortcut F1 or K for Wiki
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault()
+        setShowHelp((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handle = (id: string) => {
     switch (id) {
@@ -56,38 +69,32 @@ export default function Sidebar() {
   const bufferSecs = game?.bufferTime ?? 0
 
   return (
-    <nav className="sidebar">
-      <div className="sidebar-turn-info">
-        <span className="sidebar-turn-label">Turn</span>
-        <span className="sidebar-turn-value">{game?.turn ?? '—'}</span>
-        <TurnTimer secs={timerSecs} />
-        <TurnTimer secs={bufferSecs} />
-      </div>
-
-      <div className="sidebar-icons-col">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            className={`sidebar-icon-btn ${item.danger ? 'danger' : ''} ${item.id === 'help' && showHelp ? 'active' : ''}`}
-            title={item.label}
-            onClick={() => handle(item.id)}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={item.path} />
-            </svg>
-          </button>
-        ))}
-      </div>
-
-      {showHelp && (
-        <div className="sidebar-help-tooltip panel">
-          <h4>⌨️ Atajos de juego</h4>
-          <ul>
-            <li><strong>Espacio:</strong> Resolver / Pasar prioridad</li>
-            <li><strong>Click en carta:</strong> Jugar hechizo o elegir objetivo</li>
-          </ul>
+    <>
+      <nav className="sidebar">
+        <div className="sidebar-turn-info">
+          <span className="sidebar-turn-label">Turn</span>
+          <span className="sidebar-turn-value">{game?.turn ?? '—'}</span>
+          <TurnTimer secs={timerSecs} />
+          <TurnTimer secs={bufferSecs} />
         </div>
-      )}
-    </nav>
+
+        <div className="sidebar-icons-col">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              className={`sidebar-icon-btn ${item.danger ? 'danger' : ''} ${item.id === 'help' && showHelp ? 'active' : ''}`}
+              title={item.label}
+              onClick={() => handle(item.id)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d={item.path} />
+              </svg>
+            </button>
+          ))}
+        </div>
+      </nav>
+
+      {showHelp && <HelpWikiModal onClose={() => setShowHelp(false)} />}
+    </>
   )
 }

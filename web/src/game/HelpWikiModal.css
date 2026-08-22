@@ -1,0 +1,414 @@
+.wiki-backdrop {
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+  background: rgba(4, 6, 18, 0.82);
+}
+
+.wiki-dialog {
+  width: min(920px, 94vw) !important;
+  max-height: min(840px, 90vh) !important;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background: rgba(14, 18, 38, 0.98);
+  border: 1.5px solid rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.25), 0 24px 64px rgba(0, 0, 0, 0.9);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.wiki-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wiki-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wiki-icon {
+  font-size: 32px;
+}
+
+.wiki-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #f8fafc;
+  font-family: var(--font-display, serif);
+  letter-spacing: 0.02em;
+}
+
+.wiki-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.wiki-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.wiki-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+/* Nav Tabs */
+.wiki-nav-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.wiki-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wiki-tab-btn:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.wiki-tab-btn.active {
+  background: rgba(124, 92, 255, 0.18);
+  border-color: rgba(168, 85, 247, 0.5);
+  color: #ffd070;
+  box-shadow: 0 0 12px rgba(124, 92, 255, 0.25);
+}
+
+/* Content Area */
+.wiki-content {
+  flex: 1 1 auto;
+  min-height: 200px;
+  max-height: 56vh;
+  overflow-y: auto;
+  margin-top: 14px;
+  padding-right: 6px;
+}
+
+.wiki-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wiki-content::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+}
+
+/* Search Bar */
+.wiki-search-bar-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.wiki-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.wiki-search-input {
+  width: 100%;
+  padding: 10px 38px 10px 36px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.wiki-search-input:focus {
+  border-color: var(--accent, #a78bfa);
+  box-shadow: 0 0 0 2px rgba(124, 92, 255, 0.2);
+}
+
+.wiki-clear-search {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+}
+
+/* Category Pills */
+.wiki-category-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 16px;
+}
+
+.wiki-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wiki-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.wiki-pill.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.6);
+  color: #ffd070;
+  font-weight: 700;
+}
+
+/* Keywords Grid */
+.wiki-keywords-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.wiki-kw-card {
+  background: rgba(20, 26, 52, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.wiki-kw-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(26, 34, 68, 0.85);
+}
+
+.wiki-kw-card.cat-combat { border-left: 3px solid #ef4444; }
+.wiki-kw-card.cat-evasion { border-left: 3px solid #38bdf8; }
+.wiki-kw-card.cat-protection { border-left: 3px solid #a855f7; }
+.wiki-kw-card.cat-cards { border-left: 3px solid #6366f1; }
+.wiki-kw-card.cat-counters { border-left: 3px solid #22c55e; }
+.wiki-kw-card.cat-mana { border-left: 3px solid #eab308; }
+.wiki-kw-card.cat-graveyard { border-left: 3px solid #d946ef; }
+.wiki-kw-card.cat-mechanic { border-left: 3px solid #f97316; }
+
+.wiki-kw-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wiki-kw-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wiki-kw-icon {
+  font-size: 15px;
+}
+
+.wiki-kw-name-en {
+  font-size: 0.95rem;
+  color: #ffd070;
+  font-family: var(--font-display, serif);
+}
+
+.wiki-kw-name-es {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.wiki-kw-type-badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #94a3b8;
+}
+
+.wiki-kw-summary {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  color: #cbd5e1;
+}
+
+.wiki-kw-rule-ref {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-family: monospace;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.wiki-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 0;
+  color: #94a3b8;
+}
+
+.wiki-empty span {
+  font-size: 32px;
+  opacity: 0.5;
+}
+
+/* Phases Tab */
+.wiki-phases-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wiki-section h3 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  color: #ffd070;
+  font-family: var(--font-display, serif);
+}
+
+.wiki-phases-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.phase-block {
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(20, 26, 52, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.phase-block.phase-beginning { border-left: 4px solid #22c55e; }
+.phase-block.phase-main { border-left: 4px solid #3b82f6; }
+.phase-block.phase-combat { border-left: 4px solid #ef4444; }
+.phase-block.phase-ending { border-left: 4px solid #a855f7; }
+
+.phase-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.phase-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.phase-step {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.35;
+}
+
+.phase-step strong {
+  color: #ffd070;
+}
+
+.wiki-stack-card {
+  background: rgba(20, 26, 52, 0.6);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.wiki-stack-card p {
+  margin: 0 0 8px;
+}
+
+.wiki-stack-card p:last-child {
+  margin-bottom: 0;
+}
+
+/* Shortcuts Tab */
+.wiki-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.shortcut-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(20, 26, 52, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.shortcut-key {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(255, 208, 112, 0.6);
+  color: #ffd070;
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.shortcut-info strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #f8fafc;
+  margin-bottom: 4px;
+}
+
+.shortcut-info p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* Footer */
+.wiki-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+}

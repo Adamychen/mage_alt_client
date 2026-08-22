@@ -2,7 +2,7 @@
 
 > This document is the **project source of truth**: roadmap, phases, decisions, and
 > verified actual state. It is updated at every work step, not just at the end of phases.
-> Last updated: 2026-08-22 (Universal Playable Objects Audit & Mana Floating from Battlefield Permanents)
+> Last updated: 2026-08-22 (MTG Keywords Breakdown Hover Tooltips & In-Client MTG Rules Wiki Modal)
 
 ---
 
@@ -264,6 +264,7 @@ web/
 | 2026-08-21 | Feature/UX | Quick Deck Selector on Join Table Dialog with inline text decklist importer | vitest 222/222 ✅; typecheck ✅; build ✅ |
 | 2026-08-21 | Fix | Robust lobby user list extraction supporting Array of RoomUsersView and direct UsersView wire formats | vitest 226/226 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
 | 2026-08-21 | Feature/UX | Advanced Table Creation Dialog with categorized tabs (General, Clocks & Rules, Security & Passwords, Bot Seats with Custom Decks) | vitest 230/230 ✅; typecheck ✅; build ✅; java ✅; Playwright e2e ✅ |
+| 2026-08-22 | Feature/UX | MTG Keywords Hover Tooltips (Arena-style) & In-Client Rules Wiki Modal: dynamic rule parsing, bilingual glossary with live search, turn phases guide, keyboard shortcuts reference | vitest 293/293 ✅; typecheck ✅; build ✅; Playwright e2e ✅ |
 
 ---
 
